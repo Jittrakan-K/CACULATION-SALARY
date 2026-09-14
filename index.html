@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>คำนวณเงินเดือน – จิตรกาล เกตุประสาท</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Prompt:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="app-nav no-print">
+    <div class="nav-container">
+      <div class="app-branding">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+          </svg>
+        </div>
+        <div>
+          <h1>คำนวณเงินเดือน – นายจิตรกาล เกตุประสาท</h1>
+          <p class="subtitle">ออบเรย์ (ประเทศไทย) จำกัด | รหัส 20523 | PRODUCTION TECHNOLOGY</p>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <div class="view-switch-tabs">
+          <button type="button" id="tab-calc-btn" class="tab-btn active" onclick="switchView('calc')">💰 เงินเดือน</button>
+          <button type="button" id="tab-timesheet-btn" class="tab-btn" onclick="switchView('timesheet')">⏱️ เข้า-ออกงาน</button>
+          <button type="button" id="tab-calendar-btn" class="tab-btn" onclick="switchView('calendar')">📅 ปฏิทิน 2569</button>
+        </div>
+        <button type="button" class="btn btn-print" onclick="prepareAndPrint()">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
+          </svg>
+          พิมพ์สลิป
+        </button>
+      </div>
+    </div>
+  </header>
+
+
+  <main class="main-content">
+
+    <!-- VIEW 1: SALARY SUMMARY -->
+    <section id="view-calc" class="view-panel active-panel no-print">
+      <div class="container">
+        <div class="action-toolbar card">
+          <div class="toolbar-left">
+            <label for="payrollPeriodSelect" class="toolbar-label">รอบการจ่ายรายเดือน ตัดรอบทุกวันที่ 20:</label>
+            <select id="payrollPeriodSelect" class="form-select" onchange="onPayrollPeriodSelectChange()"></select>
+          </div>
+          <div class="toolbar-right">
+            <button type="button" class="btn btn-outline-primary" onclick="loadAttendanceFromExcel()">📊 โหลดข้อมูล Excel (21/08–20/09)</button>
+            <button type="button" class="btn btn-success" onclick="switchView('timesheet')">⏱️ แก้ไขเวลาเข้า-ออก</button>
+          </div>
+        </div>
+
+        <div class="summary-cards-grid">
+          <div class="sum-card income-card">
+            <div class="card-icon">💰</div>
+            <div class="card-content">
+              <span class="card-title">ยอดรวมเงินได้</span>
+              <span class="card-amount" id="dashTotalIncome">0.00</span>
+              <span class="card-unit">บาท</span>
+            </div>
+          </div>
+          <div class="sum-card deduct-card">
+            <div class="card-icon">📉</div>
+            <div class="card-content">
+              <span class="card-title">เงินหัก (ประกันสังคม)</span>
+              <span class="card-amount text-danger" id="dashTotalDeduct">875.00</span>
+              <span class="card-unit">บาท</span>
+            </div>
+          </div>
+          <div class="sum-card net-card">
+            <div class="card-icon">💵</div>
+            <div class="card-content">
+              <span class="card-title">เงินได้สุทธิ (รับจริง)</span>
+              <span class="card-amount text-success" id="dashNetPay">0.00</span>
+              <span class="card-unit">บาท</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="card-header-title">📋 รายละเอียดการคำนวณ (ตามสูตร Excel)</h2>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table-cal-breakdown">
+                <thead>
+                  <tr>
+                    <th>รายการ</th>
+                    <th>สูตรคำนวณ</th>
+                    <th>ตัวแปร / จำนวน</th>
+                    <th class="text-right">จำนวนเงิน (บาท)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>เงินเดือนพื้นฐาน</strong></td>
+                    <td><code>A2</code></td>
+                    <td>ฐานเงินเดือน/เดือน</td>
+                    <td class="text-right font-weight-bold" id="calcBaseSalary">20,000.00</td>
+                  </tr>
+                  <tr>
+                    <td><strong>วันทำงานตามปฏิทิน</strong></td>
+                    <td><code>B2 = IN-OUT!H35</code></td>
+                    <td>วันทำงานในรอบนี้</td>
+                    <td class="text-right"><span id="calcTargetDays">24</span> วัน</td>
+                  </tr>
+                  <tr>
+                    <td><strong>ค่าจ้างต่อวัน</strong></td>
+                    <td><code>C2 = A2 / B2</code></td>
+                    <td>เงินเดือน ÷ วันทำงาน</td>
+                    <td class="text-right" id="calcDailyRate">833.33</td>
+                  </tr>
+                  <tr>
+                    <td><strong>วันที่มาทำงานจริง</strong></td>
+                    <td><code>D2 = IN-OUT!I35</code></td>
+                    <td>วันที่ลงชื่อเข้างาน</td>
+                    <td class="text-right"><span id="calcCameDays">24</span> วัน</td>
+                  </tr>
+                  <tr class="table-row-highlight">
+                    <td><strong>เงินเดือนที่ได้รับจริง</strong></td>
+                    <td><code>E2 = C2 × D2</code></td>
+                    <td>ค่าจ้างต่อวัน × วันที่มา</td>
+                    <td class="text-right font-weight-bold text-primary" id="calcActualSalary">20,000.00</td>
+                  </tr>
+                  <tr>
+                    <td><strong>ค่าอาหาร</strong></td>
+                    <td><code>J2 = 20 × D2</code></td>
+                    <td>20 บาท × <span id="calcFoodDays">24</span> วัน</td>
+                    <td class="text-right font-weight-bold" id="calcFoodTotal">480.00</td>
+                  </tr>
+                  <tr>
+                    <td><strong>อาหารโอที</strong></td>
+                    <td><code>K2 = 15 × F2</code></td>
+                    <td>15 บาท × <span id="calcOTMealDays">0</span> วัน (OT ≥ 1 ชม.)</td>
+                    <td class="text-right font-weight-bold" id="calcOTMealTotal">0.00</td>
+                  </tr>
+                  <tr>
+                    <td><strong>ค่าเดินทาง</strong></td>
+                    <td><code>L2 = 1,230</code></td>
+                    <td>คงที่ทุกเดือน</td>
+                    <td class="text-right font-weight-bold" id="calcTravelTotal">1,230.00</td>
+                  </tr>
+                  <tr>
+                    <td><strong>เบี้ยขยัน</strong></td>
+                    <td><code>M2 = IF(B2=D2, 650, 0)</code></td>
+                    <td>มาครบ: <span id="calcDiligenceStatus" class="badge-status-ok">ครบวันทำงาน</span></td>
+                    <td class="text-right font-weight-bold text-success" id="calcDiligenceTotal">650.00</td>
+                  </tr>
+                  <tr>
+                    <td><strong>อัตราชั่วโมง OT</strong></td>
+                    <td><code>A2 / 240</code></td>
+                    <td>เงินเดือน ÷ (30×8 ชม.)</td>
+                    <td class="text-right"><span id="calcHourlyOTRate">83.33</span> บ./ชม.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>OT 1.5× (วันปกติ)</strong></td>
+                    <td><code>N2 = (A2/240) × 1.5 × G2</code></td>
+                    <td><span id="calcOT15Hours">0.0</span> ชม.</td>
+                    <td class="text-right font-weight-bold" id="calcOT15Total">0.00</td>
+                  </tr>
+                  <tr>
+                    <td><strong>OT 1.0× (วันหยุด 8 ชม.)</strong></td>
+                    <td><code>O2 = (A2/240) × 1.0 × H2</code></td>
+                    <td><span id="calcOT1Hours">0.0</span> ชม.</td>
+                    <td class="text-right font-weight-bold" id="calcOT1Total">0.00</td>
+                  </tr>
+                  <tr>
+                    <td><strong>OT 3.0× (วันหยุด หลัง 17:00)</strong></td>
+                    <td><code>P2 = (A2/240) × 3.0 × I2</code></td>
+                    <td><span id="calcOT3Hours">0.0</span> ชม.</td>
+                    <td class="text-right font-weight-bold" id="calcOT3Total">0.00</td>
+                  </tr>
+                  <tr class="table-row-deduct">
+                    <td><strong>ประกันสังคม (SSO 5%)</strong></td>
+                    <td><code>Q2 = 875</code></td>
+                    <td>เพดานฐาน 17,500 บาท</td>
+                    <td class="text-right font-weight-bold text-danger" id="calcSSOTotal">-875.00</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="bottom-action-bar text-center">
+          <button type="button" class="btn btn-success btn-lg" onclick="switchView('timesheet')">⏱️ บันทึก/แก้ไขเวลาเข้า-ออกงาน</button>
+          <button type="button" class="btn btn-primary btn-lg" onclick="prepareAndPrint()">📄 พิมพ์ใบแจ้งรายได้</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: TIMESHEET IN-OUT -->
+    <section id="view-timesheet" class="view-panel no-print">
+      <div class="container">
+        <div class="timesheet-header-card card">
+          <div class="card-header-flex">
+            <div>
+              <h2 class="card-header-title">⏱️ ตารางบันทึกเวลาเข้า-ออกงาน (IN-OUT)</h2>
+              <p class="subtitle">ระบบคำนวณ OT อัตโนมัติจากเวลาออกงานตามสูตร SWITCH ใน Excel</p>
+            </div>
+            <div class="timesheet-quick-actions">
+              <button type="button" class="btn btn-outline-primary btn-sm" onclick="loadAttendanceFromExcel()">📊 โหลดข้อมูล Excel (21/08–20/09)</button>
+              <button type="button" class="btn btn-outline-success btn-sm" onclick="autoFillNormalWorkdays()">✅ เติมวันทำงานปกติ (08:00–17:00)</button>
+              <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearAttendanceTable()">🗑️ ล้างเวลาทั้งหมด</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="ot-hint-banner">
+              <strong>💡 กฎ OT จากเวลาออกงาน:</strong>
+              <span>17:00 = 0 ชม.</span> |
+              <span>17:30 หรือ 17:50 = 0.5 ชม.</span> |
+              <span>18:20 = 1.0 ชม.</span> |
+              <span>18:50 = 1.5 ชม.</span> |
+              <span>19:20 = 2.0 ชม.</span> |
+              <span>19:50 = 2.5 ชม.</span>
+              <br>
+              <em>* วันหยุด: 8 ชม. = Holiday OT×1 | เกิน 17:00 = OT Holiday ×3</em>
+            </div>
+            <div class="table-responsive">
+              <table class="table-timesheet" id="tableAttendance">
+                <thead>
+                  <tr>
+                    <th style="width:80px;">วันที่</th>
+                    <th style="width:50px;">วัน</th>
+                    <th style="width:140px;">สถานะ</th>
+                    <th style="width:100px;">เวลาเข้า</th>
+                    <th style="width:110px;">เวลาออก</th>
+                    <th style="width:90px;">OT (1.5)</th>
+                    <th style="width:90px;">Holiday (1)</th>
+                    <th style="width:90px;">OT Hol (3)</th>
+                    <th style="width:75px;">วันทำงาน</th>
+                    <th style="width:75px;">วันที่มา</th>
+                    <th style="width:80px;">วันทำ OT</th>
+                  </tr>
+                </thead>
+                <tbody id="attendanceTbody"></tbody>
+                <tfoot>
+                  <tr class="timesheet-sum-row">
+                    <td colspan="5" class="text-right font-weight-bold">รวมยอดทั้งหมด:</td>
+                    <td class="text-right font-weight-bold text-primary" id="attTotalOT15">0.0</td>
+                    <td class="text-right font-weight-bold text-primary" id="attTotalHol">0.0</td>
+                    <td class="text-right font-weight-bold text-primary" id="attTotalOTHol">0.0</td>
+                    <td class="text-center font-weight-bold" id="attTotalTargetDays">0</td>
+                    <td class="text-center font-weight-bold text-success" id="attTotalCameDays">0</td>
+                    <td class="text-center font-weight-bold text-primary" id="attTotalOTDays">0</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <div class="bottom-action-bar text-center">
+              <button type="button" class="btn btn-primary btn-lg" onclick="switchView('calc')">← ดูสรุปเงินเดือน</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: ORBRAY CALENDAR 2569 -->
+    <section id="view-calendar" class="view-panel no-print">
+      <div class="container">
+        <div class="card">
+          <div class="card-header-flex">
+            <div>
+              <h2 class="card-header-title">📅 ปฏิทินวันทำงาน ออบเรย์ (ประเทศไทย) จำกัด ปี 2569 / 2026</h2>
+              <p class="subtitle">อ้างอิงวันทำงาน วันหยุดนักขัตฤกษ์ และวันหยุดเสาร์-อาทิตย์จากปฏิทินบริษัท</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="calendar-legend-box">
+              <div class="legend-item"><span class="legend-badge badge-national">xx</span><span><strong>National Holiday</strong> (วันหยุดนักขัตฤกษ์)</span></div>
+              <div class="legend-item"><span class="legend-badge badge-memorial">xx</span><span><strong>Memorial day with pay</strong> (วันหยุดประเพณีจ่ายเงิน)</span></div>
+              <div class="legend-item"><span class="legend-badge badge-orbray">xx</span><span><strong>Orbray day</strong> (วันทำงานพิเศษ)</span></div>
+              <div class="legend-item"><span class="legend-badge badge-sat-holiday">xx</span><span><strong>Saturday Holiday</strong> (วันเสาร์หยุด)</span></div>
+              <div class="legend-item"><span class="legend-badge badge-sunday">xx</span><span><strong>Sunday Holiday</strong> (วันอาทิตย์หยุด)</span></div>
+              <div class="legend-item"><span class="legend-badge badge-work-sat">xx</span><span><strong>Working Saturday</strong> (วันเสาร์ทำงานปกติ)</span></div>
+            </div>
+            <div class="orbray-cal-grid" id="orbrayCalendarGrid"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: PAYSLIP (print only, no tab) -->
+    <section id="view-slip" class="view-panel">
+      <div class="slip-view-controls no-print">
+        <div class="container">
+          <div class="slip-ctrl-flex">
+            <div><button type="button" class="btn btn-secondary" onclick="switchView('calc')">← กลับ</button></div>
+            <div class="slip-ctrl-title">ใบแจ้งรายได้ (ตัวอย่าง)</div>
+            <div>
+              <button type="button" class="btn btn-primary btn-print-big" onclick="window.print()">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                  <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
+                </svg>
+                พิมพ์ / บันทึก PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="payslip-wrapper">
+        <div class="payslip-window-frame">
+          <div class="slip-app-bar">
+            <div class="slip-app-bar-left">
+              <button type="button" class="btn-app-print" onclick="window.print()">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                  <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
+                </svg>
+                พิมพ์
+              </button>
+            </div>
+            <div class="slip-app-bar-right">
+              <span class="app-icon">🪗</span>
+              <span class="app-icon">❓</span>
+              <span class="app-icon">💬</span>
+            </div>
+          </div>
+
+          <div class="payslip-sheet">
+            <div class="watermark-overlay" aria-hidden="true">
+              <div class="watermark-text" style="top:14%;left:52%;">Confidential</div>
+              <div class="watermark-text" style="top:24%;left:16%;">Confidential</div>
+              <div class="watermark-text" style="top:44%;left:45%;">Confidential</div>
+              <div class="watermark-text" style="top:62%;left:15%;">Confidential</div>
+              <div class="watermark-text" style="top:76%;left:40%;">Confidential</div>
+              <div class="watermark-text" style="top:90%;left:18%;">Confidential</div>
+            </div>
+
+            <div class="slip-title-container">
+              <h2 class="slip-main-title">ใบแจ้งรายได้</h2>
+            </div>
+
+            <div class="slip-header-info">
+              <div class="slip-header-left">
+                <div class="slip-logo-area">
+                  <svg class="company-logo" viewBox="0 0 90 75" width="70" height="55">
+                    <defs>
+                      <linearGradient id="logoBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#00a0e9"/>
+                        <stop offset="100%" stop-color="#004494"/>
+                      </linearGradient>
+                      <linearGradient id="logoOrangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#f58220"/>
+                        <stop offset="100%" stop-color="#e60012"/>
+                      </linearGradient>
+                    </defs>
+                    <path d="M18,10 C45,5 68,14 65,36 C62,54 40,58 30,58 L24,70 L14,70 L22,18 C22,18 24,14 34,12 C44,10 54,16 52,28 C50,38 40,43 32,43" fill="none" stroke="url(#logoBlueGrad)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M38,24 C48,22 56,28 54,36 C52,42 45,45 38,45" fill="none" stroke="url(#logoOrangeGrad)" stroke-width="5" stroke-linecap="round"/>
+                    <text x="14" y="66" font-family="'Segoe UI',Arial,sans-serif" font-weight="900" font-size="8" fill="#004494">POWER</text>
+                    <text x="15" y="73" font-family="'Segoe UI',Arial,sans-serif" font-weight="bold" font-size="6" fill="#777">VISION</text>
+                  </svg>
+                </div>
+                <div class="slip-company-details">
+                  <div class="slip-text-blue" id="slipCompanyName">ออบเรย์ (ประเทศไทย) จำกัด</div>
+                  <div class="slip-text-blue" id="slipEmpName">20523:นายจิตรกาล เกตุประสาท</div>
+                  <div class="slip-text-blue" id="slipDepartment">9003.2:PRODUCTION TECHNOLOGY</div>
+                  <div class="slip-text-blue">ประเภทพนักงาน <span id="slipEmpType">รายเดือน</span></div>
+                </div>
+              </div>
+              <div class="slip-header-right">
+                <table class="slip-info-table">
+                  <tr><td class="info-label">ประจำเดือน</td><td class="info-val slip-text-blue" id="slipPeriodMonth">กันยายน</td></tr>
+                  <tr><td class="info-label">งวดที่</td><td class="info-val slip-text-blue" id="slipPeriodRound">งวดจ่ายเงินเดือน</td></tr>
+                  <tr><td class="info-label">เลขที่บัญชีธนาคาร</td><td class="info-val slip-text-blue" id="slipBankAccount">4202160927</td></tr>
+                  <tr><td class="info-label">วันที่จ่าย</td><td class="info-val slip-text-blue" id="slipPayDate">30/09/2569</td></tr>
+                </table>
+              </div>
+            </div>
+
+            <div class="slip-table-container">
+              <table class="slip-main-table">
+                <colgroup>
+                  <col style="width:32%;">
+                  <col style="width:33%;">
+                  <col style="width:35%;">
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th class="slip-col-th col-income">รายการเงินได้</th>
+                    <th class="slip-col-th col-deduct">รายการเงินหัก</th>
+                    <th class="slip-col-th col-tax">ค่าลดหย่อน</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="slip-cell-top col-border-right">
+                      <table class="slip-sub-table"><tbody id="slipIncomeRows"></tbody></table>
+                    </td>
+                    <td class="slip-cell-top col-border-right">
+                      <table class="slip-sub-table"><tbody id="slipDeductRows"></tbody></table>
+                    </td>
+                    <td class="slip-cell-top">
+                      <table class="slip-sub-table">
+                        <tbody>
+                          <tr><td>ลดหย่อนผู้มีเงินได้</td><td class="text-right" id="slipTaxDedPerson">60,000.00</td></tr>
+                          <tr><td>ค่าใช้จ่าย</td><td class="text-right" id="slipTaxDedExpense">100,000.00</td></tr>
+                          <tr><td>ประกันสังคม</td><td class="text-right" id="slipTaxDedSSO">8,908.00</td></tr>
+                          <tr class="sub-total-row"><td>ยอดรวม</td><td class="text-right" id="slipTotalTaxDed">168,908.00</td></tr>
+                        </tbody>
+                      </table>
+                      <div class="slip-sub-section-title">รายการเงินสะสม</div>
+                      <table class="slip-sub-table">
+                        <tbody>
+                          <tr><td>รายได้สะสม</td><td class="text-right" id="slipAccIncome">174,389.00</td></tr>
+                          <tr><td>ภาษีสะสม-พนง.</td><td class="text-right" id="slipAccTaxEmp">0.00</td></tr>
+                          <tr><td>ภาษีสะสม-บริษัท</td><td class="text-right" id="slipAccTaxComp">0.00</td></tr>
+                          <tr><td>ป.ก.ส. สะสม</td><td class="text-right" id="slipAccSSO">5,408.00</td></tr>
+                          <tr><td>กองทุนเงินสะสม</td><td class="text-right" id="slipAccFundEmp">0.00</td></tr>
+                          <tr><td>กองทุนเงินสมทบ</td><td class="text-right" id="slipAccFundComp">0.00</td></tr>
+                        </tbody>
+                      </table>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="slip-summary-bar">
+                <div class="slip-sum-col col-1 text-center">
+                  <div class="sum-label">ยอดรวมเงินได้</div>
+                  <div class="sum-value underlined" id="slipTotalIncome">0.00</div>
+                </div>
+                <div class="slip-sum-col col-2 text-center">
+                  <div class="sum-label">ยอดรวมเงินหัก</div>
+                  <div class="sum-value underlined" id="slipTotalDeduct">875.00</div>
+                </div>
+                <div class="slip-sum-col col-3 text-right">
+                  <div class="net-wrapper">
+                    <span class="sum-label net-label">เงินได้สุทธิ</span>
+                    <span class="sum-value net-value" id="slipNetPay">0.00</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="slip-footer">
+                <div class="slip-footer-inner">
+                  <span class="footer-user-label">ผู้ใช้</span>
+                  <span class="footer-user-name" id="slipUserName">JITTRAKAN</span>
+                  <span class="footer-user-date" id="slipPrintDate">13/09/2569</span>
+                </div>
+              </div>
+              <div class="slip-bottom-decor"></div>
+              <div class="slip-bottom-space"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="app-footer no-print">
+    <div class="container text-center">
+      <p>ระบบคำนวณเงินเดือน ออบเรย์ (ประเทศไทย) จำกัด | นายจิตรกาล เกตุประสาท | สร้างตามไฟล์ Excel และปฏิทิน 2569</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
