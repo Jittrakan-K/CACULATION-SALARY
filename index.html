@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ระบบคิดเงินเดือน & บันทึกเวลาเข้า-ออกงาน – CACULATION SALARY</title>
+  <title>CACULATION SALARY</title>
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,6 +38,9 @@
       <nav class="nav-menu">
         <button type="button" class="nav-link-btn active" id="navBtnMain" onclick="switchView('main')">
           <span>📊 คำนวณเงินเดือน</span>
+        </button>
+        <button type="button" class="nav-link-btn" id="navBtnAttendance" onclick="switchView('attendance')">
+          <span>⏱️ บันทึกเวลาออกงาน</span>
         </button>
         <button type="button" class="nav-link-btn" id="navBtnCalendar" onclick="toggleCalendarView()">
           <span>📅 ปฏิทินวันทำงาน</span>
@@ -80,21 +83,23 @@
       
       <h1 class="hero-title">
         คำนวณเงินเดือน & ค่าล่วงเวลาแม่นยำ <br class="d-none d-md-block">
-        <span class="text-gradient">ทุกงวดจ่าย (21–20)</span> ออกแบบเพื่อความยืดหยุ่นสูงสุด
+        <span class="text-gradient">ทุกงวดจ่าย</span> ออกแบบเพื่อความยืดหยุ่นสูงสุด
       </h1>
       
       <p class="hero-subtitle">
-        บันทึกเวลาทำงาน คำนวณค่าล่วงเวลา OT 1.5, 1.0, 3.0 เท่า เบี้ยเลี้ยง และพิมพ์สลิปเงินเดือนได้ทันที 
-        พร้อมปรับโครงสร้างฐานเงินเดือนได้ทุกรายการ
+        บันทึกเวลาทำงาน คำนวณค่าล่วงเวลา OT เบี้ยเลี้ยง และพิมพ์สลิปเงินเดือนได้ทันที พร้อมปรับโครงสร้างฐานเงินเดือนได้ทุกรายการ
       </p>
 
       <!-- Hero Action Buttons -->
       <div class="hero-actions">
-        <button type="button" class="btn btn-primary btn-lg shadow-btn" onclick="openSettingsSalaryModal()">
-          ⚙️ ปรับแต่งค่าเงิน / อัตราจ้าง
+        <button type="button" class="btn btn-primary btn-lg shadow-btn" onclick="switchView('attendance')">
+          ⏱️ บันทึกเวลาออกงาน
         </button>
-        <button type="button" class="btn btn-white-outline btn-lg" onclick="loadAttendanceFromExcel()">
-          📥 โหลดข้อมูลตัวอย่าง EXCEL
+        <button type="button" class="btn btn-white-outline btn-lg" onclick="switchView('main')">
+          📊 คำนวณเงินเดือน
+        </button>
+        <button type="button" class="btn btn-white-outline btn-lg" onclick="openSettingsSalaryModal()">
+          ⚙️ ปรับแต่งค่าเงิน
         </button>
         <button type="button" class="btn btn-white-outline btn-lg" onclick="prepareAndPrint()">
           🖨️ พิมพ์สลิปเงินเดือน
@@ -135,17 +140,15 @@
         <!-- Admin Context Banner (Active when Admin edits staff data) -->
         <div id="adminScopeBanner" class="admin-scope-banner" style="display:none;"></div>
 
-        <!-- Period Navigation Toolbar (ตั้งแต่ 21 ถึง 20 เดือนหน้า) -->
+        <!-- Period Navigation Toolbar -->
         <div class="period-navigator card">
           <div class="period-nav-left">
+            <span class="period-nav-label">📅 รอบเดือน:</span>
             <button type="button" class="btn btn-outline-primary btn-nav-arrow" onclick="navPrevPeriod()" title="งวดก่อนหน้า">
               ◀ ก่อนหน้า
             </button>
             <div class="period-select-wrapper">
-              <label for="payrollPeriodSelect" class="period-nav-label">
-                รอบคิดเงินเดือน (ตั้งแต่ 21 ถึง 20 เดือนหน้า):
-              </label>
-              <select id="payrollPeriodSelect" class="form-select form-select-lg" onchange="onPayrollPeriodSelectChange()"></select>
+              <select id="payrollPeriodSelect" class="form-select form-select-period" onchange="onPayrollPeriodSelectChange()"></select>
             </div>
             <button type="button" class="btn btn-outline-primary btn-nav-arrow" onclick="navNextPeriod()" title="งวดถัดไป">
               ถัดไป ▶
@@ -153,14 +156,8 @@
           </div>
 
           <div class="period-nav-right">
-            <button type="button" class="btn btn-outline-primary" id="btnLoadExcelSample" onclick="loadAttendanceFromExcel()">
-              📊 โหลดตัวอย่าง Excel
-            </button>
-            <button type="button" class="btn btn-outline-success" onclick="autoFillNormalWorkdays()">
-              ✅ เติมวันปกติ (08:00–17:00)
-            </button>
-            <button type="button" class="btn btn-outline-danger" onclick="clearAttendanceTable()">
-              🗑️ ล้างเวลา
+            <button type="button" class="btn btn-primary btn-nav-cta" onclick="switchView('attendance')">
+              ⏱️ บันทึกเวลาออกงาน (เข้า-ออก) →
             </button>
           </div>
         </div>
@@ -193,58 +190,42 @@
           </div>
         </div>
 
-        <!-- Timesheet Table (IN-OUT 31 วัน) -->
-        <div class="card">
-          <div class="card-header-flex">
-            <div>
-              <h2 class="card-header-title">⏱️ บันทึกเวลาเข้า-ออกงาน (IN-OUT)</h2>
-              <p class="subtitle" id="timesheetPeriodSubtitle">รอบการลงเวลาทำงาน</p>
-            </div>
-            <div class="ot-quick-badges">
-              <span class="badge-rule">เข้า: ติ๊กวันทำงาน = 08:00</span>
-              <span class="badge-rule">ออก: เลือกจาก Drop Down</span>
-              <span class="badge-rule">OT: คำนวณและปัดเศษเต็มบาทอัตโนมัติ</span>
-            </div>
-          </div>
-
+        <!-- Attendance Quick Link & Overview Card -->
+        <div class="card attendance-quick-card mb-4">
           <div class="card-body">
-            <div class="ot-hint-banner">
-              <strong>💡 กฎเวลาออก & OT:</strong>
-              <span>วันปกติ: 17:00=0 ชม. | 17:30/17:50=0.5 ชม. | 18:20=1.0 ชม. | 18:50=1.5 ชม. | 19:20=2.0 ชม. | 19:50=2.5 ชม.</span>
-              <br>
-              <em>* วันอาทิตย์/วันหยุด: มีตัวเลือกเวลาออกตั้งแต่ 08:30 (เพิ่มทีละ 30 นาที) คิดเป็น Holiday OT 1.0 และเวลาหลัง 17:00 คิดเป็น OT Holiday 3.0</em>
-            </div>
-
-            <div class="table-responsive">
-              <table class="table-timesheet" id="tableAttendance">
-                <thead>
-                  <tr>
-                    <th style="width:75px;">วันที่</th>
-                    <th style="width:45px;">วัน</th>
-                    <th style="width:145px;">สถานะ</th>
-                    <th style="width:85px;">เวลาเข้า</th>
-                    <th style="width:110px;">เวลาออก</th>
-                    <th style="width:85px;">OT (1.5)</th>
-                    <th style="width:85px;">Holiday (1)</th>
-                    <th style="width:85px;">OT Hol (3)</th>
-                    <th style="width:70px;">วันทำงาน</th>
-                    <th style="width:65px;">วันที่มา</th>
-                    <th style="width:70px;">วันทำ OT</th>
-                  </tr>
-                </thead>
-                <tbody id="attendanceTbody"></tbody>
-                <tfoot>
-                  <tr class="timesheet-sum-row">
-                    <td colspan="5" class="text-right font-weight-bold">รวมยอดทั้งหมดในรอบนี้:</td>
-                    <td class="text-right font-weight-bold text-primary" id="attTotalOT15">0.0</td>
-                    <td class="text-right font-weight-bold text-primary" id="attTotalHol">0.0</td>
-                    <td class="text-right font-weight-bold text-primary" id="attTotalOTHol">0.0</td>
-                    <td class="text-center font-weight-bold" id="attTotalTargetDays">0</td>
-                    <td class="text-center font-weight-bold text-success" id="attTotalCameDays">0</td>
-                    <td class="text-center font-weight-bold text-primary" id="attTotalOTDays">0</td>
-                  </tr>
-                </tfoot>
-              </table>
+            <div class="attendance-quick-grid">
+              <div class="att-quick-info">
+                <div class="att-quick-badge">
+                  <span>⏱️ บันทึกเวลาทำงาน</span>
+                </div>
+                <h3 class="att-quick-title">บันทึกเวลาเข้า-ออกงาน & ชั่วโมง OT</h3>
+                <p class="att-quick-desc">
+                  ลงเวลาทำงานรายวัน เลือกเวลาออกงาน (Drop Down) เพื่อคำนวณ OT 1.5 เท่า, วันหยุด 1.0 เท่า และ 3.0 เท่าอัตโนมัติ
+                </p>
+                <div class="att-quick-metrics">
+                  <div class="att-metric-pill">
+                    <span class="pill-label">มาทำงาน:</span>
+                    <strong class="pill-val text-success" id="quickCameDays">0</strong>
+                    <span class="pill-total">/ <span id="quickTargetDays">0</span> วัน</span>
+                  </div>
+                  <div class="att-metric-pill">
+                    <span class="pill-label">ชั่วโมง OT สะสม:</span>
+                    <strong class="pill-val text-primary" id="quickTotalOTHours">0.0</strong>
+                    <span class="pill-unit">ชม.</span>
+                  </div>
+                  <div class="att-metric-pill">
+                    <span class="pill-label">วันทำ OT:</span>
+                    <strong class="pill-val text-primary" id="quickTotalOTDays">0</strong>
+                    <span class="pill-unit">วัน</span>
+                  </div>
+                </div>
+              </div>
+              <div class="att-quick-action">
+                <button type="button" class="btn btn-primary btn-lg shadow-btn btn-enter-att" onclick="switchView('attendance')">
+                  <span class="btn-main-label">⏱️ บันทึกเวลาออกงาน</span>
+                  <span class="btn-sub-label">เปิดหน้าบันทึกเวลาเข้า-ออกงาน →</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -375,6 +356,149 @@
                     📄 พิมพ์ใบแจ้งรายได้ (สลิปเงินเดือน)
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ATTENDANCE / TIMESHEET WORKSPACE (SEPARATE PAGE) -->
+    <section id="view-attendance" class="view-panel no-print" style="display:none;">
+      <div class="container">
+        
+        <!-- Admin Context Banner for Attendance View -->
+        <div id="adminScopeBannerAtt" class="admin-scope-banner" style="display:none;"></div>
+
+        <!-- Period Navigation Toolbar for Attendance -->
+        <div class="period-navigator card">
+          <div class="period-nav-left">
+            <span class="period-nav-label">📅 รอบเดือน:</span>
+            <button type="button" class="btn btn-outline-primary btn-nav-arrow" onclick="navPrevPeriod()" title="งวดก่อนหน้า">
+              ◀ ก่อนหน้า
+            </button>
+            <div class="period-select-wrapper">
+              <select id="payrollPeriodSelectAtt" class="form-select form-select-period" onchange="onPayrollPeriodSelectAttChange()"></select>
+            </div>
+            <button type="button" class="btn btn-outline-primary btn-nav-arrow" onclick="navNextPeriod()" title="งวดถัดไป">
+              ถัดไป ▶
+            </button>
+          </div>
+
+          <div class="period-nav-right">
+            <button type="button" class="btn btn-outline-success" onclick="autoFillNormalWorkdays()">
+              ✅ เติมวันปกติ (08:00–17:00)
+            </button>
+            <button type="button" class="btn btn-outline-danger" onclick="clearAttendanceTable()">
+              🗑️ ล้างเวลา
+            </button>
+            <button type="button" class="btn btn-primary" onclick="switchView('main')">
+              📊 ไปที่คำนวณเงินเดือน →
+            </button>
+          </div>
+        </div>
+
+        <!-- Attendance Quick KPI Metrics Bar -->
+        <div class="attendance-kpi-bar mb-3">
+          <div class="kpi-mini-card">
+            <span class="kpi-icon">🎯</span>
+            <div class="kpi-info">
+              <span class="kpi-label">วันทำงานเป้าหมาย</span>
+              <strong class="kpi-val" id="attCardTargetDays">0 วัน</strong>
+            </div>
+          </div>
+          <div class="kpi-mini-card">
+            <span class="kpi-icon">🚶</span>
+            <div class="kpi-info">
+              <span class="kpi-label">มาทำงานจริง</span>
+              <strong class="kpi-val text-success" id="attCardCameDays">0 วัน</strong>
+            </div>
+          </div>
+          <div class="kpi-mini-card">
+            <span class="kpi-icon">⚡</span>
+            <div class="kpi-info">
+              <span class="kpi-label">ชั่วโมง OT รวม</span>
+              <strong class="kpi-val text-primary" id="attCardOTHours">0.0 ชม.</strong>
+            </div>
+          </div>
+          <div class="kpi-mini-card">
+            <span class="kpi-icon">💵</span>
+            <div class="kpi-info">
+              <span class="kpi-label">เงินได้สุทธิประมาณการ</span>
+              <strong class="kpi-val text-success" id="attCardNetPay">0.00 บาท</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Timesheet Table (IN-OUT 31 วัน) -->
+        <div class="card">
+          <div class="card-header-flex">
+            <div>
+              <h2 class="card-header-title">⏱️ บันทึกเวลาเข้า-ออกงาน (IN-OUT)</h2>
+              <p class="subtitle" id="timesheetPeriodSubtitle">รอบการลงเวลาทำงาน</p>
+            </div>
+            <div class="ot-quick-badges">
+              <span class="badge-rule">เข้า: ติ๊กวันทำงาน = 08:00</span>
+              <span class="badge-rule">ออก: เลือกจาก Drop Down</span>
+              <span class="badge-rule">OT: คำนวณและปัดเศษเต็มบาทอัตโนมัติ</span>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="ot-hint-banner">
+              <strong>💡 กฎเวลาออก & OT:</strong>
+              <span>วันปกติ: 17:00=0 ชม. | 17:30/17:50=0.5 ชม. | 18:20=1.0 ชม. | 18:50=1.5 ชม. | 19:20=2.0 ชม. | 19:50=2.5 ชม.</span>
+              <br>
+              <em>* วันอาทิตย์/วันหยุด: มีตัวเลือกเวลาออกตั้งแต่ 08:30 (เพิ่มทีละ 30 นาที) คิดเป็น Holiday OT 1.0 และเวลาหลัง 17:00 คิดเป็น OT Holiday 3.0</em>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table-timesheet" id="tableAttendance">
+                <thead>
+                  <tr>
+                    <th style="width:75px;">วันที่</th>
+                    <th style="width:45px;">วัน</th>
+                    <th style="width:145px;">สถานะ</th>
+                    <th style="width:85px;">เวลาเข้า</th>
+                    <th style="width:110px;">เวลาออก</th>
+                    <th style="width:85px;">OT (1.5)</th>
+                    <th style="width:85px;">Holiday (1)</th>
+                    <th style="width:85px;">OT Hol (3)</th>
+                    <th style="width:70px;">วันทำงาน</th>
+                    <th style="width:65px;">วันที่มา</th>
+                    <th style="width:70px;">วันทำ OT</th>
+                  </tr>
+                </thead>
+                <tbody id="attendanceTbody"></tbody>
+                <tfoot>
+                  <tr class="timesheet-sum-row">
+                    <td colspan="5" class="text-right font-weight-bold">รวมยอดทั้งหมดในรอบนี้:</td>
+                    <td class="text-right font-weight-bold text-primary" id="attTotalOT15">0.0</td>
+                    <td class="text-right font-weight-bold text-primary" id="attTotalHol">0.0</td>
+                    <td class="text-right font-weight-bold text-primary" id="attTotalOTHol">0.0</td>
+                    <td class="text-center font-weight-bold" id="attTotalTargetDays">0</td>
+                    <td class="text-center font-weight-bold text-success" id="attTotalCameDays">0</td>
+                    <td class="text-center font-weight-bold text-primary" id="attTotalOTDays">0</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <!-- Attendance Page Footer Navigation -->
+            <div class="attendance-footer-bar">
+              <div class="att-footer-left">
+                <button type="button" class="btn btn-secondary" onclick="switchView('main')">
+                  ← กลับหน้าคำนวณเงินเดือน
+                </button>
+              </div>
+              <div class="att-footer-right">
+                <button type="button" class="btn btn-primary" onclick="switchView('main')">
+                  📊 ไปดูผลคำนวณเงินเดือน →
+                </button>
+                <button type="button" class="btn btn-outline-primary" onclick="prepareAndPrint()">
+                  🧾 พิมพ์สลิปเงินเดือน
+                </button>
               </div>
             </div>
           </div>
@@ -781,9 +905,14 @@
         </div>
       </div>
       <div class="modal-footer modal-footer-between">
-        <button type="button" class="btn btn-outline-danger" onclick="resetSalaryConfigToDefault()">
-          🔄 คืนค่าเริ่มต้นตามรูปที่ 2
-        </button>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-outline-danger" onclick="resetSalaryConfigToDefault()">
+            🔄 คืนค่าเริ่มต้นตามรูปที่ 2
+          </button>
+          <button type="button" class="btn btn-outline-warning" onclick="clearSalaryConfigToZero()" style="color: #b45309; border-color: #f59e0b; background: #fffbeb;" title="ปรับยอดเงินเดือน เบี้ยเลี้ยง และเงินหักเป็น 0 ทั้งหมด (สำหรับเดือนที่ยังไม่เริ่มทำงาน/ไม่มีรายได้)">
+            🧹 เคลียร์ค่าเป็น 0 ทั้งหมด (ยังไม่เริ่มงาน)
+          </button>
+        </div>
         <div>
           <button type="button" class="btn btn-secondary" onclick="closeSettingsSalaryModal()">ยกเลิก</button>
           <button type="button" class="btn btn-primary" onclick="saveSalaryConfigFromModal()">
@@ -975,23 +1104,28 @@
         </div>
 
         <!-- System Users Table -->
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
           <h4 style="font-family:'Prompt',sans-serif; color:#0c4a6e; font-size:1rem; margin:0; display:flex; align-items:center; gap:6px;">
             <span>📋</span> รายชื่อผู้ใช้ทั้งหมดในระบบ
           </h4>
-          <span class="text-muted small">คลิกปุ่มเพื่อเปลี่ยนรหัส PIN หรือจัดการผู้ใช้</span>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <button type="button" class="btn btn-outline-danger btn-xs" onclick="confirmClearAllStaffUsers()" title="ลบรายชื่อพนักงานทั้งหมด เหลือเฉพาะบัญชี ADMIN">
+              🗑️ ลบพนักงานทั้งหมด
+            </button>
+            <span class="text-muted small">คลิกปุ่มเพื่อแก้ไขหรือลบพนักงาน</span>
+          </div>
         </div>
 
         <div class="user-table-wrapper">
           <table class="users-table-modern">
             <thead>
               <tr>
-                <th style="width: 110px; text-align: center;">สิทธิ์</th>
+                <th style="width: 85px; text-align: center;">สิทธิ์</th>
                 <th style="text-align: left;">ชื่อผู้ใช้งาน / พนักงาน</th>
-                <th style="text-align: left;">รหัสพนักงาน</th>
+                <th style="width: 100px; text-align: center;">รหัสพนักงาน</th>
                 <th style="text-align: left;">แผนก</th>
-                <th style="width: 120px; text-align: center;">รหัส PIN</th>
-                <th style="width: 180px; text-align: center;">การจัดการ</th>
+                <th style="width: 105px; text-align: center;">รหัส PIN</th>
+                <th style="width: 150px; text-align: center;">การจัดการ</th>
               </tr>
             </thead>
             <tbody id="manageUsersTableBody">
@@ -1002,6 +1136,50 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="closeManageUsersModal()">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT USER (ADMIN ONLY) -->
+  <div class="modal-backdrop" id="editUserModal" style="display:none; z-index: 1060;">
+    <div class="modal-dialog modal-dialog-sm">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="background: #e0f2fe; color: #0284c7; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem;">✏️</div>
+          <div>
+            <h3 style="font-family:'Prompt',sans-serif; margin:0; color:#0c4a6e; font-size: 1.1rem;">แก้ไขข้อมูลพนักงาน</h3>
+            <p class="subtitle text-muted small" style="margin:2px 0 0 0;">ปรับปรุงชื่อ, รหัสพนักงาน, แผนก หรือรหัส PIN</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close" onclick="closeEditUserModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="editUserAlert" class="alert alert-danger" style="display:none;"></div>
+        <form id="editUserForm" onsubmit="handleSaveEditUserSubmit(event)">
+          <input type="hidden" id="editUserId">
+          <div class="form-group">
+            <label for="editUserName" class="user-form-label">ชื่อ - นามสกุล: <span class="text-danger">*</span></label>
+            <input type="text" id="editUserName" class="form-control user-form-input" required placeholder="เช่น นายสมชาย ใจดี">
+          </div>
+          <div class="form-group">
+            <label for="editUserEmpCode" class="user-form-label">รหัสประจำตัวพนักงาน: <span class="text-danger">*</span></label>
+            <input type="text" id="editUserEmpCode" class="form-control font-mono user-form-input" required placeholder="เช่น EMP-001">
+          </div>
+          <div class="form-group">
+            <label for="editUserDept" class="user-form-label">แผนก / ฝ่าย: <span class="text-danger">*</span></label>
+            <input type="text" id="editUserDept" class="form-control user-form-input" required placeholder="เช่น ฝ่ายปฏิบัติการ">
+          </div>
+          <div class="form-group">
+            <label for="editUserPin" class="user-form-label">รหัส PIN เข้าสู่ระบบ (4–8 หลัก): <span class="text-danger">*</span></label>
+            <input type="text" id="editUserPin" class="form-control font-mono user-form-input text-center" pattern="\d{4,8}" maxlength="8" required placeholder="1234">
+          </div>
+          <div class="modal-footer modal-footer-custom" style="padding: 14px 0 0 0; margin-top: 16px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 8px;">
+            <button type="button" class="btn btn-secondary" onclick="closeEditUserModal()">ยกเลิก</button>
+            <button type="submit" class="btn btn-primary shadow-btn">
+              💾 บันทึกการแก้ไข
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

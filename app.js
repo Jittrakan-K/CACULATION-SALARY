@@ -83,13 +83,13 @@ let currentAttendance = []; // รายการลงเวลา 31 วัน
 const salaryProfile = {
   companyName: 'CACULATION SALARY',
   empCode: '20523',
-  empName: 'ADMIN',
-  department: 'ผู้ดูแลระบบสูงสุด',
+  empName: 'JITTRAKAN K.',
+  department: 'PRODUCTION TECHNOLOGY',
   empType: 'รายเดือน',
   periodMonth: 'กันยายน',
   periodRound: 'งวดจ่ายเงินเดือน',
   payDate: '30/09/2569',
-  userName: 'ADMIN',
+  userName: 'JITTRAKAN K.',
   printDate: '13/09/2569'
 };
 
@@ -158,10 +158,14 @@ function loadStorageData() {
     }
 
     // โหลดการตั้งค่าโครงสร้างค่าเงินเฉพาะของ User ที่กำลัง Active
+    const uid = (typeof getActiveEditingUserId === 'function') ? getActiveEditingUserId() : 'user_admin';
     const userCfgKey = getScopedUserKey(STORAGE_KEY_SALARY_CONFIG);
-    const rawSalaryCfg = localStorage.getItem(userCfgKey) || localStorage.getItem(STORAGE_KEY_SALARY_CONFIG);
+    const rawSalaryCfg = localStorage.getItem(userCfgKey);
     if (rawSalaryCfg) {
       currentSalaryConfig = Object.assign({}, DEFAULT_SALARY_CONFIG, JSON.parse(rawSalaryCfg));
+    } else if (uid === 'user_admin') {
+      const legacyCfg = localStorage.getItem(STORAGE_KEY_SALARY_CONFIG);
+      currentSalaryConfig = legacyCfg ? Object.assign({}, DEFAULT_SALARY_CONFIG, JSON.parse(legacyCfg)) : { ...DEFAULT_SALARY_CONFIG };
     } else {
       currentSalaryConfig = { ...DEFAULT_SALARY_CONFIG };
     }
@@ -205,8 +209,13 @@ function saveAttendanceToStorage(periodId, rows) {
 
 function loadAttendanceFromStorage(periodId) {
   try {
+    const uid = (typeof getActiveEditingUserId === 'function') ? getActiveEditingUserId() : 'user_admin';
     const storeKey = getScopedUserKey(STORAGE_KEY_ATTENDANCE);
-    const raw = localStorage.getItem(storeKey) || localStorage.getItem(STORAGE_KEY_ATTENDANCE);
+    let raw = localStorage.getItem(storeKey);
+    // เฉพาะ user_admin เท่านั้นที่อนุญาตให้อ่าน legacy fallback ถ้ายังไม่มี scoped key
+    if (!raw && uid === 'user_admin') {
+      raw = localStorage.getItem(STORAGE_KEY_ATTENDANCE);
+    }
     if (raw) {
       const store = JSON.parse(raw);
       if (store[periodId] && Array.isArray(store[periodId])) {
@@ -225,6 +234,11 @@ function loadAttendanceFromStorage(periodId) {
 const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
   'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+];
+
+const ENGLISH_MONTHS = [
+  'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+  'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
 ];
 
 function getLastDayOfMonth(year, monthIndex) {
@@ -255,11 +269,14 @@ function generatePayrollPeriodsForYear(yearCE) {
     }
     const startMonthName = THAI_MONTHS[startMonth];
     const endMonthName = THAI_MONTHS[m];
+    const startMonthNameEN = ENGLISH_MONTHS[startMonth];
+    const endMonthNameEN = ENGLISH_MONTHS[m];
     const startDate = `${startYear}-${formatDay2Digit(startMonth + 1)}-21`;
     const endDate = `${yearCE}-${formatDay2Digit(monthNum)}-20`;
 
     const lastDay = getLastDayOfMonth(yearCE, m);
     const payDate = `${formatDay2Digit(lastDay)}/${formatDay2Digit(monthNum)}/${yearBE}`;
+    const displayName = `${endMonthNameEN} ${yearCE} (เงินจ่ายสิ้นเดือน)`;
 
     periods.push({
       id: periodId,
@@ -269,6 +286,10 @@ function generatePayrollPeriodsForYear(yearCE) {
       monthName,
       startMonthName,
       endMonthName,
+      startMonthNameEN,
+      endMonthNameEN,
+      displayName,
+      startYear,
       startYearBE,
       startDate,
       endDate,
@@ -663,7 +684,7 @@ function recalculateSalary() {
   const H2_ot1Hours = totals.totalHol;
   const I2_ot3Hours = totals.totalOTHol;
 
-  const baseSalary = Number(currentSalaryConfig.baseSalary) || 0;
+  const baseSalary = typeof currentSalaryConfig.baseSalary !== 'undefined' ? Number(currentSalaryConfig.baseSalary) : DEFAULT_SALARY_CONFIG.baseSalary;
   const diligenceFullAmount = Number(currentSalaryConfig.diligenceFullAmount) || 0;
   const transportationAllowance = Number(currentSalaryConfig.transportationAllowance) || 0;
   const foodPerDay = Number(currentSalaryConfig.foodPerDay) || 0;
@@ -672,7 +693,7 @@ function recalculateSalary() {
   const ot15Multiplier = Number(currentSalaryConfig.ot15Multiplier) || 1.5;
   const ot1Multiplier = Number(currentSalaryConfig.ot1Multiplier) || 1.0;
   const ot3Multiplier = Number(currentSalaryConfig.ot3Multiplier) || 3.0;
-  const ssoDeduction = Number(currentSalaryConfig.ssoDeduction) || 875;
+  const ssoDeduction = typeof currentSalaryConfig.ssoDeduction !== 'undefined' ? Number(currentSalaryConfig.ssoDeduction) : 0;
 
   const C2_dailyRate = B2_targetDays > 0 ? (baseSalary / B2_targetDays) : 0;
   const E2_actualSalary = (B2_targetDays > 0 && D2_cameDays >= B2_targetDays)
@@ -688,12 +709,13 @@ function recalculateSalary() {
   const N2_ot15Amount = Math.round(hourlyOTRate * ot15Multiplier * G2_ot15Hours);
   const O2_ot1Amount = Math.round(hourlyOTRate * ot1Multiplier * H2_ot1Hours);
   const P2_ot3Amount = Math.round(hourlyOTRate * ot3Multiplier * I2_ot3Hours);
-  const Q2_sso = ssoDeduction;
 
+  // ยอดหักประกันสังคม: ถ้าไม่มีรายได้เลยและไม่มีฐานเงินเดือน (เช่น ยังไม่ได้เริ่มงาน) ให้ยอดหักเป็น 0
   const totalEarnings = E2_actualSalary + J2_foodAllowance + K2_otMealAllowance + L2_travelAllowance +
                         M2_diligenceAllowance + N2_ot15Amount + O2_ot1Amount + P2_ot3Amount;
+  const Q2_sso = (totalEarnings === 0 && baseSalary === 0) ? 0 : ssoDeduction;
   const totalDeductions = Q2_sso;
-  const netPay = totalEarnings - totalDeductions;
+  const netPay = Math.max(0, totalEarnings - totalDeductions);
 
   // อัปเดตการ์ด Dashboard ด้านบน
   const elTotalIncome = document.getElementById('dashTotalIncome');
@@ -708,6 +730,18 @@ function recalculateSalary() {
   setElText('heroNetPay', formatCurrency(netPay));
   const totalOTHours = (G2_ot15Hours + H2_ot1Hours + I2_ot3Hours).toFixed(1);
   setElText('heroTotalOTHours', totalOTHours);
+
+  // อัปเดตการ์ดภาพรวมบันทึกเวลาทำงานบนหน้าคำนวณเงินเดือน (Quick Overview)
+  setElText('quickCameDays', D2_cameDays);
+  setElText('quickTargetDays', B2_targetDays);
+  setElText('quickTotalOTHours', totalOTHours);
+  setElText('quickTotalOTDays', F2_otDays);
+
+  // อัปเดตแถบ KPI บนหน้าบันทึกเวลาออกงาน (Attendance Page)
+  setElText('attCardTargetDays', `${B2_targetDays} วัน`);
+  setElText('attCardCameDays', `${D2_cameDays} วัน`);
+  setElText('attCardOTHours', `${totalOTHours} ชม.`);
+  setElText('attCardNetPay', `${formatCurrency(netPay)} บาท`);
 
   // อัปเดตรายการคำนวณเงินเดือนในการ์ด (รูปที่ 2)
   setElText('calcBaseSalary', formatCurrency(baseSalary));
@@ -746,10 +780,10 @@ function recalculateSalary() {
   setElText('calcOT3Hours', I2_ot3Hours.toFixed(1));
   setElText('calcOT3Total', formatCurrency(P2_ot3Amount));
 
-  setElText('calcSSOTotal', `-${formatCurrency(Q2_sso)}`);
+  setElText('calcSSOTotal', Q2_sso > 0 ? `-${formatCurrency(Q2_sso)}` : '0.00');
   setElText('calcSumIncome', formatCurrency(totalEarnings));
-  setElText('calcSumDeduct', `-${formatCurrency(totalDeductions)}`);
-  setElText('calcGrandNetPay', `${formatCurrency(netPay)} บาท`);
+  setElText('calcSumDeduct', totalDeductions > 0 ? `-${formatCurrency(totalDeductions)}` : '0.00');
+  setElText('calcGrandNetPay', formatCurrency(netPay));
   setElText('cardPayDateDisplay', salaryProfile.payDate || '-');
 
   // ปรับปรุงข้อความระบุอัตราบนหน้าจอให้ตรงกับการตั้งค่าปัจจุบัน
@@ -961,39 +995,63 @@ function onAppYearChange() {
 }
 
 function refreshPeriodSelector() {
-  const select = document.getElementById('payrollPeriodSelect');
-  if (!select) return;
-  select.innerHTML = '';
+  const select1 = document.getElementById('payrollPeriodSelect');
+  const select2 = document.getElementById('payrollPeriodSelectAtt');
+  const selects = [select1, select2].filter(Boolean);
+  if (selects.length === 0) return;
 
   const periods = generatePayrollPeriodsForYear(activeYearCE);
-  periods.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.id;
-    opt.innerText = `รอบ 21 ${p.startMonthName} – 20 ${p.endMonthName} ${p.yearBE} (จ่ายสิ้นเดือน ${p.payDate})`;
-    select.appendChild(opt);
+  selects.forEach(select => {
+    select.innerHTML = '';
+    periods.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.innerText = p.displayName;
+      select.appendChild(opt);
+    });
   });
 
   const currentMonthNum = new Date().getMonth() + 1;
   const matchPeriod = periods.find(p => p.monthIndex + 1 === currentMonthNum) || periods[0];
-  select.value = matchPeriod.id;
+  selects.forEach(select => {
+    select.value = matchPeriod.id;
+  });
+
+  onPayrollPeriodSelectChange();
+}
+
+function onPayrollPeriodSelectAttChange() {
+  const selectAtt = document.getElementById('payrollPeriodSelectAtt');
+  const selectMain = document.getElementById('payrollPeriodSelect');
+  if (selectAtt && selectMain) {
+    selectMain.value = selectAtt.value;
+  }
   onPayrollPeriodSelectChange();
 }
 
 function onPayrollPeriodSelectChange() {
   const select = document.getElementById('payrollPeriodSelect');
-  if (!select) return;
+  const selectAtt = document.getElementById('payrollPeriodSelectAtt');
+  if (!select && !selectAtt) return;
+
+  const activeSelect = select || selectAtt;
+  const periodVal = activeSelect.value;
+  if (select && select.value !== periodVal) select.value = periodVal;
+  if (selectAtt && selectAtt.value !== periodVal) selectAtt.value = periodVal;
+
   const periods = generatePayrollPeriodsForYear(activeYearCE);
-  const found = periods.find(p => p.id === select.value);
+  const found = periods.find(p => p.id === periodVal);
   if (!found) return;
 
   currentPeriod = found;
-  salaryProfile.periodMonth = found.monthName.split(' ')[0];
+  salaryProfile.periodMonth = `${found.endMonthNameEN} ${found.yearCE}`;
   salaryProfile.payDate = found.payDate;
 
+  const uid = (typeof getActiveEditingUserId === 'function') ? getActiveEditingUserId() : 'user_admin';
   const savedAtt = loadAttendanceFromStorage(found.id);
   if (savedAtt) {
     currentAttendance = savedAtt;
-  } else if (found.id === '2026-09') {
+  } else if (found.id === '2026-09' && uid === 'user_admin') {
     currentAttendance = JSON.parse(JSON.stringify(EXCEL_SAMPLE_ATTENDANCE));
   } else {
     generateAttendanceForPeriod(found.startDate, found.endDate);
@@ -1002,12 +1060,12 @@ function onPayrollPeriodSelectChange() {
 
   const periodSubtitle = document.getElementById('timesheetPeriodSubtitle');
   if (periodSubtitle) {
-    periodSubtitle.innerText = `รอบ 21 ${found.startMonthName} – 20 ${found.endMonthName} ${found.yearBE} (ตัดรอบ ${found.startDate} ถึง ${found.endDate} | จ่ายสิ้นเดือน ${found.payDate})`;
+    periodSubtitle.innerText = `${found.displayName} (ตัดรอบ ${found.startDate} ถึง ${found.endDate} | จ่ายสิ้นเดือน ${found.payDate})`;
   }
 
   const btnExcel = document.getElementById('btnLoadExcelSample');
   if (btnExcel) {
-    btnExcel.style.display = (found.id === '2026-09') ? 'inline-flex' : 'none';
+    btnExcel.style.display = (found.id === '2026-09' && uid === 'user_admin') ? 'inline-flex' : 'none';
   }
 
   buildAttendanceTable();
@@ -1015,31 +1073,38 @@ function onPayrollPeriodSelectChange() {
 }
 
 function navPrevPeriod() {
-  const select = document.getElementById('payrollPeriodSelect');
+  const select = document.getElementById('payrollPeriodSelect') || document.getElementById('payrollPeriodSelectAtt');
   if (!select || select.selectedIndex <= 0) return;
-  select.selectedIndex--;
+  const newIndex = select.selectedIndex - 1;
+  const selectMain = document.getElementById('payrollPeriodSelect');
+  const selectAtt = document.getElementById('payrollPeriodSelectAtt');
+  if (selectMain) selectMain.selectedIndex = newIndex;
+  if (selectAtt) selectAtt.selectedIndex = newIndex;
   onPayrollPeriodSelectChange();
 }
 
 function navNextPeriod() {
-  const select = document.getElementById('payrollPeriodSelect');
+  const select = document.getElementById('payrollPeriodSelect') || document.getElementById('payrollPeriodSelectAtt');
   if (!select || select.selectedIndex >= select.options.length - 1) return;
-  select.selectedIndex++;
+  const newIndex = select.selectedIndex + 1;
+  const selectMain = document.getElementById('payrollPeriodSelect');
+  const selectAtt = document.getElementById('payrollPeriodSelectAtt');
+  if (selectMain) selectMain.selectedIndex = newIndex;
+  if (selectAtt) selectAtt.selectedIndex = newIndex;
   onPayrollPeriodSelectChange();
 }
 
 function selectPeriodMonth(periodId) {
   const select = document.getElementById('payrollPeriodSelect');
-  if (select) {
-    select.value = periodId;
-    onPayrollPeriodSelectChange();
-  }
+  const selectAtt = document.getElementById('payrollPeriodSelectAtt');
+  if (select) select.value = periodId;
+  if (selectAtt) selectAtt.value = periodId;
+  onPayrollPeriodSelectChange();
   const calSection = document.getElementById('view-calendar');
   const btnToggle = document.getElementById('btnToggleCalendar');
   if (calSection) calSection.style.display = 'none';
   if (btnToggle) btnToggle.innerText = '📅 ปฏิทินวันทำงาน';
-  const mainView = document.getElementById('view-main');
-  if (mainView) mainView.style.display = 'block';
+  switchView('main');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -1228,31 +1293,58 @@ function toggleCalendarView() {
   }
 }
 
+let currentActiveView = 'main';
+
 function closeSlipView() {
-  const mainView = document.getElementById('view-main');
-  const slipView = document.getElementById('view-slip');
-  if (slipView) slipView.style.display = 'none';
-  if (mainView) mainView.style.display = 'block';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  switchView(currentActiveView === 'attendance' ? 'attendance' : 'main');
 }
 
 function switchView(viewName) {
   const mainView = document.getElementById('view-main');
+  const attView = document.getElementById('view-attendance');
   const calView = document.getElementById('view-calendar');
   const slipView = document.getElementById('view-slip');
 
-  if (viewName === 'main' || viewName === 'timesheet') {
+  const navBtnMain = document.getElementById('navBtnMain');
+  const navBtnAtt = document.getElementById('navBtnAttendance');
+  const navBtnCal = document.getElementById('navBtnCalendar');
+  const navBtnSlip = document.getElementById('navBtnSlip');
+
+  // Track the primary view
+  if (viewName === 'attendance' || viewName === 'timesheet') {
+    currentActiveView = 'attendance';
+  } else if (viewName === 'main' || viewName === 'salary') {
+    currentActiveView = 'main';
+  }
+
+  // Hide all views first
+  if (mainView) mainView.style.display = 'none';
+  if (attView) attView.style.display = 'none';
+  if (calView) calView.style.display = 'none';
+  if (slipView) slipView.style.display = 'none';
+
+  // Remove active class from nav buttons
+  [navBtnMain, navBtnAtt, navBtnCal, navBtnSlip].forEach(btn => {
+    if (btn) btn.classList.remove('active');
+  });
+
+  if (viewName === 'main' || viewName === 'salary') {
     if (mainView) mainView.style.display = 'block';
-    if (calView) calView.style.display = 'none';
-    if (slipView) slipView.style.display = 'none';
+    if (navBtnMain) navBtnMain.classList.add('active');
+  } else if (viewName === 'attendance' || viewName === 'timesheet') {
+    if (attView) attView.style.display = 'block';
+    if (navBtnAtt) navBtnAtt.classList.add('active');
   } else if (viewName === 'calendar') {
-    if (mainView) mainView.style.display = 'block';
+    if (currentActiveView === 'attendance') {
+      if (attView) attView.style.display = 'block';
+    } else {
+      if (mainView) mainView.style.display = 'block';
+    }
     if (calView) calView.style.display = 'block';
-    if (slipView) slipView.style.display = 'none';
+    if (navBtnCal) navBtnCal.classList.add('active');
   } else if (viewName === 'slip') {
-    if (mainView) mainView.style.display = 'none';
-    if (calView) calView.style.display = 'none';
     if (slipView) slipView.style.display = 'block';
+    if (navBtnSlip) navBtnSlip.classList.add('active');
   }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -1272,17 +1364,17 @@ function openSettingsSalaryModal() {
   if (!modal) return;
 
   // นำค่าปัจจุบันใส่ลงในฟอร์ม
-  setInputValue('cfgBaseSalary', currentSalaryConfig.baseSalary);
-  setInputValue('cfgTransportationAllowance', currentSalaryConfig.transportationAllowance);
-  setInputValue('cfgDiligenceFullAmount', currentSalaryConfig.diligenceFullAmount);
-  setInputValue('cfgFoodPerDay', currentSalaryConfig.foodPerDay);
-  setInputValue('cfgOtMealPerDay', currentSalaryConfig.otMealPerDay);
-  setInputValue('cfgOtDivisorHours', currentSalaryConfig.otDivisorHours);
-  setInputValue('cfgOt15Multiplier', currentSalaryConfig.ot15Multiplier);
-  setInputValue('cfgOt1Multiplier', currentSalaryConfig.ot1Multiplier);
-  setInputValue('cfgOt3Multiplier', currentSalaryConfig.ot3Multiplier);
-  setInputValue('cfgSsoDeduction', currentSalaryConfig.ssoDeduction);
-  setInputValue('cfgSsoMaxBase', currentSalaryConfig.ssoMaxBase);
+  setInputValue('cfgBaseSalary', typeof currentSalaryConfig.baseSalary !== 'undefined' ? currentSalaryConfig.baseSalary : DEFAULT_SALARY_CONFIG.baseSalary);
+  setInputValue('cfgTransportationAllowance', currentSalaryConfig.transportationAllowance ?? 0);
+  setInputValue('cfgDiligenceFullAmount', currentSalaryConfig.diligenceFullAmount ?? 0);
+  setInputValue('cfgFoodPerDay', currentSalaryConfig.foodPerDay ?? 0);
+  setInputValue('cfgOtMealPerDay', currentSalaryConfig.otMealPerDay ?? 0);
+  setInputValue('cfgOtDivisorHours', currentSalaryConfig.otDivisorHours ?? 240);
+  setInputValue('cfgOt15Multiplier', currentSalaryConfig.ot15Multiplier ?? 1.5);
+  setInputValue('cfgOt1Multiplier', currentSalaryConfig.ot1Multiplier ?? 1.0);
+  setInputValue('cfgOt3Multiplier', currentSalaryConfig.ot3Multiplier ?? 3.0);
+  setInputValue('cfgSsoDeduction', typeof currentSalaryConfig.ssoDeduction !== 'undefined' ? currentSalaryConfig.ssoDeduction : DEFAULT_SALARY_CONFIG.ssoDeduction);
+  setInputValue('cfgSsoMaxBase', currentSalaryConfig.ssoMaxBase ?? 17500);
 
   updateLiveOTPreview();
   modal.style.display = 'flex';
@@ -1301,19 +1393,25 @@ function updateLiveOTPreview() {
   if (previewEl) previewEl.innerText = formatCurrency(rate);
 }
 
+function parseFormNumber(val, defaultVal = 0) {
+  if (val === '' || val === null || val === undefined) return defaultVal;
+  const n = parseFloat(val);
+  return isNaN(n) ? defaultVal : n;
+}
+
 function saveSalaryConfigFromModal() {
   const newConfig = {
-    baseSalary: parseFloat(document.getElementById('cfgBaseSalary')?.value) || DEFAULT_SALARY_CONFIG.baseSalary,
-    transportationAllowance: parseFloat(document.getElementById('cfgTransportationAllowance')?.value) || 0,
-    diligenceFullAmount: parseFloat(document.getElementById('cfgDiligenceFullAmount')?.value) || 0,
-    foodPerDay: parseFloat(document.getElementById('cfgFoodPerDay')?.value) || 0,
-    otMealPerDay: parseFloat(document.getElementById('cfgOtMealPerDay')?.value) || 0,
-    otDivisorHours: parseFloat(document.getElementById('cfgOtDivisorHours')?.value) || 240,
-    ot15Multiplier: parseFloat(document.getElementById('cfgOt15Multiplier')?.value) || 1.5,
-    ot1Multiplier: parseFloat(document.getElementById('cfgOt1Multiplier')?.value) || 1.0,
-    ot3Multiplier: parseFloat(document.getElementById('cfgOt3Multiplier')?.value) || 3.0,
-    ssoDeduction: parseFloat(document.getElementById('cfgSsoDeduction')?.value) || 875,
-    ssoMaxBase: parseFloat(document.getElementById('cfgSsoMaxBase')?.value) || 17500
+    baseSalary: parseFormNumber(document.getElementById('cfgBaseSalary')?.value, 0),
+    transportationAllowance: parseFormNumber(document.getElementById('cfgTransportationAllowance')?.value, 0),
+    diligenceFullAmount: parseFormNumber(document.getElementById('cfgDiligenceFullAmount')?.value, 0),
+    foodPerDay: parseFormNumber(document.getElementById('cfgFoodPerDay')?.value, 0),
+    otMealPerDay: parseFormNumber(document.getElementById('cfgOtMealPerDay')?.value, 0),
+    otDivisorHours: parseFormNumber(document.getElementById('cfgOtDivisorHours')?.value, 240),
+    ot15Multiplier: parseFormNumber(document.getElementById('cfgOt15Multiplier')?.value, 1.5),
+    ot1Multiplier: parseFormNumber(document.getElementById('cfgOt1Multiplier')?.value, 1.0),
+    ot3Multiplier: parseFormNumber(document.getElementById('cfgOt3Multiplier')?.value, 3.0),
+    ssoDeduction: parseFormNumber(document.getElementById('cfgSsoDeduction')?.value, 0),
+    ssoMaxBase: parseFormNumber(document.getElementById('cfgSsoMaxBase')?.value, 17500)
   };
 
   currentSalaryConfig = newConfig;
@@ -1336,7 +1434,21 @@ function saveSalaryConfigFromModal() {
   closeSettingsSalaryModal();
   updateRateLabelsOnCards();
   recalculateSalary();
-  showToastNotification('บันทึกโครงสร้างค่าเงินและเบี้ยเลี้ยงเรียบร้อยแล้ว!');
+  showToastNotification('✅ บันทึกโครงสร้างค่าเงินและเบี้ยเลี้ยงเรียบร้อยแล้ว!');
+}
+
+function clearSalaryConfigToZero() {
+  if (confirm('คุณต้องการปรับยอดเงินเดือน เบี้ยเลี้ยง และเงินหักทั้งหมดให้เป็น 0 ใช่หรือไม่?\n\n(สำหรับกรณีเดือนที่ยังไม่ได้เข้าทำงาน หรือยังไม่มีรายได้)')) {
+    setInputValue('cfgBaseSalary', 0);
+    setInputValue('cfgTransportationAllowance', 0);
+    setInputValue('cfgDiligenceFullAmount', 0);
+    setInputValue('cfgFoodPerDay', 0);
+    setInputValue('cfgOtMealPerDay', 0);
+    setInputValue('cfgSsoDeduction', 0);
+    setInputValue('cfgSsoMaxBase', 0);
+    updateLiveOTPreview();
+    showToastNotification('🧹 เคลียร์ค่าเงินและเบี้ยเลี้ยงเป็น 0 ทั้งหมดแล้ว (กรุณากด "💾 บันทึกการตั้งค่า" เพื่อยืนยัน)');
+  }
 }
 
 function resetSalaryConfigToDefault() {
@@ -1509,12 +1621,10 @@ function reloadUserDataAfterAuthChange() {
 function switchEditingUser(targetUserId) {
   if (!targetUserId) return;
 
-  // ตรวจสอบสิทธิ์
-  if (!currentUser || currentUser.role !== 'admin') {
-    if (currentUser && currentUser.id !== targetUserId) {
-      showToastNotification('⚠️ คุณไม่มีสิทธิ์แก้ไขข้อมูลของพนักงานคนอื่น');
-      return;
-    }
+  // ตรวจสอบสิทธิ์: เฉพาะ ADMIN (JITTRAKAN K.) เท่านั้นที่สามารถดูหรือสลับข้อมูลของพนักงานคนอื่นได้
+  if (!currentUser || currentUser.role !== 'admin' || currentUser.id !== 'user_admin') {
+    showToastNotification('⚠️ คุณไม่มีสิทธิ์ดูข้อมูลของพนักงานคนอื่น เฉพาะ ADMIN เท่านั้น');
+    return;
   }
 
   setActiveEditingUserId(targetUserId);
@@ -1539,15 +1649,18 @@ function switchEditingUser(targetUserId) {
  * อัปเดตแบนเนอร์แจ้งเตือนสถานะการแก้ไขข้อมูลของ Admin
  */
 function updateAdminScopeBanner() {
-  const banner = document.getElementById('adminScopeBanner');
-  if (!banner) return;
+  const banners = [
+    document.getElementById('adminScopeBanner'),
+    document.getElementById('adminScopeBannerAtt')
+  ].filter(Boolean);
+  if (banners.length === 0) return;
 
   const currentActiveId = getActiveEditingUserId();
   const isAdmin = currentUser && currentUser.role === 'admin';
 
   if (isAdmin && currentActiveId !== 'user_admin') {
     const targetUser = getActiveEditingUser();
-    banner.innerHTML = `
+    const bannerHtml = `
       <div class="admin-scope-banner-info">
         <span style="font-size:1.3rem;">👑</span>
         <div>
@@ -1563,9 +1676,14 @@ function updateAdminScopeBanner() {
         </button>
       </div>
     `;
-    banner.style.display = 'flex';
+    banners.forEach(b => {
+      b.innerHTML = bannerHtml;
+      b.style.display = 'flex';
+    });
   } else {
-    banner.style.display = 'none';
+    banners.forEach(b => {
+      b.style.display = 'none';
+    });
   }
 }
 
@@ -1782,11 +1900,11 @@ function handleSaveAccountProfile(e) {
 }
 
 /**
- * ระบบจัดการรายชื่อผู้ใช้และ PIN (Manage Users Modal - Admin Only)
+ * ระบบจัดการรายชื่อผู้ใช้และ PIN (Manage Users Modal - Admin Only: JITTRAKAN K.)
  */
 function openManageUsersModal() {
-  if (!currentUser || currentUser.role !== 'admin') {
-    showToastNotification('⚠️ คุณต้องเข้าสู่ระบบเป็น ADMIN เพื่อจัดการผู้ใช้');
+  if (!currentUser || currentUser.role !== 'admin' || currentUser.id !== 'user_admin') {
+    showToastNotification('⚠️ คุณต้องเข้าสู่ระบบเป็น ADMIN (JITTRAKAN K.) เพื่อจัดการผู้ใช้');
     openAuthModal();
     return;
   }
@@ -1807,30 +1925,32 @@ function renderManageUsersTable() {
 
   const users = getAllSystemUsers();
   tbody.innerHTML = users.map(u => {
-    const isAdmin = u.role === 'admin';
-    const badge = isAdmin 
+    const isMasterAdmin = (u.id === 'user_admin');
+    const badge = isMasterAdmin 
       ? '<span class="user-role-badge-admin">👑 ADMIN</span>' 
       : '<span class="user-role-badge-user">👤 พนักงาน</span>';
 
-    const deleteBtnOrBadge = isAdmin 
-      ? '<span class="badge-pill-locked" title="บัญชีผู้ดูแลระบบหลัก (ไม่สามารถลบได้)">🔒 บัญชีหลัก</span>' 
-      : `<button type="button" class="btn btn-outline-danger btn-action-pill" onclick="confirmDeleteUser('${u.id}')" title="ลบพนักงานคนนี้">🗑️ ลบ</button>`;
+    const actionHtml = isMasterAdmin 
+      ? '<span class="badge-pill-locked" title="บัญชีผู้ดูแลระบบหลัก (ไม่สามารถลบหรือแก้ไขสิทธิ์ได้)">🔒 บัญชีหลัก</span>' 
+      : `
+        <div class="user-action-group">
+          <button type="button" class="btn btn-outline-primary btn-action-pill" onclick="openEditUserModal('${u.id}')" title="แก้ไขข้อมูลพนักงาน">
+            ✏️ แก้ไข
+          </button>
+          <button type="button" class="btn btn-outline-danger btn-action-pill" onclick="confirmDeleteUser('${u.id}')" title="ลบพนักงานคนนี้">
+            🗑️ ลบ
+          </button>
+        </div>
+      `;
 
     return `
       <tr>
         <td style="text-align: center;">${badge}</td>
         <td><strong style="color: #0c4a6e;">${escapeHtml(u.name)}</strong></td>
-        <td><span class="badge-account-code">${escapeHtml(u.empCode || '-')}</span></td>
+        <td style="text-align: center;"><span class="badge-account-code">${escapeHtml(u.empCode || '-')}</span></td>
         <td><span style="color: #475569;">${escapeHtml(u.department || '-')}</span></td>
         <td style="text-align: center;"><span class="pin-code-badge">${escapeHtml(u.pin)}</span></td>
-        <td style="text-align: center;">
-          <div class="user-action-group">
-            <button type="button" class="btn btn-outline-primary btn-action-pill" onclick="promptEditStaffUser('${u.id}')" title="แก้ไขข้อมูลพนักงาน">
-              ✏️ แก้ไข
-            </button>
-            ${deleteBtnOrBadge}
-          </div>
-        </td>
+        <td style="text-align: center;">${actionHtml}</td>
       </tr>
     `;
   }).join('');
@@ -1851,40 +1971,83 @@ function handleAddNewUserSubmit(e) {
     document.getElementById('newUserDept').value = '';
     renderManageUsersTable();
     updateNavbarAuthUI(currentUser, isFirebaseOnline);
-    showToastNotification(`เพิ่มพนักงาน ${name} (รหัส: ${res.user.empCode}, PIN: ${pin}) เรียบร้อยแล้ว!`);
+    showToastNotification(`✅ เพิ่มพนักงาน ${name} (รหัส: ${res.user.empCode}, PIN: ${pin}) เรียบร้อยแล้ว!`);
   } else {
     alert(res.error || 'ไม่สามารถเพิ่มผู้ใช้ได้');
   }
 }
 
-function promptEditStaffUser(userId) {
-  const users = getAllSystemUsers();
+/**
+ * หน้าต่าง Modal แก้ไขข้อมูลพนักงาน (Admin Only)
+ */
+function openEditUserModal(userId) {
+  if (!currentUser || currentUser.role !== 'admin' || currentUser.id !== 'user_admin') {
+    showToastNotification('⚠️ คุณไม่มีสิทธิ์แก้ไขข้อมูลพนักงาน เฉพาะ ADMIN เท่านั้น');
+    return;
+  }
+  const users = getAllSystemUsers(true);
   const u = users.find(x => x.id === userId);
   if (!u) return;
 
-  const newName = prompt(`ชื่อ-นามสกุล ของพนักงาน:`, u.name);
-  if (newName === null) return;
+  const modal = document.getElementById('editUserModal');
+  if (!modal) return;
 
-  const newEmpCode = prompt(`รหัสประจำตัวพนักงาน:`, u.empCode || '');
-  if (newEmpCode === null) return;
+  const alertBox = document.getElementById('editUserAlert');
+  if (alertBox) {
+    alertBox.style.display = 'none';
+    alertBox.textContent = '';
+  }
 
-  const newDept = prompt(`แผนก / ฝ่าย:`, u.department || '');
-  if (newDept === null) return;
+  const idInput = document.getElementById('editUserId');
+  const nameInput = document.getElementById('editUserName');
+  const empCodeInput = document.getElementById('editUserEmpCode');
+  const deptInput = document.getElementById('editUserDept');
+  const pinInput = document.getElementById('editUserPin');
 
-  const newPin = prompt(`รหัส PIN เข้าสู่ระบบ (ตัวเลข 4–8 หลัก):`, u.pin);
-  if (newPin === null) return;
+  if (idInput) idInput.value = u.id;
+  if (nameInput) nameInput.value = u.name || '';
+  if (empCodeInput) empCodeInput.value = u.empCode || '';
+  if (deptInput) deptInput.value = u.department || '';
+  if (pinInput) pinInput.value = u.pin || '';
 
-  const cleanPin = String(newPin).trim();
-  if (!/^\d{4,8}$/.test(cleanPin)) {
-    alert('รหัส PIN ต้องเป็นตัวเลขความยาว 4–8 หลักเท่านั้น');
+  modal.style.display = 'flex';
+}
+
+function closeEditUserModal() {
+  const modal = document.getElementById('editUserModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function handleSaveEditUserSubmit(e) {
+  e.preventDefault();
+  const userId = document.getElementById('editUserId')?.value;
+  const name = document.getElementById('editUserName')?.value.trim();
+  const empCode = document.getElementById('editUserEmpCode')?.value.trim();
+  const dept = document.getElementById('editUserDept')?.value.trim();
+  const pin = document.getElementById('editUserPin')?.value.trim();
+  const alertBox = document.getElementById('editUserAlert');
+
+  if (!userId || !name) {
+    if (alertBox) {
+      alertBox.textContent = 'กรุณาระบุชื่อ-นามสกุลพนักงาน';
+      alertBox.style.display = 'block';
+    }
+    return;
+  }
+
+  if (!pin || !/^\d{4,8}$/.test(pin)) {
+    if (alertBox) {
+      alertBox.textContent = 'รหัส PIN ต้องเป็นตัวเลขความยาว 4–8 หลักเท่านั้น';
+      alertBox.style.display = 'block';
+    }
     return;
   }
 
   const res = updateSystemUser(userId, {
-    name: newName.trim(),
-    empCode: newEmpCode.trim(),
-    department: newDept.trim(),
-    pin: cleanPin
+    name: name.toUpperCase(),
+    empCode: (empCode || '-').toUpperCase(),
+    department: dept || '-',
+    pin: pin
   });
 
   if (res.success) {
@@ -1894,27 +2057,54 @@ function promptEditStaffUser(userId) {
       syncSalaryProfileWithActiveUser();
       calculatePayroll();
     }
-    showToastNotification(`อัปเดตข้อมูลพนักงาน ${u.name} สำเร็จ!`);
+    closeEditUserModal();
+    showToastNotification(`✅ อัปเดตข้อมูลพนักงาน "${name}" สำเร็จ!`);
   } else {
-    alert(res.error || 'เกิดข้อผิดพลาดในการแก้ไขข้อมูล');
+    if (alertBox) {
+      alertBox.textContent = res.error || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล';
+      alertBox.style.display = 'block';
+    } else {
+      alert(res.error || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+    }
   }
 }
 
 function confirmDeleteUser(userId) {
+  if (userId === 'user_admin') {
+    alert('ไม่สามารถลบบัญชีผู้ดูแลระบบหลัก (JITTRAKAN K.) ได้');
+    return;
+  }
   const users = getAllSystemUsers();
   const u = users.find(x => x.id === userId);
   if (!u) return;
 
-  if (confirm(`คุณต้องการลบพนักงาน "${u.name}" (PIN: ${u.pin}) ออกจากระบบหรือไม่?`)) {
+  if (confirm(`คุณต้องการลบพนักงาน "${u.name}" (รหัส: ${u.empCode || '-'}, PIN: ${u.pin}) ออกจากระบบหรือไม่?`)) {
     const res = deleteSystemUser(userId);
     if (res.success) {
       renderManageUsersTable();
       updateNavbarAuthUI(currentUser, isFirebaseOnline);
       reloadUserDataAfterAuthChange();
-      showToastNotification(`ลบพนักงาน "${u.name}" เรียบร้อยแล้ว`);
+      showToastNotification(`🗑️ ลบพนักงาน "${u.name}" เรียบร้อยแล้ว`);
     } else {
       alert(res.error || 'ไม่สามารถลบได้');
     }
+  }
+}
+
+function confirmClearAllStaffUsers() {
+  const users = getAllSystemUsers();
+  const staffUsers = users.filter(u => u.id !== 'user_admin');
+  if (staffUsers.length === 0) {
+    showToastNotification('ℹ️ ปัจจุบันไม่มีรายชื่อพนักงานอื่นในระบบ (มีเฉพาะ ADMIN)');
+    return;
+  }
+
+  if (confirm(`คุณต้องการลบรายชื่อพนักงานทั้งหมดจำนวน ${staffUsers.length} คน ออกจากระบบหรือไม่?\n\n* บัญชีผู้ดูแลระบบหลัก (JITTRAKAN K.) จะยังคงอยู่ตามปกติ`)) {
+    clearAllStaffUsers();
+    renderManageUsersTable();
+    updateNavbarAuthUI(currentUser, isFirebaseOnline);
+    reloadUserDataAfterAuthChange();
+    showToastNotification('🗑️ ลบรายชื่อพนักงานทั้งหมดเรียบร้อยแล้ว');
   }
 }
 

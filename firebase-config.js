@@ -20,39 +20,17 @@ const DEFAULT_FIREBASE_CONFIG = {
   appId: "1:1234567890:web:abcdef123456"
 };
 
-// ข้อมูลผู้ใช้เริ่มต้นในระบบ
+// ข้อมูลผู้ใช้เริ่มต้นในระบบ (มีเพียง ADMIN หลักคนเดียว)
 const DEFAULT_SYSTEM_USERS = [
   {
     id: 'user_admin',
-    name: 'ADMIN',
+    name: 'JITTRAKAN K.',
     companyName: 'CACULATION SALARY',
     empCode: '20523',
-    department: 'ผู้ดูแลระบบสูงสุด',
+    department: 'PRODUCTION TECHNOLOGY',
     pin: '20523',
     role: 'admin',
     avatar: '👑',
-    createdAt: '2026-01-01T00:00:00.000Z'
-  },
-  {
-    id: 'user_staff1',
-    name: 'พนักงาน 01',
-    companyName: 'CACULATION SALARY',
-    empCode: 'EMP-001',
-    department: 'ฝ่ายผลิต/ปฏิบัติการ',
-    pin: '1111',
-    role: 'user',
-    avatar: '👤',
-    createdAt: '2026-01-01T00:00:00.000Z'
-  },
-  {
-    id: 'user_staff2',
-    name: 'พนักงาน 02',
-    companyName: 'CACULATION SALARY',
-    empCode: 'EMP-002',
-    department: 'ฝ่ายเทคนิค/ซ่อมบำรุง',
-    pin: '2222',
-    role: 'user',
-    avatar: '👤',
     createdAt: '2026-01-01T00:00:00.000Z'
   }
 ];
@@ -78,8 +56,12 @@ function notifyAuthState(user) {
   currentUser = user;
   if (user) {
     localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(user));
-    // ถ้าไม่มี active editing user หรือ user ไม่ใช่ admin ให้ตั้ง active editing user เป็น user ตัวเอง
-    if (user.role !== 'admin' || !localStorage.getItem(STORAGE_KEY_ACTIVE_EDITING_USER)) {
+    // กฎเหล็ก: ถ้าผู้ใช้ไม่ใช่ ADMIN (JITTRAKAN K.) จะต้องบังคับดูเฉพาะข้อมูลตัวเองเท่านั้น
+    if (user.role === 'admin' && user.id === 'user_admin') {
+      if (!localStorage.getItem(STORAGE_KEY_ACTIVE_EDITING_USER)) {
+        setActiveEditingUserId('user_admin');
+      }
+    } else {
       setActiveEditingUserId(user.id);
     }
   } else {
@@ -93,22 +75,97 @@ function notifyAuthState(user) {
 }
 
 /**
- * ดึงรายชื่อผู้ใช้ทั้งหมดในระบบ
+ * ดึงรายชื่อผู้ใช้ทั้งหมดในระบบ (พร้อมระบบล้างบัญชีตกค้าง/ซ้ำซ้อนอัตโนมัติ)
+ * กฎความเป็นส่วนตัว: ถ้าผู้ใช้เป็นพนักงานทั่วไป จะสามารถเห็นได้เฉพาะข้อมูลของตนเองเท่านั้น
  */
-function getAllSystemUsers() {
+function getAllSystemUsers(internalBypass = false) {
+  if (!internalBypass && currentUser && (currentUser.role !== 'admin' || currentUser.id !== 'user_admin')) {
+    return [ currentUser ];
+  }
+
   try {
     const raw = localStorage.getItem(STORAGE_KEY_USERS_LIST);
     if (raw) {
-      const parsed = JSON.parse(raw);
+      let parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // ตรวจสอบว่ามี ADMIN PIN 20523 อยู่เสมอ
-        const hasAdmin = parsed.some(u => u.pin === '20523' && u.role === 'admin');
-        if (!hasAdmin) {
-          parsed.unshift(DEFAULT_SYSTEM_USERS[0]);
+        let modified = false;
+
+        // 1. ลบบัญชีตกค้าง/ซ้ำซ้อน และบัญชีในรูปที่ผู้ใช้แจ้งให้ลบ:
+        //    - PIN 09718455 ทั้งหมด
+        //    - ชื่อที่มีเครื่องหมายคำพูด ' หรือ " (เช่น 'JITTRAKAN K.)
+        //    - บัญชีที่ชื่อ JITTRAKAN K. หรือ PIN 20523 หรือ รหัส 20523 แต่ไม่ใช่ user_admin
+        const originalCount = parsed.length;
+        parsed = parsed.filter(u => {
+          if (!u) return false;
+          const uPin = String(u.pin || '').trim();
+          const uName = String(u.name || '').trim();
+          const uCode = String(u.empCode || '').trim();
+
+          // ลบทุกบัญชีที่มี PIN 09718455
+          if (uPin === '09718455') return false;
+
+          // ลบทุกบัญชีที่มีเครื่องหมายคำพูดในชื่อ เช่น 'JITTRAKAN K.
+          if (uName.startsWith("'") || uName.startsWith('"') || uName.includes("'JITTRAKAN")) return false;
+
+          // ลบทุกบัญชีซ้ำซ้อนของ JITTRAKAN K. หรือ PIN 20523 หรือรหัส 20523 ที่ไม่ใช่ user_admin
+          if (u.id !== 'user_admin' && (uName.toUpperCase() === 'JITTRAKAN K.' || uPin === '20523' || uCode === '20523')) {
+            return false;
+          }
+
+          return true;
+        });
+
+        if (parsed.length !== originalCount) {
+          modified = true;
         }
-        // ตรวจสอบและใส่ค่าเริ่มต้นสำหรับข้อมูลที่เพิ่มเข้ามาใหม่ (Company, EmpCode)
-        let modified = !hasAdmin;
+
+        // 2. ตรวจสอบและสร้าง/อัปเดต Master Admin (JITTRAKAN K., PIN 20523) เพียงหนึ่งเดียว
+        let adminUser = parsed.find(u => u.id === 'user_admin');
+        if (!adminUser) {
+          adminUser = { ...DEFAULT_SYSTEM_USERS[0] };
+          parsed.unshift(adminUser);
+          modified = true;
+        }
+
+        // บังคับค่าที่ถูกต้องแน่นอนของ ADMIN หลัก
+        adminUser.id = 'user_admin';
+        adminUser.name = 'JITTRAKAN K.';
+        adminUser.companyName = 'CACULATION SALARY';
+        adminUser.empCode = '20523';
+        adminUser.department = 'PRODUCTION TECHNOLOGY';
+        adminUser.pin = '20523';
+        adminUser.role = 'admin';
+        adminUser.avatar = '👑';
+
+        // 3. กรองบัญชีที่มี ID หรือ PIN ซ้ำกันออก
+        const seenIds = new Set();
+        const seenPins = new Set();
+        seenPins.add('20523'); // จอง PIN ของ Admin ไว้
+        const cleanList = [adminUser];
+        seenIds.add('user_admin');
+
+        for (const u of parsed) {
+          if (u.id === 'user_admin') continue;
+          const pinKey = String(u.pin || '').trim();
+          if (!seenIds.has(u.id) && !seenPins.has(pinKey)) {
+            seenIds.add(u.id);
+            seenPins.add(pinKey);
+            cleanList.push(u);
+          } else {
+            modified = true;
+          }
+        }
+        parsed = cleanList;
+
+        // 4. บัญชีที่เหลือทั้งหมด (ถ้ามี) บังคับเป็น role = 'user'
         parsed.forEach(u => {
+          if (u.id !== 'user_admin') {
+            if (u.role !== 'user') {
+              u.role = 'user';
+              u.avatar = '👤';
+              modified = true;
+            }
+          }
           if (!u.companyName) {
             u.companyName = 'CACULATION SALARY';
             modified = true;
@@ -116,7 +173,7 @@ function getAllSystemUsers() {
             u.companyName = u.companyName.toUpperCase();
           }
           if (!u.empCode) {
-            u.empCode = u.id === 'user_admin' ? '20523' : ('EMP-' + (u.pin || '001'));
+            u.empCode = (u.id === 'user_admin' ? '20523' : ('EMP-' + (u.pin || '001'))).toUpperCase();
             modified = true;
           } else {
             u.empCode = u.empCode.toUpperCase();
@@ -126,9 +183,23 @@ function getAllSystemUsers() {
             modified = true;
           }
         });
+
         if (modified) {
           saveSystemUsers(parsed);
         }
+
+        // ตรวจสอบและแก้ไข auth user ใน LocalStorage ถ้าค้างข้อมูลผิดอยู่
+        const currentAuthRaw = localStorage.getItem(STORAGE_KEY_AUTH_USER);
+        if (currentAuthRaw) {
+          try {
+            const authObj = JSON.parse(currentAuthRaw);
+            if (authObj && (String(authObj.pin).trim() === '09718455' || authObj.name?.includes("'") || authObj.id !== 'user_admin')) {
+              localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(adminUser));
+              currentUser = adminUser;
+            }
+          } catch(e) {}
+        }
+
         return parsed;
       }
     }
@@ -139,6 +210,27 @@ function getAllSystemUsers() {
   // ถ้ายังไม่มี ให้บันทึกชุดเริ่มต้น
   saveSystemUsers(DEFAULT_SYSTEM_USERS);
   return DEFAULT_SYSTEM_USERS;
+}
+
+/**
+ * ล้างรายชื่อพนักงานทั้งหมด เหลือไว้เฉพาะ ADMIN หลัก
+ */
+function clearAllStaffUsers() {
+  const adminUser = {
+    id: 'user_admin',
+    name: 'JITTRAKAN K.',
+    companyName: 'CACULATION SALARY',
+    empCode: '20523',
+    department: 'PRODUCTION TECHNOLOGY',
+    pin: '20523',
+    role: 'admin',
+    avatar: '👑',
+    createdAt: '2026-01-01T00:00:00.000Z'
+  };
+  const list = [adminUser];
+  saveSystemUsers(list);
+  setActiveEditingUserId('user_admin');
+  return { success: true, count: 1, users: list };
 }
 
 /**
@@ -162,29 +254,43 @@ function saveSystemUsers(users) {
 
 /**
  * ตรวจสอบและดึง Active Editing User ID
+ * กฎเหล็ก: ถ้าผู้ใช้ไม่ใช่ ADMIN (JITTRAKAN K.) บังคับคืนค่า ID ของตัวเองเท่านั้น ห้ามดูข้อมูลคนอื่น
  */
 function getActiveEditingUserId() {
-  const saved = localStorage.getItem(STORAGE_KEY_ACTIVE_EDITING_USER);
-  if (saved) return saved;
-  if (currentUser) return currentUser.id;
+  if (currentUser) {
+    if (currentUser.role !== 'admin' || currentUser.id !== 'user_admin') {
+      return currentUser.id;
+    }
+    const saved = localStorage.getItem(STORAGE_KEY_ACTIVE_EDITING_USER);
+    return saved || 'user_admin';
+  }
   return 'user_admin';
 }
 
 /**
- * เปลี่ยน User ID ที่กำลังแก้ไขข้อมูลอยู่ (สำหรับ Admin สลับดู/แก้ไขข้อมูลพนักงานคนอื่น)
+ * เปลี่ยน User ID ที่กำลังดู/แก้ไขข้อมูล (เฉพาะ ADMIN เท่านั้นที่สามารถสลับดูคนอื่นได้)
  */
 function setActiveEditingUserId(userId) {
-  activeEditingUserId = userId;
-  localStorage.setItem(STORAGE_KEY_ACTIVE_EDITING_USER, userId);
+  if (currentUser && (currentUser.role !== 'admin' || currentUser.id !== 'user_admin')) {
+    activeEditingUserId = currentUser.id;
+    localStorage.setItem(STORAGE_KEY_ACTIVE_EDITING_USER, currentUser.id);
+    return currentUser.id;
+  }
+  activeEditingUserId = userId || 'user_admin';
+  localStorage.setItem(STORAGE_KEY_ACTIVE_EDITING_USER, activeEditingUserId);
   return activeEditingUserId;
 }
 
 /**
  * ดึงข้อมูลผู้ใช้ที่กำลังถูกแก้ไขข้อมูลอยู่
+ * กฎความเป็นส่วนตัว: พนักงานทั่วไปจะได้รับเฉพาะข้อมูลของตนเองเสมอ
  */
 function getActiveEditingUser() {
+  if (currentUser && (currentUser.role !== 'admin' || currentUser.id !== 'user_admin')) {
+    return currentUser;
+  }
   const targetId = getActiveEditingUserId();
-  const users = getAllSystemUsers();
+  const users = getAllSystemUsers(true);
   return users.find(u => u.id === targetId) || users[0] || DEFAULT_SYSTEM_USERS[0];
 }
 
@@ -201,7 +307,8 @@ async function loginWithPin(pin) {
     return { success: false, error: 'รหัส PIN ต้องมีความยาว 4–8 หลัก' };
   }
 
-  const users = getAllSystemUsers();
+  // ดึงรายชื่อทั้งหมด (internal bypass) เพื่อตรวจสอบรหัส PIN
+  const users = getAllSystemUsers(true);
   const foundUser = users.find(u => u.pin === cleanPin);
 
   if (!foundUser) {
@@ -224,6 +331,9 @@ async function loginWithPin(pin) {
  * เพิ่มผู้ใช้งานใหม่ (เฉพาะ Admin)
  */
 function registerNewUser(name, pin, role = 'user', department = '', companyName = 'CACULATION SALARY', empCode = '') {
+  if (currentUser && currentUser.role !== 'admin') {
+    return { success: false, error: 'เฉพาะผู้ดูแลระบบ (ADMIN: JITTRAKAN K.) เท่านั้นที่สามารถเพิ่มผู้ใช้ได้' };
+  }
   if (!name || !name.trim()) {
     return { success: false, error: 'กรุณาระบุชื่อพนักงาน' };
   }
@@ -238,12 +348,13 @@ function registerNewUser(name, pin, role = 'user', department = '', companyName 
     return { success: false, error: 'รหัส PIN นี้ถูกใช้งานแล้ว กรุณาเลือกรหัสอื่น' };
   }
 
+  // สิทธิ์ของพนักงานใหม่ต้องเป็น 'user' เสมอ (Admin มีแค่ JITTRAKAN K. เท่านั้น)
   const newUser = {
     id: 'user_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6),
     name: name.trim(),
     pin: cleanPin,
-    role: role,
-    avatar: role === 'admin' ? '👑' : '👤',
+    role: 'user',
+    avatar: '👤',
     companyName: (companyName || 'CACULATION SALARY').trim().toUpperCase(),
     empCode: (empCode || ('EMP-' + cleanPin)).trim().toUpperCase(),
     department: department.trim() || 'แผนกทั่วไป',
@@ -260,6 +371,11 @@ function registerNewUser(name, pin, role = 'user', department = '', companyName 
  * อัปเดตข้อมูลผู้ใช้งาน (แก้ไขชื่อ, PIN, แผนก, บริษัท, รหัสพนักงาน)
  */
 function updateSystemUser(userId, updateData) {
+  // สิทธิ์: ถ้าไม่ใช่ Admin และกำลังจะแก้ไข id คนอื่น ให้ปฏิเสธทันที
+  if (currentUser && currentUser.role !== 'admin' && currentUser.id !== userId) {
+    return { success: false, error: 'คุณไม่มีสิทธิ์แก้ไขข้อมูลบัญชีของผู้อื่น' };
+  }
+
   const users = getAllSystemUsers();
   const idx = users.findIndex(u => u.id === userId);
   if (idx === -1) {
@@ -283,9 +399,14 @@ function updateSystemUser(userId, updateData) {
   if (updateData.department !== undefined) users[idx].department = updateData.department.trim();
   if (updateData.companyName !== undefined) users[idx].companyName = updateData.companyName.trim().toUpperCase();
   if (updateData.empCode !== undefined) users[idx].empCode = updateData.empCode.trim().toUpperCase();
-  if (updateData.role && users[idx].id !== 'user_admin') {
-    users[idx].role = updateData.role;
-    users[idx].avatar = updateData.role === 'admin' ? '👑' : '👤';
+
+  // บังคับบทบาท: เฉพาะ user_admin เท่านั้นที่เป็น admin ที่เหลือทุกคนเป็น user
+  if (users[idx].id === 'user_admin') {
+    users[idx].role = 'admin';
+    users[idx].avatar = '👑';
+  } else {
+    users[idx].role = 'user';
+    users[idx].avatar = '👤';
   }
 
   saveSystemUsers(users);
@@ -307,11 +428,14 @@ function updateCurrentAccountProfile(profileData) {
 }
 
 /**
- * ลบผู้ใช้งาน (ยกเว้น ADMIN ตัวหลัก)
+ * ลบผู้ใช้งาน (ยกเว้น ADMIN JITTRAKAN K.)
  */
 function deleteSystemUser(userId) {
+  if (currentUser && currentUser.role !== 'admin') {
+    return { success: false, error: 'เฉพาะผู้ดูแลระบบ (ADMIN: JITTRAKAN K.) เท่านั้นที่สามารถลบผู้ใช้ได้' };
+  }
   if (userId === 'user_admin') {
-    return { success: false, error: 'ไม่สามารถลบบัญชี ADMIN สูงสุดได้' };
+    return { success: false, error: 'ไม่สามารถลบบัญชี ADMIN หลัก (JITTRAKAN K.) ได้' };
   }
 
   let users = getAllSystemUsers();
