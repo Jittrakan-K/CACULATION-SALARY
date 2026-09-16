@@ -16,57 +16,54 @@
   <script src="firebase-config.js"></script>
 </head>
 <body class="theme-blue-white">
-  <!-- Top Navigation Bar (Factorium SaaS Blue & White Style) -->
+  <!-- Top Navigation Bar (Single-Row Modern SaaS Style) -->
   <header class="app-nav no-print">
     <div class="nav-container">
-      <!-- Left: Brand Logo -->
+      <!-- Left: Brand Logo (Factorium Modern Style) -->
       <div class="app-branding" onclick="switchView('main')">
         <div class="brand-logo-mark">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-            <line x1="8" y1="21" x2="16" y2="21"></line>
-            <line x1="12" y1="17" x2="12" y2="21"></line>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M13 2L3 14h8l-2 8 10-12h-8l2-8z"/>
           </svg>
         </div>
         <div class="brand-text">
           <div class="brand-name">CACULATION SALARY</div>
-          <div class="brand-tag">SMART PAYROLL & TIMESHEET</div>
+          <div class="brand-tag">SMART PAYROLL SYSTEM</div>
         </div>
       </div>
 
-      <!-- Center: Navigation Links -->
+      <!-- Center: Main Navigation Menu (5 Tabs) -->
       <nav class="nav-menu">
         <button type="button" class="nav-link-btn active" id="navBtnMain" onclick="switchView('main')">
-          <span>📊 คำนวณเงินเดือน</span>
+          <span class="nav-tab-icon">📊</span>
+          <span>คำนวณเงินเดือน</span>
         </button>
         <button type="button" class="nav-link-btn" id="navBtnAttendance" onclick="switchView('attendance')">
-          <span>⏱️ บันทึกเวลาออกงาน</span>
+          <span class="nav-tab-icon">⏱️</span>
+          <span>บันทึกเวลาออกงาน</span>
         </button>
         <button type="button" class="nav-link-btn" id="navBtnCalendar" onclick="toggleCalendarView()">
-          <span>📅 ปฏิทินวันทำงาน</span>
+          <span class="nav-tab-icon">📅</span>
+          <span>ปฏิทินวันทำงาน</span>
         </button>
         <button type="button" class="nav-link-btn" id="navBtnSlip" onclick="prepareAndPrint()">
-          <span>🧾 สลิปเงินเดือน</span>
+          <span class="nav-tab-icon">🧾</span>
+          <span>สลิปเงินเดือน</span>
         </button>
-        <button type="button" class="nav-link-btn highlight" onclick="openSettingsSalaryModal()">
-          <span>⚙️ ปรับแต่งค่าเงิน</span>
+        <button type="button" class="nav-link-btn highlight" id="navBtnSettings" onclick="openSettingsSalaryModal()">
+          <span class="nav-tab-icon">⚙️</span>
+          <span>ปรับแต่งค่าเงิน</span>
         </button>
       </nav>
 
-      <!-- Right: Global Actions & Auth -->
+      <!-- Right: User Menu & Auth Actions -->
       <div class="nav-actions">
-        <div class="nav-year-box">
-          <label for="appYearSelect" class="year-label">ปี:</label>
-          <select id="appYearSelect" class="year-select" onchange="onAppYearChange()"></select>
-          <button type="button" class="btn btn-xs btn-outline-primary" onclick="openAddYearModal()" title="เพิ่มปีปฏิทินใหม่">
-            ➕
-          </button>
-        </div>
-
-        <!-- Auth Status Container (Dynamic) -->
         <div id="navAuthArea" class="nav-auth-area">
-          <button type="button" class="btn btn-sm btn-primary btn-cta" onclick="openAuthModal()">
-            🔐 เข้าสู่ระบบ PIN
+          <button type="button" class="btn-factorium-outline" onclick="openAuthModal()">
+            เข้าสู่ระบบ
+          </button>
+          <button type="button" class="btn-factorium-gradient" onclick="openAuthModal()">
+            เริ่มใช้งานฟรี
           </button>
         </div>
       </div>
@@ -156,6 +153,12 @@
           </div>
 
           <div class="period-nav-right">
+            <!-- ย้ายฟังก์ชั่นรูปที่ 1 (เลือกปี) มาอยู่ข้างๆ ปุ่มบันทึกเวลาออกงาน -->
+            <div class="factorium-year-box" title="เลือกปีปฏิทินคำนวณเงินเดือน">
+              <span class="factorium-globe-icon">🌐</span>
+              <select id="appYearSelect" class="factorium-year-select" onchange="onAppYearChange()"></select>
+              <button type="button" class="factorium-btn-plus" onclick="openAddYearModal()" title="เพิ่มปีปฏิทินใหม่">+</button>
+            </div>
             <button type="button" class="btn btn-primary btn-nav-cta" onclick="switchView('attendance')">
               ⏱️ บันทึกเวลาออกงาน (เข้า-ออก) →
             </button>

@@ -254,7 +254,10 @@ function generatePayrollPeriodsForYear(yearCE) {
   const yearBE = yearCE + 543;
   const periods = [];
 
-  for (let m = 0; m < 12; m++) {
+  // สำหรับปีนี้ (2026 / 2569) คิดตั้งแต่เดือน 7 (กรกฎาคม: m=6) ขึ้นไป
+  const startM = (yearCE === 2026) ? 6 : 0;
+
+  for (let m = startM; m < 12; m++) {
     const monthNum = m + 1;
     const monthName = `${THAI_MONTHS[m]} ${yearBE}`;
     const periodId = `${yearCE}-${formatDay2Digit(monthNum)}`;
@@ -1641,6 +1644,7 @@ function switchEditingUser(targetUserId) {
   // อัปเดต Dropdown ใน Navbar ให้ตรงกัน
   const navSelect = document.getElementById('adminUserNavSelect');
   if (navSelect) navSelect.value = targetUserId;
+  updateNavbarAuthUI(currentUser);
 
   showToastNotification(`สลับไปยังข้อมูลของ: ${targetUser.name}`);
 }
@@ -1655,24 +1659,15 @@ function updateAdminScopeBanner() {
   ].filter(Boolean);
   if (banners.length === 0) return;
 
-  const currentActiveId = getActiveEditingUserId();
-  const isAdmin = currentUser && currentUser.role === 'admin';
-
-  if (isAdmin && currentActiveId !== 'user_admin') {
-    const targetUser = getActiveEditingUser();
+  const activeUserId = getActiveEditingUserId();
+  if (currentUser && currentUser.role === 'admin' && activeUserId && activeUserId !== currentUser.id) {
+    const activeUser = getActiveEditingUser();
     const bannerHtml = `
-      <div class="admin-scope-banner-info">
-        <span style="font-size:1.3rem;">👑</span>
-        <div>
-          กำลังดูและแก้ไขข้อมูลของ: <strong>${escapeHtml(targetUser.name)}</strong> (${escapeHtml(targetUser.department || 'พนักงาน')})
-          <div style="font-size:0.78rem; color:#0369a1; margin-top:2px;">
-            ⚡ สิทธิ์ ADMIN: คุณสามารถแก้ไขเวลาทำงาน ปรับโครงสร้างค่าจ้าง และพิมพ์สลิปของพนักงานคนนี้ได้
-          </div>
-        </div>
-      </div>
-      <div>
+      <div class="banner-content">
+        <span class="banner-icon">⚠️</span>
+        <span>กำลังดู/แก้ไขข้อมูลของ: <strong>${escapeHtml(activeUser.name)}</strong> (โหมดผู้ดูแลระบบ)</span>
         <button type="button" class="btn btn-xs btn-outline-primary" onclick="switchEditingUser('user_admin')">
-          ↩️ กลับไปที่ข้อมูล ADMIN
+          กลับไปยังข้อมูลของฉัน
         </button>
       </div>
     `;
@@ -1688,7 +1683,36 @@ function updateAdminScopeBanner() {
 }
 
 /**
- * อัปเดต Navbar ส่วนแสดงสถานะการล็อกอินและ User Switcher
+ * เปิด/ปิด Dropdown เมนูข้อมูลผู้ใช้เมื่อกดที่ชื่อ
+ */
+function toggleUserMenu(event) {
+  if (event) event.stopPropagation();
+  const dropdown = document.getElementById('userProfileDropdown');
+  if (!dropdown) return;
+  dropdown.style.display = (dropdown.style.display === 'none' || !dropdown.style.display) ? 'block' : 'none';
+}
+
+/**
+ * ปิด Dropdown เมนูข้อมูลผู้ใช้
+ */
+function closeUserMenu() {
+  const dropdown = document.getElementById('userProfileDropdown');
+  if (dropdown) dropdown.style.display = 'none';
+}
+
+// Global click listener to close user profile dropdown when clicking outside
+window.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('userProfileDropdown');
+  const trigger = document.getElementById('userProfileTriggerBtn');
+  if (dropdown && dropdown.style.display !== 'none') {
+    if (!dropdown.contains(e.target) && (!trigger || !trigger.contains(e.target))) {
+      dropdown.style.display = 'none';
+    }
+  }
+});
+
+/**
+ * อัปเดต Navbar ส่วนแสดงสถานะการล็อกอินและ User Dropdown Menu
  */
 function updateNavbarAuthUI(user, isOnline) {
   const container = document.getElementById('navAuthArea');
@@ -1696,59 +1720,118 @@ function updateNavbarAuthUI(user, isOnline) {
 
   if (user) {
     const activeUserId = getActiveEditingUserId();
+    const activeUser = getActiveEditingUser() || user;
 
     if (user.role === 'admin') {
-      // ผู้ใช้เป็น ADMIN: แสดง Badge + Dropdown สลับผู้ใช้ + ปุ่มบัญชีของฉัน + ปุ่มจัดการผู้ใช้ + ออกจากระบบ
+      // ผู้ใช้เป็น ADMIN: แสดง Badge + ชื่อผู้ใช้ (กดเพื่อเปิดเมนู บัญชีของฉัน, จัดการผู้ใช้, สลับพนักงาน) + ปุ่มออกจากระบบ
       const allUsers = getAllSystemUsers();
       const optionsHtml = allUsers.map(u => {
         const selected = (u.id === activeUserId) ? 'selected' : '';
-        const roleLabel = u.role === 'admin' ? '👑 ' : '👤 ';
-        return `<option value="${u.id}" ${selected}>${roleLabel}${escapeHtml(u.name)} (รหัส: ${escapeHtml(u.empCode || '-')}, PIN: ${u.pin})</option>`;
+        return `<option value="${u.id}" ${selected}>${escapeHtml(u.name)}</option>`;
       }).join('');
 
       container.innerHTML = `
-        <div class="user-chip-menu">
-          <span class="badge-admin-gold">👑 ADMIN</span>
-          <div class="nav-user-switcher-box" title="เลือกพนักงานเพื่อดูหรือแก้ไขข้อมูล">
-            <span class="nav-user-switcher-label">พนักงาน:</span>
-            <select id="adminUserNavSelect" class="nav-user-switcher-select" onchange="switchEditingUser(this.value)">
-              ${optionsHtml}
-            </select>
+        <div class="factorium-auth-group">
+          <div class="user-menu-container">
+            <button type="button" class="btn-user-profile-trigger" id="userProfileTriggerBtn" onclick="toggleUserMenu(event)" title="คลิกเพื่อจัดการบัญชีและข้อมูลผู้ใช้">
+              <span class="user-role-badge">👑 ADMIN</span>
+              <span class="user-name-text">${escapeHtml(activeUser.name)}</span>
+              <span class="user-caret-icon">▾</span>
+            </button>
+
+            <!-- Dropdown Popover เมื่อกดที่ชื่อ JITTRAKAN K. -->
+            <div class="user-dropdown-popover" id="userProfileDropdown" style="display: none;">
+              <div class="user-dropdown-header">
+                <div class="user-dropdown-avatar">${escapeHtml(user.name.charAt(0).toUpperCase())}</div>
+                <div class="user-dropdown-info">
+                  <div class="user-dropdown-name">${escapeHtml(user.name)}</div>
+                  <div class="user-dropdown-role">👑 ผู้ดูแลระบบ (Admin)</div>
+                </div>
+              </div>
+              <div class="user-dropdown-divider"></div>
+
+              <!-- รวมคำว่า บัญชีของฉัน และ จัดการผู้ใช้ ในเมนูนี้ -->
+              <button type="button" class="user-dropdown-item" onclick="closeUserMenu(); openAccountModal();" title="ดูและจัดการข้อมูลบัญชีโปรไฟล์ของฉัน">
+                <span class="user-dropdown-icon">👤</span>
+                <span>บัญชีของฉัน</span>
+              </button>
+
+              <button type="button" class="user-dropdown-item" onclick="closeUserMenu(); openManageUsersModal();" title="จัดการรายชื่อและรหัส PIN พนักงาน">
+                <span class="user-dropdown-icon">👥</span>
+                <span>จัดการผู้ใช้</span>
+              </button>
+
+              <!-- สลับดูข้อมูลพนักงานสำหรับ Admin -->
+              <div class="user-dropdown-section">
+                <label class="user-dropdown-label">🔄 สลับดูข้อมูลพนักงาน:</label>
+                <select id="adminUserNavSelect" class="user-dropdown-select" onchange="switchEditingUser(this.value); closeUserMenu();">
+                  ${optionsHtml}
+                </select>
+              </div>
+
+              <div class="user-dropdown-divider"></div>
+
+              <button type="button" class="user-dropdown-item text-danger" onclick="closeUserMenu(); handleLogout();" title="ออกจากระบบ">
+                <span class="user-dropdown-icon">🚪</span>
+                <span>ออกจากระบบ</span>
+              </button>
+            </div>
           </div>
-          <button type="button" class="btn btn-xs btn-outline-primary" onclick="openAccountModal()" title="ดูและจัดการข้อมูลบัญชีโปรไฟล์ของฉัน">
-            👤 บัญชีของฉัน
-          </button>
-          <button type="button" class="btn btn-xs btn-outline-primary" onclick="openManageUsersModal()" title="จัดการรายชื่อและรหัส PIN พนักงาน">
-            👥 จัดการผู้ใช้
-          </button>
-          <button type="button" class="btn btn-xs btn-outline-danger" onclick="handleLogout()" title="ออกจากระบบ">
-            ออก
+
+          <button type="button" class="btn-factorium-gradient" onclick="handleLogout()" title="ออกจากระบบ">
+            ออกจากระบบ
           </button>
         </div>
       `;
     } else {
-      // พนักงานทั่วไป: แสดงชื่อ + ปุ่มบัญชีของฉัน + ปุ่มออกจากระบบ
+      // พนักงานทั่วไป: แสดงชื่อ + กดเพื่อเปิดเมนู บัญชีของฉัน + ออกจากระบบ
       container.innerHTML = `
-        <div class="user-chip-menu">
-          <div class="user-chip" onclick="openAccountModal()" style="cursor: pointer;" title="คลิกเพื่อดูและจัดการข้อมูลบัญชีของฉัน">
-            <div class="user-avatar-initials">${user.name.charAt(0).toUpperCase()}</div>
-            <span class="user-name-text">${escapeHtml(user.name)}</span>
-            <span class="status-dot dot-online" title="เข้าสู่ระบบแล้ว"></span>
+        <div class="factorium-auth-group">
+          <div class="user-menu-container">
+            <button type="button" class="btn-user-profile-trigger" id="userProfileTriggerBtn" onclick="toggleUserMenu(event)" title="คลิกเพื่อจัดการบัญชี">
+              <span class="user-role-badge badge-user">👤 ทั่วไป</span>
+              <span class="user-name-text">${escapeHtml(user.name)}</span>
+              <span class="user-caret-icon">▾</span>
+            </button>
+
+            <div class="user-dropdown-popover" id="userProfileDropdown" style="display: none;">
+              <div class="user-dropdown-header">
+                <div class="user-dropdown-avatar">${escapeHtml(user.name.charAt(0).toUpperCase())}</div>
+                <div class="user-dropdown-info">
+                  <div class="user-dropdown-name">${escapeHtml(user.name)}</div>
+                  <div class="user-dropdown-role">👤 พนักงาน</div>
+                </div>
+              </div>
+              <div class="user-dropdown-divider"></div>
+
+              <button type="button" class="user-dropdown-item" onclick="closeUserMenu(); openAccountModal();">
+                <span class="user-dropdown-icon">👤</span>
+                <span>บัญชีของฉัน</span>
+              </button>
+
+              <div class="user-dropdown-divider"></div>
+
+              <button type="button" class="user-dropdown-item text-danger" onclick="closeUserMenu(); handleLogout();">
+                <span class="user-dropdown-icon">🚪</span>
+                <span>ออกจากระบบ</span>
+              </button>
+            </div>
           </div>
-          <button type="button" class="btn btn-xs btn-outline-primary" onclick="openAccountModal()" title="ดูและจัดการข้อมูลบัญชีของฉัน">
-            👤 บัญชีของฉัน
-          </button>
-          <button type="button" class="btn btn-xs btn-outline-danger" onclick="handleLogout()" title="ออกจากระบบ">
-            ออก
+
+          <button type="button" class="btn-factorium-gradient" onclick="handleLogout()" title="ออกจากระบบ">
+            ออกจากระบบ
           </button>
         </div>
       `;
     }
   } else {
-    // ยังไม่ได้ล็อกอิน: แสดงปุ่มเข้าสู่ระบบ PIN
+    // ยังไม่ได้ล็อกอิน: แสดงปุ่ม เข้าสู่ระบบ และ เริ่มใช้งานฟรี
     container.innerHTML = `
-      <button type="button" class="btn btn-sm btn-primary btn-cta" onclick="openAuthModal()">
-        🔐 เข้าสู่ระบบ PIN
+      <button type="button" class="btn-factorium-outline" onclick="openAuthModal()">
+        เข้าสู่ระบบ
+      </button>
+      <button type="button" class="btn-factorium-gradient" onclick="openAuthModal()">
+        เริ่มใช้งานฟรี
       </button>
     `;
   }

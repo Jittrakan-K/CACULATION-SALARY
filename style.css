@@ -85,53 +85,55 @@ p, span, div, a, li {
 /* ---------------------------------------------------------
    Navigation Bar (Factorium SaaS Blue & White Style)
    --------------------------------------------------------- */
+/* ---------------------------------------------------------
+   Navigation Bar (Single-Row Modern SaaS Style)
+   --------------------------------------------------------- */
 .app-nav {
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(12px);
-  color: var(--gray-900);
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.85);
-  box-shadow: 0 2px 12px rgba(2, 132, 199, 0.05);
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
   position: sticky;
   top: 0;
-  z-index: 100;
-  transition: all 0.3s ease;
+  z-index: 1000;
+  height: 54px;
 }
 
 .nav-container {
-  max-width: 1400px;
+  max-width: 1440px;
+  width: 100%;
+  height: 100%;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
   gap: 16px;
 }
 
 .app-branding {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   cursor: pointer;
   user-select: none;
+  flex-shrink: 0;
 }
 
 .brand-logo-mark {
-  background: var(--primary-gradient);
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
+  background: linear-gradient(135deg, #d92365 0%, #7c3aed 60%, #2563eb 100%);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  box-shadow: 0 4px 10px rgba(2, 132, 199, 0.3);
+  box-shadow: 0 2px 6px rgba(217, 35, 101, 0.25);
   transition: transform 0.2s ease;
 }
 
 .app-branding:hover .brand-logo-mark {
-  transform: scale(1.05);
+  transform: scale(1.04);
 }
 
 .brand-text {
@@ -141,105 +143,341 @@ p, span, div, a, li {
 
 .brand-name {
   font-family: 'Prompt', sans-serif;
-  font-size: 1.12rem;
-  font-weight: 700;
-  color: #0c4a6e;
-  line-height: 1.2;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.15;
   letter-spacing: -0.3px;
 }
 
 .brand-tag {
-  font-size: 0.68rem;
+  font-size: 0.6rem;
   font-weight: 700;
-  color: #0284c7;
-  letter-spacing: 0.8px;
+  color: #64748b;
+  letter-spacing: 0.5px;
 }
 
-/* Nav Menu Links */
+/* Center Main Navigation Menu (5 Tabs) */
 .nav-menu {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 2px;
+  height: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav-menu::-webkit-scrollbar {
+  display: none;
 }
 
 .nav-link-btn {
   background: transparent;
   border: none;
-  color: var(--gray-600);
-  padding: 8px 14px;
-  border-radius: 8px;
+  color: #475569;
+  padding: 0 13px;
+  height: 54px;
   font-family: 'Prompt', sans-serif;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
   font-weight: 500;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  border-bottom: 2.5px solid transparent;
 }
 
 .nav-link-btn:hover {
-  background: var(--primary-light);
-  color: var(--primary);
+  color: #0f172a;
+  background: rgba(241, 245, 249, 0.7);
 }
 
 .nav-link-btn.active {
-  background: var(--primary-light);
-  color: var(--primary);
+  color: #2563eb;
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px var(--primary-border);
+  border-bottom-color: #2563eb;
+  background: transparent;
 }
 
 .nav-link-btn.highlight {
-  color: #0369a1;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  color: #059669;
+  font-weight: 600;
 }
 
 .nav-link-btn.highlight:hover {
-  background: #dcfce7;
-  color: #15803d;
+  color: #047857;
+  background: #f0fdf4;
 }
 
-/* Nav Actions & Auth Area */
+.nav-tab-icon {
+  font-size: 0.92rem;
+}
+
+/* Right Nav Actions & Auth Area */
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-.nav-year-box {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: #f1f5f9;
-  padding: 4px 8px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-}
-
-.year-label {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--gray-600);
-}
-
-.year-select {
-  padding: 3px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-  background: #fff;
-  color: #0c4a6e;
-  font-family: 'Prompt', sans-serif;
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .nav-auth-area {
   display: flex;
   align-items: center;
+  gap: 6px;
+}
+
+/* ---------------------------------------------------------
+   Factorium Signature Capsule Pill Buttons
+   --------------------------------------------------------- */
+.btn-factorium-outline {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #1e293b;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-family: 'Prompt', sans-serif;
+  font-size: 0.76rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.btn-factorium-outline:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.btn-factorium-gradient {
+  background: linear-gradient(90deg, #d92365 0%, #7c3aed 55%, #2563eb 100%);
+  color: #ffffff;
+  border: none;
+  padding: 4px 14px;
+  border-radius: 9999px;
+  font-family: 'Prompt', sans-serif;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 8px rgba(217, 35, 101, 0.22);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-factorium-gradient:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 12px rgba(124, 58, 237, 0.32);
+}
+
+/* ---------------------------------------------------------
+   User Profile Dropdown Popover (เมื่อกดที่ชื่อ JITTRAKAN K.)
+   --------------------------------------------------------- */
+.factorium-auth-group {
+  display: flex;
+  align-items: center;
   gap: 8px;
+  position: relative;
+}
+
+.user-menu-container {
+  position: relative;
+}
+
+.btn-user-profile-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-family: 'Prompt', sans-serif;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #0f172a;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.btn-user-profile-trigger:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.user-role-badge {
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: #b45309;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  padding: 1px 5px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.user-role-badge.badge-user {
+  color: #0369a1;
+  background: #e0f2fe;
+  border-color: #bae6fd;
+}
+
+.user-name-text {
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-caret-icon {
+  font-size: 0.72rem;
+  color: #64748b;
+  transition: transform 0.2s ease;
+}
+
+/* Dropdown Popover Card */
+.user-dropdown-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 250px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.06);
+  padding: 8px 0;
+  z-index: 1050;
+  animation: dropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.user-dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px 10px;
+}
+
+.user-dropdown-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #d92365 0%, #7c3aed 100%);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.user-dropdown-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.user-dropdown-name {
+  font-family: 'Prompt', sans-serif;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-dropdown-role {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.user-dropdown-divider {
+  height: 1px;
+  background: #f1f5f9;
+  margin: 6px 0;
+}
+
+.user-dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  font-family: 'Prompt', sans-serif;
+  font-size: 0.84rem;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.user-dropdown-item:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.user-dropdown-item.text-danger {
+  color: #dc2626;
+}
+
+.user-dropdown-item.text-danger:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.user-dropdown-icon {
+  font-size: 1rem;
+  width: 18px;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.user-dropdown-section {
+  padding: 8px 16px;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+  margin: 4px 0;
+}
+
+.user-dropdown-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.user-dropdown-select {
+  font-size: 0.78rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  outline: none;
+  cursor: pointer;
 }
 
 .btn-ghost-primary {
@@ -279,11 +517,18 @@ p, span, div, a, li {
   box-shadow: 0 6px 18px rgba(2, 132, 199, 0.4);
 }
 
-/* User Profile Chip */
+/* User Profile Chip - Right-Aligned Widget Container */
 .user-chip-menu {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  padding: 3px 8px;
+  border-radius: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  flex-wrap: nowrap;
 }
 
 .user-chip {
@@ -346,6 +591,42 @@ p, span, div, a, li {
   padding: 2px 6px;
   font-size: 0.75rem;
   border-radius: 4px;
+}
+
+@media (max-width: 992px) {
+  .nav-container {
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .brand-tag {
+    display: none;
+  }
+  .nav-link-btn {
+    padding: 0 9px;
+    font-size: 0.82rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-nav {
+    height: auto;
+  }
+  .nav-container {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .nav-menu {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+    padding-top: 4px;
+    border-top: 1px solid #f1f5f9;
+  }
+  .nav-actions {
+    margin-left: auto;
+  }
 }
 
 /* ---------------------------------------------------------
@@ -1546,6 +1827,8 @@ p, span, div, a, li {
   border-radius: 6px;
   cursor: pointer;
   outline: none;
+  max-width: 170px;
+  text-overflow: ellipsis;
 }
 
 .admin-scope-banner {
@@ -2235,6 +2518,62 @@ p, span, div, a, li {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.period-nav-right .factorium-year-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.period-nav-right .factorium-year-box:hover {
+  border-color: #3b82f6;
+  background: #f8fafc;
+}
+
+.period-nav-right .factorium-globe-icon {
+  font-size: 0.95rem;
+}
+
+.period-nav-right .factorium-year-select {
+  border: none;
+  background: transparent;
+  color: #1e293b;
+  font-family: 'Prompt', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  padding-right: 4px;
+}
+
+.period-nav-right .factorium-btn-plus {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.period-nav-right .factorium-btn-plus:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: #94a3b8;
 }
 
 .period-nav-right .btn {
