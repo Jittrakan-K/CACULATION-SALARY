@@ -677,6 +677,10 @@ function loadAttendanceFromExcel() {
 // ==========================================================================
 // 8. ระบบคำนวณเงินเดือนตามสูตร Excel (Salary Calculation Engine)
 // ==========================================================================
+function calculatePayroll() {
+  recalculateSalary();
+}
+
 function recalculateSalary() {
   const totals = recalculateAttendanceTotals();
 
@@ -1184,7 +1188,8 @@ function confirmAddNewYear() {
   onAppYearChange();
   closeAddYearModal();
 
-  alert(`เพิ่มปีปฏิทิน พ.ศ. ${yearBE} (${yearCE}) เรียบร้อยแล้ว! สามารถคลิกกำหนดวันหยุดได้ในปฏิทิน`);
+  showSuccessPopup('บันทึกสำเร็จ', `เพิ่มปีปฏิทิน พ.ศ. ${yearBE} (${yearCE}) เรียบร้อยแล้ว`);
+  showToastNotification(`✅ เพิ่มปีปฏิทิน พ.ศ. ${yearBE} (${yearCE}) เรียบร้อยแล้ว!`);
 }
 
 function deleteCurrentYear() {
@@ -1276,6 +1281,8 @@ function saveDayStatusFromModal() {
   }
 
   closeEditDayModal();
+  showSuccessPopup('บันทึกสำเร็จ', 'บันทึกสถานะวันทำงานเรียบร้อยแล้ว');
+  showToastNotification('✅ บันทึกสถานะวันทำงานเรียบร้อยแล้ว');
 }
 
 // ==========================================================================
@@ -1437,6 +1444,7 @@ function saveSalaryConfigFromModal() {
   closeSettingsSalaryModal();
   updateRateLabelsOnCards();
   recalculateSalary();
+  showSuccessPopup('บันทึกสำเร็จ', 'บันทึกโครงสร้างค่าเงินและเบี้ยเลี้ยงเรียบร้อยแล้ว');
   showToastNotification('✅ บันทึกโครงสร้างค่าเงินและเบี้ยเลี้ยงเรียบร้อยแล้ว!');
 }
 
@@ -1965,11 +1973,16 @@ function handleSaveAccountProfile(e) {
 
   if (res.success) {
     // ซิงก์ข้อมูลพนักงานไปยัง salaryProfile และการคำนวณ
-    syncSalaryProfileWithActiveUser();
-    calculatePayroll();
-    updateNavbarAuthUI(currentUser, isFirebaseOnline);
+    try {
+      syncSalaryProfileWithActiveUser();
+      recalculateSalary();
+      updateNavbarAuthUI(currentUser, isFirebaseOnline);
+    } catch (err) {
+      console.error('Error syncing profile after save:', err);
+    }
 
     closeAccountModal();
+    showSuccessPopup('บันทึกสำเร็จ', `บันทึกข้อมูลบัญชี (${name}) เรียบร้อยแล้ว`);
     showToastNotification(`✅ บันทึกข้อมูลบัญชี (${name}) เรียบร้อยแล้ว!`);
   } else {
     if (alertBox) {
@@ -2054,6 +2067,7 @@ function handleAddNewUserSubmit(e) {
     document.getElementById('newUserDept').value = '';
     renderManageUsersTable();
     updateNavbarAuthUI(currentUser, isFirebaseOnline);
+    showSuccessPopup('บันทึกสำเร็จ', `เพิ่มพนักงาน ${name} (PIN: ${pin}) เรียบร้อยแล้ว`);
     showToastNotification(`✅ เพิ่มพนักงาน ${name} (รหัส: ${res.user.empCode}, PIN: ${pin}) เรียบร้อยแล้ว!`);
   } else {
     alert(res.error || 'ไม่สามารถเพิ่มผู้ใช้ได้');
@@ -2138,9 +2152,10 @@ function handleSaveEditUserSubmit(e) {
     updateNavbarAuthUI(currentUser, isFirebaseOnline);
     if (getActiveEditingUserId() === userId) {
       syncSalaryProfileWithActiveUser();
-      calculatePayroll();
+      recalculateSalary();
     }
     closeEditUserModal();
+    showSuccessPopup('บันทึกสำเร็จ', `อัปเดตข้อมูลพนักงาน "${name}" เรียบร้อยแล้ว`);
     showToastNotification(`✅ อัปเดตข้อมูลพนักงาน "${name}" สำเร็จ!`);
   } else {
     if (alertBox) {
@@ -2243,6 +2258,58 @@ function resetFirebaseConfigDefault() {
     }
     closeFirebaseConfigModal();
     location.reload();
+  }
+}
+
+// ==========================================================================
+// ระบบหน้าต่างเด้งแจ้งเตือนบันทึกสำเร็จ (Success Confirmation Modal Dialog)
+// ==========================================================================
+let successPopupTimer = null;
+
+function showSuccessPopup(title = 'บันทึกสำเร็จ', message = 'บันทึกข้อมูลเรียบร้อยแล้ว', callback = null) {
+  const modal = document.getElementById('successConfirmModal');
+  const titleEl = document.getElementById('successPopupTitle');
+  const msgEl = document.getElementById('successPopupMessage');
+  const okBtn = document.getElementById('successPopupOkBtn');
+
+  if (titleEl) titleEl.textContent = title;
+  if (msgEl) msgEl.textContent = message;
+
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    if (okBtn) okBtn.focus();
+  }
+
+  if (successPopupTimer) clearTimeout(successPopupTimer);
+  window._successPopupCallback = callback;
+
+  // ปิดอัตโนมัติเมื่อครบ 3 วินาทีหากผู้ใช้ไม่ได้กดปุ่ม
+  successPopupTimer = setTimeout(() => {
+    closeSuccessPopup();
+  }, 3000);
+}
+
+function closeSuccessPopup() {
+  if (successPopupTimer) {
+    clearTimeout(successPopupTimer);
+    successPopupTimer = null;
+  }
+  const modal = document.getElementById('successConfirmModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+  if (typeof window._successPopupCallback === 'function') {
+    const cb = window._successPopupCallback;
+    window._successPopupCallback = null;
+    cb();
+  }
+}
+
+function handleSuccessBackdropClick(event) {
+  if (event && event.target && event.target.id === 'successConfirmModal') {
+    closeSuccessPopup();
   }
 }
 

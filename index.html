@@ -1051,7 +1051,7 @@
 
           <div class="modal-footer modal-footer-custom" style="padding: 14px 0 0 0; margin-top: 18px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px;">
             <button type="button" class="btn btn-secondary" onclick="closeAccountModal()">ปิด / ยกเลิก</button>
-            <button type="submit" class="btn btn-primary shadow-btn">
+            <button type="submit" class="btn btn-primary shadow-btn" id="btnSubmitAccountProfile" onclick="handleSaveAccountProfile(event)">
               💾 บันทึกข้อมูลบัญชี
             </button>
           </div>
@@ -1231,6 +1231,24 @@
           <button type="button" class="btn btn-secondary" onclick="closeFirebaseConfigModal()">ปิด</button>
           <button type="button" class="btn btn-primary" onclick="saveFirebaseConfigFromModal()">
             💾 บันทึกคอนฟิก
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Confirmation Modal (หน้าต่างเด้งแจ้งเตือนบันทึกสำเร็จ) -->
+  <div class="modal-backdrop" id="successConfirmModal" style="display:none; z-index: 99999;" onclick="handleSuccessBackdropClick(event)">
+    <div class="modal-dialog success-popup-dialog" style="max-width: 360px; text-align: center; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
+      <div class="modal-body" style="padding: 28px 24px 24px 24px;">
+        <div class="success-popup-icon-wrap">
+          <div class="success-popup-check">✓</div>
+        </div>
+        <h3 id="successPopupTitle" class="success-popup-title">บันทึกสำเร็จ</h3>
+        <p id="successPopupMessage" class="success-popup-message">บันทึกข้อมูลเรียบร้อยแล้ว</p>
+        <div style="margin-top: 22px;">
+          <button type="button" class="btn btn-primary btn-lg shadow-btn" id="successPopupOkBtn" onclick="closeSuccessPopup()" style="min-width: 140px; border-radius: 9999px; font-weight: 700; padding: 7px 28px; font-size: 0.95rem;">
+            ตกลง
           </button>
         </div>
       </div>
