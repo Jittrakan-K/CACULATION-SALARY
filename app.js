@@ -1,76 +1,41 @@
 /**
- * ระบบคำนวณเงินเดือน & ออกใบแจ้งรายได้ ออบเรย์ (ประเทศไทย) จำกัด
- * อ้างอิงสูตรคำนวณจากไฟล์ Excel: DATA SALARY 210826-200926.xlsx
- * และปฏิทินวันทำงานปี 2569 / 2026 จาก Image (1).jpg และ Image (2).jpg
+ * APP.JS - ระบบคำนวณเงินเดือน & ปฏิทินวันทำงาน
+ * CACULATION SALARY
  */
 
 // ==========================================================================
-// 1. ฐานข้อมูลปฏิทินวันทำงาน Orbray 2569 / 2026 (ตามภาพ Image 1 & 2)
+// 1. ฐานข้อมูลปฏิทินเริ่มต้นปี 2569 (2026)
 // ==========================================================================
-
-const ORBRAY_CALENDAR_2026 = {
-  // วันหยุดนักขัตฤกษ์ (วงรีสีเหลือง)
+const DEFAULT_CALENDAR_2026 = {
+  yearCE: 2026,
+  yearBE: 2569,
+  title: '2569 / 2026',
   nationalHolidays: [
-    '2026-01-01', // วันขึ้นปีใหม่
-    '2026-03-03', // วันมาฆบูชา
-    '2026-04-13', '2026-04-14', '2026-04-15', '2026-04-16', // วันสงกรานต์
-    '2026-05-01', // วันแรงงานแห่งชาติ
-    '2026-06-01', // วันวิสาขบูชา (ชดเชย)
-    '2026-07-28', '2026-07-29', // วันเฉลิมฯ ร.10 / วันอาสาฬหบูชา
-    '2026-08-12', // วันแม่แห่งชาติ
-    '2026-10-13', // วันนวมินทรมหาราช ร.9
-    '2026-10-23', // วันปิยมหาราช
-    '2026-12-05', // วันพ่อแห่งชาติ ร.9
-    '2026-12-28', // วันสมเด็จพระเจ้าตากสินฯ / วันหยุดพิเศษ
-    '2026-12-31'  // วันสิ้นปี
+    '2026-01-01', '2026-01-02', '2026-03-03', '2026-04-06', '2026-04-13',
+    '2026-04-14', '2026-04-15', '2026-05-01', '2026-05-04', '2026-06-01',
+    '2026-06-03', '2026-07-28', '2026-07-29', '2026-08-12', '2026-10-13',
+    '2026-10-23', '2026-12-05', '2026-12-07', '2026-12-10', '2026-12-31'
   ],
-  // วันหยุดประเพณีจ่ายเงิน (วงรีสีม่วง: Memorial day with pay)
   memorialHolidays: [
-    '2026-09-19',
-    '2026-12-30'
+    '2026-09-19' // วันหยุดประเพณีจ่ายเงิน (Memorial day with pay)
   ],
-  // วันหยุดพิเศษ/เชื่อมวันหยุด (วงรีสีดำ วันธรรมดา)
   bridgeHolidays: [
-    '2026-01-02',
-    '2026-12-29'
+    '2026-01-03' // วันหยุดพิเศษ
   ],
-  // วันทำงานพิเศษ Orbray (วงรีสีแดง: Orbray day)
   orbrayWorkDays: [
-    '2026-10-17'
+    '2026-10-17' // วันทำงานพิเศษ
   ],
-  // วันเสาร์ที่เป็นวันทำงานปกติ (ตัวเลขอักษรสีดำ ไม่มีวงกลม)
   workingSaturdays: [
-    '2026-01-17',
-    '2026-02-21',
-    '2026-03-14', '2026-03-28',
-    '2026-04-04', '2026-04-18',
-    '2026-05-09',
-    '2026-06-20',
-    '2026-07-04', '2026-07-25',
-    '2026-08-01', '2026-08-15', '2026-08-29',
-    '2026-10-17', '2026-10-31',
-    '2026-12-12'
-  ]
+    '2026-01-17', '2026-02-21', '2026-03-14', '2026-03-28',
+    '2026-04-04', '2026-04-18', '2026-05-09', '2026-06-20',
+    '2026-07-04', '2026-07-25', '2026-08-01', '2026-08-15', '2026-08-29',
+    '2026-10-17', '2026-10-31', '2026-12-12'
+  ],
+  customDayOverrides: {}
 };
 
-// ข้อมูล 12 งวดการจ่ายประจำปี 2569 (ตัดรอบทุกวันที่ 20 จ่ายทุกสิ้นเดือน)
-const PAYROLL_PERIODS_2026 = [
-  { id: '2026-01', monthName: 'มกราคม 2569', startDate: '2025-12-21', endDate: '2026-01-20', payDate: '31/01/2569' },
-  { id: '2026-02', monthName: 'กุมภาพันธ์ 2569', startDate: '2026-01-21', endDate: '2026-02-20', payDate: '28/02/2569' },
-  { id: '2026-03', monthName: 'มีนาคม 2569', startDate: '2026-02-21', endDate: '2026-03-20', payDate: '31/03/2569' },
-  { id: '2026-04', monthName: 'เมษายน 2569', startDate: '2026-03-21', endDate: '2026-04-20', payDate: '30/04/2569' },
-  { id: '2026-05', monthName: 'พฤษภาคม 2569', startDate: '2026-04-21', endDate: '2026-05-20', payDate: '31/05/2569' },
-  { id: '2026-06', monthName: 'มิถุนายน 2569', startDate: '2026-05-21', endDate: '2026-06-20', payDate: '30/06/2569' },
-  { id: '2026-07', monthName: 'กรกฎาคม 2569', startDate: '2026-06-21', endDate: '2026-07-20', payDate: '31/07/2569' },
-  { id: '2026-08', monthName: 'สิงหาคม 2569', startDate: '2026-07-21', endDate: '2026-08-20', payDate: '31/08/2569' },
-  { id: '2026-09', monthName: 'กันยายน 2569', startDate: '2026-08-21', endDate: '2026-09-20', payDate: '30/09/2569' },
-  { id: '2026-10', monthName: 'ตุลาคม 2569', startDate: '2026-09-21', endDate: '2026-10-20', payDate: '31/10/2569' },
-  { id: '2026-11', monthName: 'พฤศจิกายน 2569', startDate: '2026-10-21', endDate: '2026-11-20', payDate: '30/11/2569' },
-  { id: '2026-12', monthName: 'ธันวาคม 2569', startDate: '2026-11-21', endDate: '2026-12-20', payDate: '31/12/2569' }
-];
-
 // ==========================================================================
-// 2. ข้อมูลตัวอย่างจากไฟล์ Excel: DATA SALARY 210826-200926.xlsx
+// 2. ข้อมูลตัวอย่างจากไฟล์ Excel (21/08/2026 - 20/09/2026)
 // ==========================================================================
 const EXCEL_SAMPLE_ATTENDANCE = [
   { date: '2026-08-21', inTime: '08:00', outTime: '17:00', ot: 0, hol: 0, otHol: 0, workDay: 1, come: 1, otDay: 0 },
@@ -107,36 +72,275 @@ const EXCEL_SAMPLE_ATTENDANCE = [
 ];
 
 // ==========================================================================
-// 3. ฟังก์ชันระบุประเภทวันตามปฏิทิน Orbray
+// 3. State Management (สถานะหลักของระบบ)
 // ==========================================================================
-function getOrbrayDayInfo(dateStr) {
-  const d = new Date(dateStr);
-  const dayOfWeek = d.getDay(); // 0 = Sun, 6 = Sat
+let allCalendars = {};      // บันทึกปฏิทินทุกปี { '2026': {...}, '2027': {...} }
+let activeYearCE = 2026;    // ปี ค.ศ. ปัจจุบันที่กำลังดู
+let currentPeriod = null;   // งวดการจ่ายปัจจุบัน
+let currentAttendance = []; // รายการลงเวลา 31 วันของงวดปัจจุบัน
 
-  if (ORBRAY_CALENDAR_2026.nationalHolidays.includes(dateStr)) {
-    return { type: 'NATIONAL_HOLIDAY', name: 'วันหยุดนักขัตฤกษ์', isWorkDay: false, badgeClass: 'badge-national' };
-  }
-  if (ORBRAY_CALENDAR_2026.memorialHolidays.includes(dateStr)) {
-    return { type: 'MEMORIAL_HOLIDAY', name: 'วันหยุดประเพณีจ่ายเงิน', isWorkDay: false, badgeClass: 'badge-memorial' };
-  }
-  if (ORBRAY_CALENDAR_2026.bridgeHolidays.includes(dateStr)) {
-    return { type: 'BRIDGE_HOLIDAY', name: 'วันหยุดพิเศษ', isWorkDay: false, badgeClass: 'badge-bridge' };
-  }
-  if (dayOfWeek === 0) {
-    return { type: 'SUNDAY', name: 'วันอาทิตย์หยุด', isWorkDay: false, badgeClass: 'badge-sunday' };
-  }
-  if (dayOfWeek === 6) {
-    if (ORBRAY_CALENDAR_2026.workingSaturdays.includes(dateStr)) {
-      return { type: 'WORKING_SATURDAY', name: 'เสาร์ทำงาน', isWorkDay: true, badgeClass: 'badge-work-sat' };
-    } else {
-      return { type: 'SATURDAY_HOLIDAY', name: 'เสาร์หยุด', isWorkDay: false, badgeClass: 'badge-sat-holiday' };
+// ข้อมูลพนักงานและข้อมูลคงที่
+const salaryProfile = {
+  companyName: 'CACULATION SALARY',
+  empCode: '20523',
+  empName: 'ADMIN',
+  department: 'ผู้ดูแลระบบสูงสุด',
+  empType: 'รายเดือน',
+  periodMonth: 'กันยายน',
+  periodRound: 'งวดจ่ายเงินเดือน',
+  payDate: '30/09/2569',
+  userName: 'ADMIN',
+  printDate: '13/09/2569'
+};
+
+// โครงสร้างอัตราค่าเงินเริ่มต้นตามรูปที่ 2 (สามารถแก้ไขได้ตลอดเวลา)
+const DEFAULT_SALARY_CONFIG = {
+  baseSalary: 20000,
+  diligenceFullAmount: 650,
+  transportationAllowance: 1230,
+  foodPerDay: 20,
+  otMealPerDay: 15,
+  otDivisorHours: 240,
+  ot15Multiplier: 1.5,
+  ot1Multiplier: 1.0,
+  ot3Multiplier: 3.0,
+  ssoDeduction: 875,
+  ssoMaxBase: 17500
+};
+
+let currentSalaryConfig = { ...DEFAULT_SALARY_CONFIG };
+
+// ==========================================================================
+// 4. ระบบจัดเก็บข้อมูล LocalStorage (Storage Manager)
+// ==========================================================================
+// 4. ระบบจัดเก็บข้อมูล LocalStorage (Storage Manager Scoped by User)
+// ==========================================================================
+const STORAGE_KEY_CALENDARS = 'orbray_salary_calendars_v2';
+const STORAGE_KEY_YEAR = 'orbray_salary_active_year_v2';
+const STORAGE_KEY_ATTENDANCE = 'orbray_salary_attendance_store_v2';
+const STORAGE_KEY_SALARY_CONFIG = 'salary_rates_config_v2';
+
+function getScopedUserKey(baseKey) {
+  const uid = (typeof getActiveEditingUserId === 'function') ? getActiveEditingUserId() : 'user_admin';
+  return `${baseKey}_${uid}`;
+}
+
+function syncSalaryProfileWithActiveUser() {
+  if (typeof getActiveEditingUser === 'function') {
+    const u = getActiveEditingUser();
+    if (u) {
+      salaryProfile.companyName = (u.companyName || 'CACULATION SALARY').toUpperCase();
+      salaryProfile.empCode = (u.empCode || (u.id === 'user_admin' ? '20523' : ('EMP-' + (u.pin || '001')))).toUpperCase();
+      salaryProfile.empName = u.name;
+      salaryProfile.department = u.department || 'ฝ่ายปฏิบัติการ';
+      salaryProfile.userName = u.role === 'admin' ? 'ADMIN' : u.name;
     }
   }
-  return { type: 'NORMAL_WORKDAY', name: 'วันทำงานปกติ', isWorkDay: true, badgeClass: 'badge-workday' };
+}
+
+function loadStorageData() {
+  try {
+    const rawCals = localStorage.getItem(STORAGE_KEY_CALENDARS);
+    if (rawCals) {
+      allCalendars = JSON.parse(rawCals);
+    } else {
+      allCalendars = { '2026': JSON.parse(JSON.stringify(DEFAULT_CALENDAR_2026)) };
+    }
+
+    const savedYear = localStorage.getItem(STORAGE_KEY_YEAR);
+    if (savedYear && allCalendars[savedYear]) {
+      activeYearCE = parseInt(savedYear, 10);
+    } else {
+      activeYearCE = 2026;
+      if (!allCalendars['2026']) {
+        allCalendars['2026'] = JSON.parse(JSON.stringify(DEFAULT_CALENDAR_2026));
+      }
+    }
+
+    // โหลดการตั้งค่าโครงสร้างค่าเงินเฉพาะของ User ที่กำลัง Active
+    const userCfgKey = getScopedUserKey(STORAGE_KEY_SALARY_CONFIG);
+    const rawSalaryCfg = localStorage.getItem(userCfgKey) || localStorage.getItem(STORAGE_KEY_SALARY_CONFIG);
+    if (rawSalaryCfg) {
+      currentSalaryConfig = Object.assign({}, DEFAULT_SALARY_CONFIG, JSON.parse(rawSalaryCfg));
+    } else {
+      currentSalaryConfig = { ...DEFAULT_SALARY_CONFIG };
+    }
+
+    // อัปเดตข้อมูลพนักงานในสลิปตาม Active User
+    syncSalaryProfileWithActiveUser();
+  } catch (e) {
+    console.error('Storage load failed, using default', e);
+    allCalendars = { '2026': JSON.parse(JSON.stringify(DEFAULT_CALENDAR_2026)) };
+    activeYearCE = 2026;
+    currentSalaryConfig = { ...DEFAULT_SALARY_CONFIG };
+  }
+}
+
+function saveCalendarsToStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY_CALENDARS, JSON.stringify(allCalendars));
+    localStorage.setItem(STORAGE_KEY_YEAR, activeYearCE.toString());
+  } catch (e) {
+    console.warn('Storage save failed', e);
+  }
+}
+
+function saveAttendanceToStorage(periodId, rows) {
+  try {
+    const storeKey = getScopedUserKey(STORAGE_KEY_ATTENDANCE);
+    let store = {};
+    const raw = localStorage.getItem(storeKey);
+    if (raw) store = JSON.parse(raw);
+    store[periodId] = rows;
+    localStorage.setItem(storeKey, JSON.stringify(store));
+
+    // ซิงค์ข้อมูลลง Cloud
+    if (typeof syncDataToCloud === 'function') {
+      syncDataToCloud('attendance_' + periodId, rows);
+    }
+  } catch (e) {
+    console.warn('Attendance save failed', e);
+  }
+}
+
+function loadAttendanceFromStorage(periodId) {
+  try {
+    const storeKey = getScopedUserKey(STORAGE_KEY_ATTENDANCE);
+    const raw = localStorage.getItem(storeKey) || localStorage.getItem(STORAGE_KEY_ATTENDANCE);
+    if (raw) {
+      const store = JSON.parse(raw);
+      if (store[periodId] && Array.isArray(store[periodId])) {
+        return store[periodId];
+      }
+    }
+  } catch (e) {
+    console.warn('Attendance load failed', e);
+  }
+  return null;
 }
 
 // ==========================================================================
-// 4. คำนวณชั่วโมง OT จากเวลาออกงานตามสูตร SWITCH ใน Excel
+// 5. ระบบคำนวณวันและรอบการจ่ายเงินเดือน (Calendar & Periods Generator)
+// ==========================================================================
+const THAI_MONTHS = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+];
+
+function getLastDayOfMonth(year, monthIndex) {
+  const d = new Date(year, monthIndex + 1, 0);
+  return d.getDate();
+}
+
+function formatDay2Digit(n) {
+  return n < 10 ? '0' + n : '' + n;
+}
+
+function generatePayrollPeriodsForYear(yearCE) {
+  const yearBE = yearCE + 543;
+  const periods = [];
+
+  for (let m = 0; m < 12; m++) {
+    const monthNum = m + 1;
+    const monthName = `${THAI_MONTHS[m]} ${yearBE}`;
+    const periodId = `${yearCE}-${formatDay2Digit(monthNum)}`;
+
+    let startYear = yearCE;
+    let startMonth = m - 1;
+    let startYearBE = yearBE;
+    if (startMonth < 0) {
+      startMonth = 11;
+      startYear = yearCE - 1;
+      startYearBE = yearBE - 1;
+    }
+    const startMonthName = THAI_MONTHS[startMonth];
+    const endMonthName = THAI_MONTHS[m];
+    const startDate = `${startYear}-${formatDay2Digit(startMonth + 1)}-21`;
+    const endDate = `${yearCE}-${formatDay2Digit(monthNum)}-20`;
+
+    const lastDay = getLastDayOfMonth(yearCE, m);
+    const payDate = `${formatDay2Digit(lastDay)}/${formatDay2Digit(monthNum)}/${yearBE}`;
+
+    periods.push({
+      id: periodId,
+      yearCE,
+      yearBE,
+      monthIndex: m,
+      monthName,
+      startMonthName,
+      endMonthName,
+      startYearBE,
+      startDate,
+      endDate,
+      payDate
+    });
+  }
+  return periods;
+}
+
+function getOrbrayDayInfo(dateStr) {
+  const yearCE = parseInt(dateStr.split('-')[0], 10);
+  const cal = allCalendars[yearCE] || allCalendars[activeYearCE] || DEFAULT_CALENDAR_2026;
+
+  if (cal.customDayOverrides && cal.customDayOverrides[dateStr]) {
+    const ov = cal.customDayOverrides[dateStr];
+    return getDayTypeConfig(ov.type, ov.name);
+  }
+
+  if (cal.nationalHolidays && cal.nationalHolidays.includes(dateStr)) {
+    return getDayTypeConfig('NATIONAL_HOLIDAY');
+  }
+  if (cal.memorialHolidays && cal.memorialHolidays.includes(dateStr)) {
+    return getDayTypeConfig('MEMORIAL_HOLIDAY');
+  }
+  if (cal.bridgeHolidays && cal.bridgeHolidays.includes(dateStr)) {
+    return getDayTypeConfig('BRIDGE_HOLIDAY');
+  }
+  if (cal.orbrayWorkDays && cal.orbrayWorkDays.includes(dateStr)) {
+    return getDayTypeConfig('ORBRAY_WORKDAY');
+  }
+
+  const d = new Date(dateStr);
+  const dayOfWeek = d.getDay();
+
+  if (dayOfWeek === 0) {
+    return getDayTypeConfig('SUNDAY');
+  }
+
+  if (dayOfWeek === 6) {
+    if (cal.workingSaturdays && cal.workingSaturdays.includes(dateStr)) {
+      return getDayTypeConfig('WORKING_SATURDAY');
+    } else {
+      return getDayTypeConfig('SATURDAY_HOLIDAY');
+    }
+  }
+
+  return getDayTypeConfig('NORMAL_WORKDAY');
+}
+
+function getDayTypeConfig(type, customName = null) {
+  switch (type) {
+    case 'NATIONAL_HOLIDAY':
+      return { type, name: customName || 'วันหยุดนักขัตฤกษ์', isWorkDay: false, badgeClass: 'badge-national', calClass: 'day-national-holiday' };
+    case 'MEMORIAL_HOLIDAY':
+      return { type, name: customName || 'วันหยุดประเพณีจ่ายเงิน', isWorkDay: false, badgeClass: 'badge-memorial', calClass: 'day-memorial-holiday' };
+    case 'ORBRAY_WORKDAY':
+      return { type, name: customName || 'วันทำงานพิเศษ', isWorkDay: true, badgeClass: 'badge-orbray', calClass: 'day-orbray-work' };
+    case 'WORKING_SATURDAY':
+      return { type, name: customName || 'เสาร์ทำงาน', isWorkDay: true, badgeClass: 'badge-work-sat', calClass: 'day-working-sat' };
+    case 'SATURDAY_HOLIDAY':
+      return { type, name: customName || 'เสาร์หยุด', isWorkDay: false, badgeClass: 'badge-sat-holiday', calClass: 'day-sat-holiday' };
+    case 'SUNDAY':
+      return { type, name: customName || 'วันอาทิตย์หยุด', isWorkDay: false, badgeClass: 'badge-sunday', calClass: 'day-sunday' };
+    case 'BRIDGE_HOLIDAY':
+      return { type, name: customName || 'วันหยุดพิเศษ', isWorkDay: false, badgeClass: 'badge-bridge', calClass: 'day-bridge' };
+    default:
+      return { type: 'NORMAL_WORKDAY', name: customName || 'วันทำงานปกติ', isWorkDay: true, badgeClass: 'badge-workday', calClass: '' };
+  }
+}
+
+// ==========================================================================
+// 6. การคำนวณ OT จากเวลาออกงาน
 // ==========================================================================
 function getOTFromTimeOut(timeOutStr) {
   if (!timeOutStr) return 0;
@@ -153,87 +357,18 @@ function getOTFromTimeOut(timeOutStr) {
     case '19:20': return 2.0;
     case '19:50': return 2.5;
     default:
-      // คำนวณตามจริงถ้าเป็นเวลาอื่น
       const parts = t.split(':');
       if (parts.length === 2) {
         const h = parseInt(parts[0], 10);
         const m = parseInt(parts[1], 10);
         const totalMinutes = (h * 60 + m) - (17 * 60);
         if (totalMinutes <= 0) return 0;
-        return Math.floor((totalMinutes / 60) * 2) / 2; // ปัดลงเป็นขั้น 0.5 ชม.
+        return Math.floor((totalMinutes / 60) * 2) / 2;
       }
       return 0;
   }
 }
 
-// ==========================================================================
-// 5. โครงสร้างสถานะและข้อมูลหลักของแอปพลิเคชัน
-// ==========================================================================
-let currentPeriod = PAYROLL_PERIODS_2026.find(p => p.id === '2026-09'); // เริ่มต้นที่งวด ก.ย. (21 ส.ค. - 20 ก.ย.)
-let currentAttendance = JSON.parse(JSON.stringify(EXCEL_SAMPLE_ATTENDANCE));
-
-let salaryProfile = {
-  companyName: 'ออบเรย์ (ประเทศไทย) จำกัด',
-  empName: '20523:นายจิตรกาล เกตุประสาท',
-  department: '9003.2:PRODUCTION TECHNOLOGY',
-  empType: 'รายเดือน',
-  bankAccount: '4202160927',
-  periodMonth: 'กันยายน',
-  periodRound: 'งวดจ่ายเงินเดือน',
-  payDate: '30/09/2569',
-  userName: 'JITTRAKAN',
-  printDate: '13/09/2569'
-};
-
-let baseSalary = 20000;
-let transportationAllowance = 1230;
-let diligenceFullAmount = 650;
-let ssoDeduction = 875;
-
-let taxAllowances = {
-  personal: 60000,
-  expenses: 100000,
-  sso: 8908
-};
-
-let accumulatedData = {
-  income: 174389.00,
-  taxEmp: 0.00,
-  taxComp: 0.00,
-  sso: 5408.00,
-  fundEmp: 0.00,
-  fundComp: 0.00
-};
-
-// ==========================================================================
-// 6. การสลับหน้าจอ (Tab Navigation)
-// ==========================================================================
-function switchView(viewName) {
-  document.querySelectorAll('.view-panel').forEach(el => el.classList.remove('active-panel'));
-  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-
-  const targetPanel = document.getElementById('view-' + viewName);
-  const targetBtn = document.getElementById('tab-' + viewName + '-btn');
-
-  if (targetPanel) targetPanel.classList.add('active-panel');
-  if (targetBtn) targetBtn.classList.add('active');
-
-  if (viewName === 'slip') {
-    updatePayslip();
-  }
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function prepareAndPrint() {
-  switchView('slip');
-  setTimeout(() => {
-    window.print();
-  }, 250);
-}
-
-// ==========================================================================
-// 7. ตารางลงเวลา IN-OUT (Time Tracking & OT Sheet)
-// ==========================================================================
 function updateRowOT(row) {
   if (!row.workDay || !row.outTime) {
     row.ot = 0;
@@ -245,55 +380,52 @@ function updateRowOT(row) {
   const dayInfo = getOrbrayDayInfo(row.date);
 
   if (dayInfo.isWorkDay) {
-    // วันทำงานปกติ: OT นับเป็น OT 1.5
     row.ot = getOTFromTimeOut(row.outTime);
     row.hol = 0;
     row.otHol = 0;
   } else {
-    // วันหยุด / วันอาทิตย์ / เสาร์หยุด / นักขัตฤกษ์:
     row.ot = 0;
-
     const parts = row.outTime.split(':');
     const h = parseInt(parts[0], 10);
     const m = parseInt(parts[1], 10);
     const totalMinutes = h * 60 + m;
 
-    const normalEndMinutes = 17 * 60; // 17:00
-    const startMinutes = 8 * 60;      // 08:00
-    const lunchStart = 12 * 60;       // 12:00
-    const lunchEnd = 13 * 60;         // 13:00
+    const normalEndMinutes = 17 * 60;
+    const startMinutes = 8 * 60;
+    const lunchStart = 12 * 60;
+    const lunchEnd = 13 * 60;
 
     if (totalMinutes <= normalEndMinutes) {
-      // ทำงานช่วง 08:00 - 17:00 ในวันหยุด นับเป็น Holiday (OT 1.0)
       let workMins = 0;
       if (totalMinutes <= lunchStart) {
         workMins = totalMinutes - startMinutes;
       } else if (totalMinutes <= lunchEnd) {
-        workMins = lunchStart - startMinutes; // 4 ชม.
+        workMins = lunchStart - startMinutes;
       } else {
-        workMins = (totalMinutes - startMinutes) - 60; // หักพักเที่ยง 1 ชม.
+        workMins = (totalMinutes - startMinutes) - 60;
       }
       if (workMins < 0) workMins = 0;
-      row.hol = Math.floor((workMins / 60) * 2) / 2; // ปัดขั้น 0.5 ชม.
+      row.hol = Math.floor((workMins / 60) * 2) / 2;
       row.otHol = 0;
     } else {
-      // ทำงานเกิน 17:00 ในวันหยุด (ครบ 8 ชม. Holiday OT 1.0 + OT หลัง 17:00 เป็น OT Hol 3.0)
       row.hol = 8.0;
       row.otHol = getOTFromTimeOut(row.outTime);
     }
   }
 
-  // วันทำโอที: OT >= 1 ชม. (รวมทั้งวันปกติและวันหยุด)
   row.otDay = (row.ot >= 1 || row.hol >= 1 || row.otHol >= 1) ? 1 : 0;
 }
 
+// ==========================================================================
+// 7. การสร้างและจัดการตารางเข้า-ออกงาน (Timesheet Table)
+// ==========================================================================
 function buildAttendanceTable() {
   const tbody = document.getElementById('attendanceTbody');
+  if (!tbody) return;
   tbody.innerHTML = '';
 
   const thaiDays = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 
-  // ตัวเลือกเวลาออกสำหรับวันอาทิตย์ / วันหยุด (ตั้งแต่ 08:30 ทุก 30 นาที จนถึง 19:20)
   const sundayOutOptions = [
     '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00',
     '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00',
@@ -301,7 +433,6 @@ function buildAttendanceTable() {
     '19:00', '19:20'
   ];
 
-  // ตัวเลือกเวลาออกสำหรับวันทำงานปกติ
   const normalOutOptions = [
     '17:00', '17:30', '17:50', '18:20', '18:50', '19:20', '19:50'
   ];
@@ -369,18 +500,10 @@ function onAttendanceTimeChange(index, field, value) {
   if (field === 'out') {
     row.outTime = value ? value.trim() : '';
   }
-
   updateRowOT(row);
   buildAttendanceTable();
   recalculateSalary();
-}
-
-function onAttendanceManualOT(index, field, val) {
-  currentAttendance[index][field] = parseFloat(val) || 0;
-  const row = currentAttendance[index];
-  row.otDay = (row.ot >= 1 || row.hol >= 1 || row.otHol >= 1) ? 1 : 0;
-  recalculateAttendanceTotals();
-  recalculateSalary();
+  saveCurrentAttendance();
 }
 
 function onAttendanceToggleWorkDay(index, isChecked) {
@@ -405,6 +528,7 @@ function onAttendanceToggleWorkDay(index, isChecked) {
 
   buildAttendanceTable();
   recalculateSalary();
+  saveCurrentAttendance();
 }
 
 function recalculateAttendanceTotals() {
@@ -424,101 +548,23 @@ function recalculateAttendanceTotals() {
     totalOTDays += parseInt(row.otDay, 10) || 0;
   });
 
-  // แสดงผลในแถวสรุปท้ายตาราง IN-OUT
-  document.getElementById('attTotalOT15').innerText = totalOT15.toFixed(1);
-  document.getElementById('attTotalHol').innerText = totalHol.toFixed(1);
-  document.getElementById('attTotalOTHol').innerText = totalOTHol.toFixed(1);
-  document.getElementById('attTotalTargetDays').innerText = totalTargetDays;
-  document.getElementById('attTotalCameDays').innerText = totalCameDays;
-  document.getElementById('attTotalOTDays').innerText = totalOTDays;
+  const elOT15 = document.getElementById('attTotalOT15');
+  const elHol = document.getElementById('attTotalHol');
+  const elOTHol = document.getElementById('attTotalOTHol');
+  const elTarget = document.getElementById('attTotalTargetDays');
+  const elCame = document.getElementById('attTotalCameDays');
+  const elOTDays = document.getElementById('attTotalOTDays');
+
+  if (elOT15) elOT15.innerText = totalOT15.toFixed(1);
+  if (elHol) elHol.innerText = totalHol.toFixed(1);
+  if (elOTHol) elOTHol.innerText = totalOTHol.toFixed(1);
+  if (elTarget) elTarget.innerText = totalTargetDays;
+  if (elCame) elCame.innerText = totalCameDays;
+  if (elOTDays) elOTDays.innerText = totalOTDays;
 
   return { totalOT15, totalHol, totalOTHol, totalTargetDays, totalCameDays, totalOTDays };
 }
 
-// โหลดข้อมูลตัวอย่างจากไฟล์ Excel
-function loadAttendanceFromExcel() {
-  currentAttendance = JSON.parse(JSON.stringify(EXCEL_SAMPLE_ATTENDANCE));
-  salaryProfile.periodMonth = 'กันยายน';
-  salaryProfile.payDate = '30/09/2569';
-  buildAttendanceTable();
-  recalculateSalary();
-  alert('โหลดข้อมูลลงเวลา 31 วันจากไฟล์ Excel DATA SALARY 210826-200926.xlsx สำเร็จแล้ว!');
-}
-
-// โหลดข้อมูลตามสลิปสิงหาคม 2569
-function loadAttendanceFromAugSlip() {
-  // สร้างตาราง 21 ก.ค. - 20 ส.ค. 2569
-  generateAttendanceForPeriod('2026-07-21', '2026-08-20');
-  // ปรับยอด OT ให้ตรงกับสลิป (OT1.5=26.5, OT1=8, OT3=2)
-  let assigned15 = 26.5;
-  let assigned1 = 8.0;
-  let assigned3 = 2.0;
-
-  currentAttendance.forEach(row => {
-    const dayInfo = getOrbrayDayInfo(row.date);
-    if (dayInfo.isWorkDay) {
-      row.workDay = 1;
-      row.come = 1;
-      row.inTime = '08:00';
-      row.outTime = '17:00';
-    } else {
-      row.workDay = 0;
-      row.come = 0;
-      row.inTime = '';
-      row.outTime = '';
-    }
-  });
-
-  // เสาร์ 8 ส.ค. ทำงานวันหยุด 8 ชม. + OT 2 ชม.
-  let satHol = currentAttendance.find(r => r.date === '2026-08-08');
-  if (satHol) {
-    satHol.inTime = '08:00';
-    satHol.outTime = '19:20';
-    satHol.come = 1;
-    satHol.hol = 8;
-    satHol.otHol = 2;
-    satHol.workDay = 1;
-    satHol.otDay = 1;
-  }
-
-  // กระจาย OT 1.5 ให้ได้ 26.5 ชม.
-  let needed = 26.5;
-  for (let r of currentAttendance) {
-    if (needed <= 0) break;
-    const dayInfo = getOrbrayDayInfo(r.date);
-    if (dayInfo.isWorkDay) {
-      if (needed >= 2) {
-        r.outTime = '19:20';
-        r.ot = 2.0;
-        r.otDay = 1;
-        needed -= 2;
-      } else if (needed >= 1.5) {
-        r.outTime = '18:50';
-        r.ot = 1.5;
-        r.otDay = 1;
-        needed -= 1.5;
-      } else if (needed >= 1) {
-        r.outTime = '18:20';
-        r.ot = 1.0;
-        r.otDay = 1;
-        needed -= 1;
-      } else if (needed >= 0.5) {
-        r.outTime = '17:50';
-        r.ot = 0.5;
-        needed -= 0.5;
-      }
-    }
-  }
-
-  salaryProfile.periodMonth = 'สิงหาคม';
-  salaryProfile.payDate = '31/08/2569';
-
-  buildAttendanceTable();
-  recalculateSalary();
-  alert('โหลดข้อมูลสลิปเงินเดือนประจำเดือนสิงหาคม 2569 เรียบร้อยแล้ว!');
-}
-
-// เติมวันทำงานปกติครบทุกวัน
 function autoFillNormalWorkdays() {
   currentAttendance.forEach(row => {
     const dayInfo = getOrbrayDayInfo(row.date);
@@ -544,9 +590,9 @@ function autoFillNormalWorkdays() {
   });
   buildAttendanceTable();
   recalculateSalary();
+  saveCurrentAttendance();
 }
 
-// ล้างเวลาทั้งหมด
 function clearAttendanceTable() {
   if (!confirm('คุณต้องการล้างข้อมูลเวลาทั้งหมดในตารางใช่หรือไม่?')) return;
   currentAttendance.forEach(row => {
@@ -561,9 +607,9 @@ function clearAttendanceTable() {
   });
   buildAttendanceTable();
   recalculateSalary();
+  saveCurrentAttendance();
 }
 
-// สร้างตารางช่วงวันที่สำหรับรอบที่เลือก
 function generateAttendanceForPeriod(startStr, endStr) {
   const rows = [];
   let cur = new Date(startStr);
@@ -588,359 +634,1375 @@ function generateAttendanceForPeriod(startStr, endStr) {
   currentAttendance = rows;
 }
 
+function saveCurrentAttendance() {
+  if (currentPeriod && currentAttendance) {
+    saveAttendanceToStorage(currentPeriod.id, currentAttendance);
+  }
+}
+
+function loadAttendanceFromExcel() {
+  currentAttendance = JSON.parse(JSON.stringify(EXCEL_SAMPLE_ATTENDANCE));
+  salaryProfile.periodMonth = 'กันยายน';
+  salaryProfile.payDate = '30/09/2569';
+  buildAttendanceTable();
+  recalculateSalary();
+  saveCurrentAttendance();
+  alert('โหลดข้อมูลลงเวลา 31 วันจากไฟล์ Excel DATA SALARY 210826-200926.xlsx สำเร็จแล้ว!');
+}
+
 // ==========================================================================
-// 8. ระบบคำนวณเงินเดือนตามสูตรชีต CAL SALARY ใน Excel
+// 8. ระบบคำนวณเงินเดือนตามสูตร Excel (Salary Calculation Engine)
 // ==========================================================================
 function recalculateSalary() {
   const totals = recalculateAttendanceTotals();
 
-  const B2_targetDays = totals.totalTargetDays; // จำนวนวัน (ในเดือนนี้)
-  const D2_cameDays = totals.totalCameDays;     // จำนวนวัน (ที่มาทำงาน)
-  const F2_otDays = totals.totalOTDays;         // จำนวนวัน (ทำโอที >= 1 ชม.)
-  const G2_ot15Hours = totals.totalOT15;        // จำนวนชั่วโมง (OT*1.5)
-  const H2_ot1Hours = totals.totalHol;          // จำนวนชั่วโมง (OT*1 / Holiday)
-  const I2_ot3Hours = totals.totalOTHol;        // จำนวนชั่วโมง (OT*3 / OT Holiday)
+  const B2_targetDays = totals.totalTargetDays;
+  const D2_cameDays = totals.totalCameDays;
+  const F2_otDays = totals.totalOTDays;
+  const G2_ot15Hours = totals.totalOT15;
+  const H2_ot1Hours = totals.totalHol;
+  const I2_ot3Hours = totals.totalOTHol;
 
-  // C2: เงินที่ได้ต่อวัน = A2 / B2
+  const baseSalary = Number(currentSalaryConfig.baseSalary) || 0;
+  const diligenceFullAmount = Number(currentSalaryConfig.diligenceFullAmount) || 0;
+  const transportationAllowance = Number(currentSalaryConfig.transportationAllowance) || 0;
+  const foodPerDay = Number(currentSalaryConfig.foodPerDay) || 0;
+  const otMealPerDay = Number(currentSalaryConfig.otMealPerDay) || 0;
+  const otDivisor = Number(currentSalaryConfig.otDivisorHours) || 240;
+  const ot15Multiplier = Number(currentSalaryConfig.ot15Multiplier) || 1.5;
+  const ot1Multiplier = Number(currentSalaryConfig.ot1Multiplier) || 1.0;
+  const ot3Multiplier = Number(currentSalaryConfig.ot3Multiplier) || 3.0;
+  const ssoDeduction = Number(currentSalaryConfig.ssoDeduction) || 875;
+
   const C2_dailyRate = B2_targetDays > 0 ? (baseSalary / B2_targetDays) : 0;
-
-  // E2: เงินที่ได้ทั้งหมด (ไม่รวมโอที) = C2 * D2
   const E2_actualSalary = (B2_targetDays > 0 && D2_cameDays >= B2_targetDays)
     ? baseSalary
     : Math.round(C2_dailyRate * D2_cameDays);
 
-  // J2: ค่าอาหาร = 20 * D2
-  const J2_foodAllowance = 20 * D2_cameDays;
-
-  // K2: อาหารโอที = 15 * F2
-  const K2_otMealAllowance = 15 * F2_otDays;
-
-  // L2: เงินช่วยเหลือค่าเดินทาง = 1,230 บาท
+  const J2_foodAllowance = foodPerDay * D2_cameDays;
+  const K2_otMealAllowance = otMealPerDay * F2_otDays;
   const L2_travelAllowance = transportationAllowance;
-
-  // M2: เบี้ยขยัน = IF(B2=D2, 650, 0)
   const M2_diligenceAllowance = (B2_targetDays > 0 && D2_cameDays >= B2_targetDays) ? diligenceFullAmount : 0;
 
-  // อัตราต่อชั่วโมงสำหรับการคิด OT: (A2 / 30 / 8) = A2 / 240
-  const hourlyOTRate = baseSalary / 240;
-
-  // N2: OT*1.5 = (A2 / 240) * (1.5 * G2) ปัดเศษตามความเหมาะสม
-  const N2_ot15Amount = Math.round(hourlyOTRate * 1.5 * G2_ot15Hours);
-
-  // O2: OT*1 = (A2 / 240) * (1 * H2) ปัดเศษตามความเหมาะสม (เช่น 666.67 -> 667)
-  const O2_ot1Amount = Math.round(hourlyOTRate * 1.0 * H2_ot1Hours);
-
-  // P2: OT*3 = (A2 / 240) * (3 * I2) ปัดเศษตามความเหมาะสม
-  const P2_ot3Amount = Math.round(hourlyOTRate * 3.0 * I2_ot3Hours);
-
-  // Q2: ประกันสังคม = 875 บาท
+  const hourlyOTRate = otDivisor > 0 ? (baseSalary / otDivisor) : 0;
+  const N2_ot15Amount = Math.round(hourlyOTRate * ot15Multiplier * G2_ot15Hours);
+  const O2_ot1Amount = Math.round(hourlyOTRate * ot1Multiplier * H2_ot1Hours);
+  const P2_ot3Amount = Math.round(hourlyOTRate * ot3Multiplier * I2_ot3Hours);
   const Q2_sso = ssoDeduction;
 
-  // รวมเงินได้ (Earnings)
-  const totalEarnings = E2_actualSalary + J2_foodAllowance + K2_otMealAllowance + L2_travelAllowance + 
+  const totalEarnings = E2_actualSalary + J2_foodAllowance + K2_otMealAllowance + L2_travelAllowance +
                         M2_diligenceAllowance + N2_ot15Amount + O2_ot1Amount + P2_ot3Amount;
-
-  // รวมเงินหัก (Deductions)
   const totalDeductions = Q2_sso;
-
-  // เงินได้สุทธิ (Net Pay)
   const netPay = totalEarnings - totalDeductions;
 
-  // อัปเดตค่าแสดงผลใน UI หน้าคำนวณ
-  document.getElementById('calcBaseSalary').innerText = formatCurrency(baseSalary);
-  document.getElementById('calcTargetDays').innerText = B2_targetDays;
-  document.getElementById('calcDailyRate').innerText = formatCurrency(C2_dailyRate);
-  document.getElementById('calcCameDays').innerText = D2_cameDays;
-  document.getElementById('calcActualSalary').innerText = formatCurrency(E2_actualSalary);
+  // อัปเดตการ์ด Dashboard ด้านบน
+  const elTotalIncome = document.getElementById('dashTotalIncome');
+  const elTotalDeduct = document.getElementById('dashTotalDeduct');
+  const elNetPay = document.getElementById('dashNetPay');
+  if (elTotalIncome) elTotalIncome.innerText = formatCurrency(totalEarnings);
+  if (elTotalDeduct) elTotalDeduct.innerText = formatCurrency(totalDeductions);
+  if (elNetPay) elNetPay.innerText = formatCurrency(netPay);
 
-  document.getElementById('calcFoodDays').innerText = D2_cameDays;
-  document.getElementById('calcFoodTotal').innerText = formatCurrency(J2_foodAllowance);
+  // อัปเดต Hero Header สถิติสำคัญ
+  setElText('heroTargetDays', B2_targetDays);
+  setElText('heroNetPay', formatCurrency(netPay));
+  const totalOTHours = (G2_ot15Hours + H2_ot1Hours + I2_ot3Hours).toFixed(1);
+  setElText('heroTotalOTHours', totalOTHours);
 
-  document.getElementById('calcOTMealDays').innerText = F2_otDays;
-  document.getElementById('calcOTMealTotal').innerText = formatCurrency(K2_otMealAllowance);
+  // อัปเดตรายการคำนวณเงินเดือนในการ์ด (รูปที่ 2)
+  setElText('calcBaseSalary', formatCurrency(baseSalary));
+  setElText('calcTargetDays', B2_targetDays);
+  setElText('calcDailyRate', formatCurrency(C2_dailyRate));
+  setElText('calcCameDays', D2_cameDays);
+  setElText('calcActualSalary', formatCurrency(E2_actualSalary));
 
-  document.getElementById('calcTravelTotal').innerText = formatCurrency(L2_travelAllowance);
+  setElText('calcFoodDays', D2_cameDays);
+  setElText('calcFoodTotal', formatCurrency(J2_foodAllowance));
 
-  document.getElementById('calcDiligenceStatus').innerText = (B2_targetDays > 0 && D2_cameDays >= B2_targetDays) ? 'ครบวันทำงาน' : 'ไม่ครบวันทำงาน';
-  document.getElementById('calcDiligenceTotal').innerText = formatCurrency(M2_diligenceAllowance);
+  setElText('calcOTMealDays', F2_otDays);
+  setElText('calcOTMealTotal', formatCurrency(K2_otMealAllowance));
 
-  document.getElementById('calcHourlyOTRate').innerText = formatCurrency(hourlyOTRate);
-  document.getElementById('calcOT15Hours').innerText = G2_ot15Hours.toFixed(1);
-  document.getElementById('calcOT15Total').innerText = formatCurrency(N2_ot15Amount);
+  setElText('calcTravelTotal', formatCurrency(L2_travelAllowance));
 
-  document.getElementById('calcOT1Hours').innerText = H2_ot1Hours.toFixed(1);
-  document.getElementById('calcOT1Total').innerText = formatCurrency(O2_ot1Amount);
+  const diligenceStatusEl = document.getElementById('calcDiligenceStatus');
+  if (diligenceStatusEl) {
+    if (B2_targetDays > 0 && D2_cameDays >= B2_targetDays) {
+      diligenceStatusEl.innerText = 'ครบวันทำงาน';
+      diligenceStatusEl.className = 'badge-status-ok';
+    } else {
+      diligenceStatusEl.innerText = 'ขาด/ไม่ครบวันทำงาน';
+      diligenceStatusEl.className = 'day-badge badge-sunday';
+    }
+  }
+  setElText('calcDiligenceTotal', formatCurrency(M2_diligenceAllowance));
 
-  document.getElementById('calcOT3Hours').innerText = I2_ot3Hours.toFixed(1);
-  document.getElementById('calcOT3Total').innerText = formatCurrency(P2_ot3Amount);
+  setElText('calcHourlyOTRate', formatCurrency(hourlyOTRate));
+  setElText('calcOT15Hours', G2_ot15Hours.toFixed(1));
+  setElText('calcOT15Total', formatCurrency(N2_ot15Amount));
 
-  document.getElementById('calcSSOTotal').innerText = formatCurrency(Q2_sso);
+  setElText('calcOT1Hours', H2_ot1Hours.toFixed(1));
+  setElText('calcOT1Total', formatCurrency(O2_ot1Amount));
 
-  // สรุปบน Dashboard Cards
-  document.getElementById('dashTotalIncome').innerText = formatCurrency(totalEarnings);
-  document.getElementById('dashTotalDeduct').innerText = formatCurrency(totalDeductions);
-  document.getElementById('dashNetPay').innerText = formatCurrency(netPay);
+  setElText('calcOT3Hours', I2_ot3Hours.toFixed(1));
+  setElText('calcOT3Total', formatCurrency(P2_ot3Amount));
 
-  // ซิงค์ไปยังใบแจ้งรายได้
+  setElText('calcSSOTotal', `-${formatCurrency(Q2_sso)}`);
+  setElText('calcSumIncome', formatCurrency(totalEarnings));
+  setElText('calcSumDeduct', `-${formatCurrency(totalDeductions)}`);
+  setElText('calcGrandNetPay', `${formatCurrency(netPay)} บาท`);
+  setElText('cardPayDateDisplay', salaryProfile.payDate || '-');
+
+  // ปรับปรุงข้อความระบุอัตราบนหน้าจอให้ตรงกับการตั้งค่าปัจจุบัน
+  updateRateLabelsOnCards();
+
   updatePayslip({
-    salary: E2_actualSalary,
+    actualSalary: E2_actualSalary,
+    diligence: M2_diligenceAllowance,
+    travel: L2_travelAllowance,
     food: J2_foodAllowance,
     otMeal: K2_otMealAllowance,
-    travel: L2_travelAllowance,
-    diligence: M2_diligenceAllowance,
     ot15: N2_ot15Amount,
     ot1: O2_ot1Amount,
     ot3: P2_ot3Amount,
-    sso: Q2_sso,
     totalEarnings,
     totalDeductions,
     netPay
   });
 }
 
-// ==========================================================================
-// 9. อัปเดตข้อมูลใบแจ้งรายได้ (Payslip Preview & Print)
-// ==========================================================================
-function updatePayslip(calcData) {
-  // ซิงค์ข้อมูลส่วนหัว
-  document.getElementById('slipCompanyName').innerText = salaryProfile.companyName;
-  document.getElementById('slipEmpName').innerText = salaryProfile.empName;
-  document.getElementById('slipDepartment').innerText = salaryProfile.department;
-  document.getElementById('slipEmpType').innerText = salaryProfile.empType;
-  document.getElementById('slipBankAccount').innerText = salaryProfile.bankAccount;
-  document.getElementById('slipPeriodMonth').innerText = salaryProfile.periodMonth;
-  document.getElementById('slipPeriodRound').innerText = salaryProfile.periodRound;
-  document.getElementById('slipPayDate').innerText = salaryProfile.payDate;
-  document.getElementById('slipUserName').innerText = salaryProfile.userName;
-  document.getElementById('slipPrintDate').innerText = salaryProfile.printDate;
+function updateRateLabelsOnCards() {
+  setElText('lblRateDiligence', formatCurrency(currentSalaryConfig.diligenceFullAmount));
+  setElText('lblFoodTitle', `ค่าอาหาร (${currentSalaryConfig.foodPerDay} บ./วัน)`);
+  setElText('lblFoodPerDay', currentSalaryConfig.foodPerDay);
+  setElText('lblOTMealTitle', `อาหารโอที (${currentSalaryConfig.otMealPerDay} บ./วัน)`);
+  setElText('lblOTMealPerDay', currentSalaryConfig.otMealPerDay);
+  setElText('calcTravelTotal', formatCurrency(currentSalaryConfig.transportationAllowance));
+  
+  const baseFormatted = formatCurrency(currentSalaryConfig.baseSalary);
+  const div = currentSalaryConfig.otDivisorHours;
+  setElText('lblOT15Title', `ค่าล่วงเวลา OT ${currentSalaryConfig.ot15Multiplier} เท่า (วันปกติ)`);
+  setElText('lblOT15Mult', currentSalaryConfig.ot15Multiplier);
+  setElText('lblOT15Base', baseFormatted);
+  setElText('lblOT15Divisor', div);
 
-  if (!calcData) return;
+  setElText('lblOT1Title', `ค่าล่วงเวลา OT ${currentSalaryConfig.ot1Multiplier} เท่า (วันหยุด 8 ชม.)`);
+  setElText('lblOT1Mult', currentSalaryConfig.ot1Multiplier);
+  setElText('lblOT1Base', baseFormatted);
+  setElText('lblOT1Divisor', div);
 
-  // คอลัมน์ที่ 1: รายการเงินได้
+  setElText('lblOT3Title', `ค่าล่วงเวลา OT ${currentSalaryConfig.ot3Multiplier} เท่า (วันหยุดหลัง 17:00)`);
+  setElText('lblOT3Mult', currentSalaryConfig.ot3Multiplier);
+  setElText('lblOT3Base', baseFormatted);
+  setElText('lblOT3Divisor', div);
+
+  setElText('lblSSOMaxBase', formatCurrency(currentSalaryConfig.ssoMaxBase));
+}
+
+function updatePayslip(calc) {
+  setElText('slipPeriodMonth', salaryProfile.periodMonth);
+  setElText('slipPayDate', salaryProfile.payDate);
+  setElText('slipCompanyName', salaryProfile.companyName || 'CACULATION SALARY');
+  setElText('slipEmpCode', salaryProfile.empCode || '-');
+  setElText('slipEmpName', salaryProfile.empName || '-');
+  setElText('slipDepartment', salaryProfile.department || '-');
+
   const tbodyIncome = document.getElementById('slipIncomeRows');
-  tbodyIncome.innerHTML = '';
+  if (tbodyIncome) {
+    const items = [
+      { name: 'เงินเดือน', amount: calc.actualSalary },
+      { name: 'เบี้ยขยัน', amount: calc.diligence },
+      { name: 'เงินช่วยเหลือค่าเดินทาง', amount: calc.travel },
+      { name: 'ค่าอาหาร', amount: calc.food },
+      { name: 'อาหารโอที', amount: calc.otMeal },
+      { name: 'OT*1.5', amount: calc.ot15 },
+      { name: 'OT*1', amount: calc.ot1 },
+      { name: 'OT*3', amount: calc.ot3 }
+    ];
 
-  const incomeItems = [
-    { name: 'อาหาร', amount: calcData.food },
-    { name: 'อาหารโอที', amount: calcData.otMeal },
-    { name: 'เงินช่วยเหลือค่าเดินทาง', amount: calcData.travel },
-    { name: 'เบี้ยขยัน', amount: calcData.diligence },
-    { name: 'OT*1.5', amount: calcData.ot15 },
-    { name: 'OT*1', amount: calcData.ot1 },
-    { name: 'OT*3', amount: calcData.ot3 },
-    { name: 'เงินเดือน', amount: calcData.salary }
-  ];
+    tbodyIncome.innerHTML = '';
+    items.forEach(item => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${item.name}</td><td class="text-right">${formatCurrency(item.amount)}</td>`;
+      tbodyIncome.appendChild(tr);
+    });
+  }
 
-  incomeItems.forEach(item => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${item.name}</td>
-      <td class="text-right">${formatCurrency(item.amount)}</td>
-    `;
-    tbodyIncome.appendChild(tr);
-  });
-
-  // คอลัมน์ที่ 2: รายการเงินหัก
   const tbodyDeduct = document.getElementById('slipDeductRows');
-  tbodyDeduct.innerHTML = '';
-  const trDeduct = document.createElement('tr');
-  trDeduct.innerHTML = `
-    <td>ประกันสังคมหักจากพนักงาน</td>
-    <td class="text-right text-deduct-highlight">${formatCurrency(calcData.sso)}</td>
-  `;
-  tbodyDeduct.appendChild(trDeduct);
-
-  // สรุปแถบด้านล่าง
-  document.getElementById('slipTotalIncome').innerText = formatCurrency(calcData.totalEarnings);
-  document.getElementById('slipTotalDeduct').innerText = formatCurrency(calcData.totalDeductions);
-  document.getElementById('slipNetPay').innerText = formatCurrency(calcData.netPay);
-
-  // คอลัมน์ที่ 3: ค่าลดหย่อน
-  document.getElementById('slipTaxDedPerson').innerText = formatCurrency(taxAllowances.personal);
-  document.getElementById('slipTaxDedExpense').innerText = formatCurrency(taxAllowances.expenses);
-  document.getElementById('slipTaxDedSSO').innerText = formatCurrency(taxAllowances.sso);
-  document.getElementById('slipTotalTaxDed').innerText = formatCurrency(taxAllowances.personal + taxAllowances.expenses + taxAllowances.sso);
-
-  // คอลัมน์ที่ 3: รายการเงินสะสม
-  document.getElementById('slipAccIncome').innerText = formatCurrency(accumulatedData.income);
-  document.getElementById('slipAccTaxEmp').innerText = formatCurrency(accumulatedData.taxEmp);
-  document.getElementById('slipAccTaxComp').innerText = formatCurrency(accumulatedData.taxComp);
-  document.getElementById('slipAccSSO').innerText = formatCurrency(accumulatedData.sso);
-  document.getElementById('slipAccFundEmp').innerText = formatCurrency(accumulatedData.fundEmp);
-  document.getElementById('slipAccFundComp').innerText = formatCurrency(accumulatedData.fundComp);
-}
-
-// ==========================================================================
-// 10. สร้างปฏิทินบริษัท Orbray 2569 ครบทั้ง 12 เดือน (Orbray Calendar Grid)
-// ==========================================================================
-function renderOrbrayCalendarGrid() {
-  const container = document.getElementById('orbrayCalendarGrid');
-  if (!container) return;
-  container.innerHTML = '';
-
-  const monthNamesEn = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
-  const monthNamesTh = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-
-  for (let m = 0; m < 12; m++) {
-    const card = document.createElement('div');
-    card.className = 'cal-month-card';
-
-    const monthHeader = document.createElement('div');
-    monthHeader.className = 'cal-month-header';
-    monthHeader.innerHTML = `
-      <div>
-        <h3>${monthNamesEn[m]}</h3>
-        <span class="th-name">${monthNamesTh[m]} 2569</span>
-      </div>
-      <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectPeriodMonth(${m + 1})">
-        คำนวณงวดนี้
-      </button>
-    `;
-    card.appendChild(monthHeader);
-
-    // ตารางปฏิทิน
-    const table = document.createElement('table');
-    table.className = 'cal-mini-table';
-    table.innerHTML = `
-      <thead>
-        <tr>
-          <th class="col-sun">S</th>
-          <th>M</th>
-          <th>T</th>
-          <th>W</th>
-          <th>TH</th>
-          <th>F</th>
-          <th>S</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    `;
-
-    const tbody = table.querySelector('tbody');
-    const firstDay = new Date(2026, m, 1);
-    const lastDay = new Date(2026, m + 1, 0);
-    const startDayOfWeek = firstDay.getDay(); // 0 = Sun
-    const totalDays = lastDay.getDate();
-
-    let tr = document.createElement('tr');
-    // วันว่างก่อนวันที่ 1
-    for (let i = 0; i < startDayOfWeek; i++) {
-      tr.appendChild(document.createElement('td'));
-    }
-
-    for (let day = 1; day <= totalDays; day++) {
-      const dStr = `2026-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const dayInfo = getOrbrayDayInfo(dStr);
-
-      const td = document.createElement('td');
-      td.className = 'cal-day-cell';
-
-      const span = document.createElement('span');
-      span.className = 'cal-day-num';
-      span.innerText = day;
-
-      // แต่งสไตล์ตามประเภทวันให้ตรงกับภาพปฏิทิน
-      if (dayInfo.type === 'NATIONAL_HOLIDAY') {
-        span.classList.add('day-national-holiday');
-        td.title = dayInfo.name;
-      } else if (dayInfo.type === 'MEMORIAL_HOLIDAY') {
-        span.classList.add('day-memorial-holiday');
-        td.title = dayInfo.name;
-      } else if (dayInfo.type === 'ORBRAY_WORKDAY') {
-        span.classList.add('day-orbray-work');
-        td.title = dayInfo.name;
-      } else if (dayInfo.type === 'SATURDAY_HOLIDAY' || dayInfo.type === 'BRIDGE_HOLIDAY') {
-        span.classList.add('day-sat-holiday');
-        td.title = dayInfo.name;
-      } else if (dayInfo.type === 'SUNDAY') {
-        span.classList.add('day-sunday');
-      } else if (dayInfo.type === 'WORKING_SATURDAY') {
-        span.classList.add('day-working-sat');
-        td.title = 'วันเสาร์ทำงานปกติ';
-      }
-
-      td.appendChild(span);
-      tr.appendChild(td);
-
-      if ((startDayOfWeek + day) % 7 === 0 || day === totalDays) {
-        tbody.appendChild(tr);
-        tr = document.createElement('tr');
-      }
-    }
-
-    card.appendChild(table);
-    container.appendChild(card);
-  }
-}
-
-// เลือกงวดเดือนจากปฏิทิน
-function selectPeriodMonth(monthNumber) {
-  const periodId = `2026-${String(monthNumber).padStart(2, '0')}`;
-  const found = PAYROLL_PERIODS_2026.find(p => p.id === periodId);
-  if (!found) return;
-
-  currentPeriod = found;
-  document.getElementById('payrollPeriodSelect').value = found.id;
-  onPayrollPeriodSelectChange();
-  switchView('timesheet');
-}
-
-function onPayrollPeriodSelectChange() {
-  const select = document.getElementById('payrollPeriodSelect');
-  const found = PAYROLL_PERIODS_2026.find(p => p.id === select.value);
-  if (!found) return;
-
-  currentPeriod = found;
-  salaryProfile.periodMonth = found.monthName.split(' ')[0];
-  salaryProfile.payDate = found.payDate;
-
-  // ถ้าเลือกงวดกันยายน ให้โหลดข้อมูลตัวอย่างจากไฟล์ Excel
-  if (found.id === '2026-09') {
-    currentAttendance = JSON.parse(JSON.stringify(EXCEL_SAMPLE_ATTENDANCE));
-  } else {
-    // สร้างตารางวันสำหรับรอบวิกนั้น
-    generateAttendanceForPeriod(found.startDate, found.endDate);
-    autoFillNormalWorkdays();
+  if (tbodyDeduct) {
+    tbodyDeduct.innerHTML = `<tr><td>ประกันสังคม</td><td class="text-right">${formatCurrency(calc.totalDeductions)}</td></tr>`;
   }
 
-  buildAttendanceTable();
-  recalculateSalary();
+  setElText('slipTotalIncome', formatCurrency(calc.totalEarnings));
+  setElText('slipTotalDeduct', formatCurrency(calc.totalDeductions));
+  setElText('slipNetPay', formatCurrency(calc.netPay));
 }
 
-// ==========================================================================
-// 11. ฟังก์ชันช่วยเหลือและเริ่มต้นระบบ (Helpers & Initialization)
-// ==========================================================================
+function setElText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.innerText = text;
+}
+
 function formatCurrency(val) {
   const num = parseFloat(val);
   if (isNaN(num)) return '0.00';
   return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function updateBaseSalaryInput(val) {
-  baseSalary = parseFloat(val) || 20000;
+// ==========================================================================
+// 9. ระบบจัดการปฏิทินแบบเพิ่มปี (Dynamic Multi-Year Calendar UI)
+// ==========================================================================
+function renderOrbrayCalendarGrid() {
+  const grid = document.getElementById('orbrayCalendarGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  const cal = allCalendars[activeYearCE] || allCalendars['2026'];
+  const yearCE = cal.yearCE;
+  const yearBE = cal.yearBE;
+
+  setElText('calHeaderYear', `${yearBE} / ${yearCE}`);
+
+  const deleteBtn = document.getElementById('btnDeleteCurrentYear');
+  if (deleteBtn) {
+    deleteBtn.style.display = (yearCE === 2026 && Object.keys(allCalendars).length <= 1) ? 'none' : 'inline-flex';
+  }
+
+  const thaiDayHeaders = ['S', 'M', 'T', 'W', 'TH', 'F', 'S'];
+
+  for (let m = 0; m < 12; m++) {
+    const monthCard = document.createElement('div');
+    monthCard.className = 'cal-month-card';
+
+    const lastDay = getLastDayOfMonth(yearCE, m);
+    const firstDayDate = new Date(yearCE, m, 1);
+    const firstDayOfWeek = firstDayDate.getDay();
+
+    const monthNum = m + 1;
+    const periodId = `${yearCE}-${formatDay2Digit(monthNum)}`;
+
+    let html = `
+      <div class="cal-month-header">
+        <div>
+          <h3>${m + 1}. ${THAI_MONTHS[m]}</h3>
+          <span class="th-name">${yearBE}</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-primary" onclick="selectPeriodMonth('${periodId}')" title="เลือกงวดนี้">
+          คำนวณงวดนี้
+        </button>
+      </div>
+      <table class="cal-mini-table">
+        <thead>
+          <tr>
+            ${thaiDayHeaders.map((dh, i) => `<th class="${i === 0 ? 'col-sun' : ''}">${dh}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    let currentDay = 1;
+    for (let r = 0; r < 6; r++) {
+      if (currentDay > lastDay) break;
+      html += '<tr>';
+      for (let c = 0; c < 7; c++) {
+        if (r === 0 && c < firstDayOfWeek) {
+          html += '<td class="cal-day-cell"></td>';
+        } else if (currentDay > lastDay) {
+          html += '<td class="cal-day-cell"></td>';
+        } else {
+          const dateStr = `${yearCE}-${formatDay2Digit(m + 1)}-${formatDay2Digit(currentDay)}`;
+          const dayInfo = getOrbrayDayInfo(dateStr);
+          const customClass = dayInfo.calClass || '';
+
+          html += `
+            <td class="cal-day-cell">
+              <span class="cal-day-num ${customClass}" 
+                title="${dayInfo.name} (${dateStr})"
+                onclick="openEditDayModal('${dateStr}')">
+                ${currentDay}
+              </span>
+            </td>
+          `;
+          currentDay++;
+        }
+      }
+      html += '</tr>';
+    }
+
+    html += '</tbody></table>';
+    monthCard.innerHTML = html;
+    grid.appendChild(monthCard);
+  }
+}
+
+function updateYearSelectDropdown() {
+  const select = document.getElementById('appYearSelect');
+  if (!select) return;
+  select.innerHTML = '';
+
+  const years = Object.keys(allCalendars).map(Number).sort((a, b) => a - b);
+  years.forEach(y => {
+    const opt = document.createElement('option');
+    opt.value = y;
+    const cal = allCalendars[y];
+    opt.innerText = `พ.ศ. ${cal.yearBE} (${cal.yearCE})`;
+    if (y === activeYearCE) opt.selected = true;
+    select.appendChild(opt);
+  });
+}
+
+function onAppYearChange() {
+  const select = document.getElementById('appYearSelect');
+  if (!select) return;
+  activeYearCE = parseInt(select.value, 10);
+  saveCalendarsToStorage();
+
+  refreshPeriodSelector();
+  renderOrbrayCalendarGrid();
+}
+
+function refreshPeriodSelector() {
+  const select = document.getElementById('payrollPeriodSelect');
+  if (!select) return;
+  select.innerHTML = '';
+
+  const periods = generatePayrollPeriodsForYear(activeYearCE);
+  periods.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.innerText = `รอบ 21 ${p.startMonthName} – 20 ${p.endMonthName} ${p.yearBE} (จ่ายสิ้นเดือน ${p.payDate})`;
+    select.appendChild(opt);
+  });
+
+  const currentMonthNum = new Date().getMonth() + 1;
+  const matchPeriod = periods.find(p => p.monthIndex + 1 === currentMonthNum) || periods[0];
+  select.value = matchPeriod.id;
+  onPayrollPeriodSelectChange();
+}
+
+function onPayrollPeriodSelectChange() {
+  const select = document.getElementById('payrollPeriodSelect');
+  if (!select) return;
+  const periods = generatePayrollPeriodsForYear(activeYearCE);
+  const found = periods.find(p => p.id === select.value);
+  if (!found) return;
+
+  currentPeriod = found;
+  salaryProfile.periodMonth = found.monthName.split(' ')[0];
+  salaryProfile.payDate = found.payDate;
+
+  const savedAtt = loadAttendanceFromStorage(found.id);
+  if (savedAtt) {
+    currentAttendance = savedAtt;
+  } else if (found.id === '2026-09') {
+    currentAttendance = JSON.parse(JSON.stringify(EXCEL_SAMPLE_ATTENDANCE));
+  } else {
+    generateAttendanceForPeriod(found.startDate, found.endDate);
+    autoFillNormalWorkdays();
+  }
+
+  const periodSubtitle = document.getElementById('timesheetPeriodSubtitle');
+  if (periodSubtitle) {
+    periodSubtitle.innerText = `รอบ 21 ${found.startMonthName} – 20 ${found.endMonthName} ${found.yearBE} (ตัดรอบ ${found.startDate} ถึง ${found.endDate} | จ่ายสิ้นเดือน ${found.payDate})`;
+  }
+
+  const btnExcel = document.getElementById('btnLoadExcelSample');
+  if (btnExcel) {
+    btnExcel.style.display = (found.id === '2026-09') ? 'inline-flex' : 'none';
+  }
+
+  buildAttendanceTable();
   recalculateSalary();
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-  // สร้างตัวเลือกงวดการจ่าย
+function navPrevPeriod() {
+  const select = document.getElementById('payrollPeriodSelect');
+  if (!select || select.selectedIndex <= 0) return;
+  select.selectedIndex--;
+  onPayrollPeriodSelectChange();
+}
+
+function navNextPeriod() {
+  const select = document.getElementById('payrollPeriodSelect');
+  if (!select || select.selectedIndex >= select.options.length - 1) return;
+  select.selectedIndex++;
+  onPayrollPeriodSelectChange();
+}
+
+function selectPeriodMonth(periodId) {
   const select = document.getElementById('payrollPeriodSelect');
   if (select) {
-    select.innerHTML = '';
-    PAYROLL_PERIODS_2026.forEach(p => {
-      const opt = document.createElement('option');
-      opt.value = p.id;
-      opt.innerText = `งวด ${p.monthName} (ตัดรอบ ${p.startDate.split('-').slice(1).join('/')} - ${p.endDate.split('-').slice(1).join('/')} | จ่ายสิ้นเดือน ${p.payDate})`;
-      if (p.id === currentPeriod.id) opt.selected = true;
-      select.appendChild(opt);
-    });
+    select.value = periodId;
+    onPayrollPeriodSelectChange();
+  }
+  const calSection = document.getElementById('view-calendar');
+  const btnToggle = document.getElementById('btnToggleCalendar');
+  if (calSection) calSection.style.display = 'none';
+  if (btnToggle) btnToggle.innerText = '📅 ปฏิทินวันทำงาน';
+  const mainView = document.getElementById('view-main');
+  if (mainView) mainView.style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ==========================================================================
+// 10. ระบบเพิ่มปีปฏิทินใหม่ (Add Year Modal)
+// ==========================================================================
+function openAddYearModal() {
+  const nextBE = activeYearCE + 543 + 1;
+  const inpBE = document.getElementById('inpNewYearBE');
+  if (inpBE) inpBE.value = nextBE;
+  document.getElementById('addYearModal').style.display = 'flex';
+}
+
+function closeAddYearModal() {
+  document.getElementById('addYearModal').style.display = 'none';
+}
+
+function confirmAddNewYear() {
+  const inpBE = document.getElementById('inpNewYearBE');
+  const yearBE = parseInt(inpBE.value, 10);
+  if (!yearBE || yearBE < 2400 || yearBE > 3000) {
+    alert('กรุณาระบุปี พ.ศ. ให้ถูกต้อง');
+    return;
+  }
+  const yearCE = yearBE - 543;
+
+  if (allCalendars[yearCE]) {
+    alert(`ปี พ.ศ. ${yearBE} (${yearCE}) มีอยู่ในระบบแล้ว`);
+    activeYearCE = yearCE;
+    updateYearSelectDropdown();
+    onAppYearChange();
+    closeAddYearModal();
+    return;
   }
 
-  // สร้างตาราง IN-OUT
-  buildAttendanceTable();
+  const satPreset = document.getElementById('selSatPreset').value;
 
-  // สร้างปฏิทิน Orbray 2569
+  const newCal = {
+    yearCE,
+    yearBE,
+    title: `${yearBE} / ${yearCE}`,
+    nationalHolidays: [],
+    memorialHolidays: [],
+    bridgeHolidays: [],
+    orbrayWorkDays: [],
+    workingSaturdays: [],
+    customDayOverrides: {}
+  };
+
+  let cur = new Date(yearCE, 0, 1);
+  const end = new Date(yearCE, 11, 31);
+  let satIndex = 0;
+
+  while (cur <= end) {
+    if (cur.getDay() === 6) {
+      const dStr = cur.toISOString().split('T')[0];
+      if (satPreset === 'ALL_WORK') {
+        newCal.workingSaturdays.push(dStr);
+      } else if (satPreset === 'ALT_WORK') {
+        if (satIndex % 2 === 1) {
+          newCal.workingSaturdays.push(dStr);
+        }
+      }
+      satIndex++;
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  allCalendars[yearCE] = newCal;
+  activeYearCE = yearCE;
+  saveCalendarsToStorage();
+
+  updateYearSelectDropdown();
+  onAppYearChange();
+  closeAddYearModal();
+
+  alert(`เพิ่มปีปฏิทิน พ.ศ. ${yearBE} (${yearCE}) เรียบร้อยแล้ว! สามารถคลิกกำหนดวันหยุดได้ในปฏิทิน`);
+}
+
+function deleteCurrentYear() {
+  const years = Object.keys(allCalendars);
+  if (years.length <= 1) {
+    alert('ไม่สามารถลบปีปฏิทินได้ เนื่องจากต้องมีอย่างน้อย 1 ปีในระบบ');
+    return;
+  }
+
+  const cal = allCalendars[activeYearCE];
+  if (!confirm(`คุณต้องการลบปฏิทินปี พ.ศ. ${cal.yearBE} (${cal.yearCE}) ใช่หรือไม่?`)) return;
+
+  delete allCalendars[activeYearCE];
+  activeYearCE = Object.keys(allCalendars).map(Number)[0];
+  saveCalendarsToStorage();
+
+  updateYearSelectDropdown();
+  onAppYearChange();
+}
+
+// ==========================================================================
+// 11. กล่องแก้ไขสถานะวันในปฏิทิน (Edit Day Modal)
+// ==========================================================================
+function openEditDayModal(dateStr) {
+  const modal = document.getElementById('editDayModal');
+  if (!modal) return;
+
+  const dayInfo = getOrbrayDayInfo(dateStr);
+  const d = new Date(dateStr);
+  const thaiDays = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+
+  document.getElementById('modalTargetDateStr').value = dateStr;
+  document.getElementById('modalDayDateDisplay').innerText = `${dateStr} (${thaiDays[d.getDay()]})`;
+
+  const select = document.getElementById('modalDayTypeSelect');
+  select.value = dayInfo.type;
+
+  const nameInput = document.getElementById('modalHolidayNameInput');
+  const cal = allCalendars[activeYearCE] || allCalendars['2026'];
+  const override = cal.customDayOverrides ? cal.customDayOverrides[dateStr] : null;
+
+  nameInput.value = override ? (override.name || '') : (dayInfo.name !== 'วันทำงานปกติ' ? dayInfo.name : '');
+  onModalDayTypeSelectChange();
+
+  modal.style.display = 'flex';
+}
+
+function closeEditDayModal() {
+  document.getElementById('editDayModal').style.display = 'none';
+}
+
+function onModalDayTypeSelectChange() {
+  const select = document.getElementById('modalDayTypeSelect');
+  const group = document.getElementById('modalHolidayNameGroup');
+  if (select.value === 'NORMAL_WORKDAY' || select.value === 'SUNDAY') {
+    group.style.display = 'none';
+  } else {
+    group.style.display = 'block';
+  }
+}
+
+function saveDayStatusFromModal() {
+  const dateStr = document.getElementById('modalTargetDateStr').value;
+  const newType = document.getElementById('modalDayTypeSelect').value;
+  const holidayName = document.getElementById('modalHolidayNameInput').value.trim();
+
+  const yearCE = parseInt(dateStr.split('-')[0], 10);
+  const cal = allCalendars[yearCE];
+  if (!cal) return;
+
+  if (!cal.customDayOverrides) cal.customDayOverrides = {};
+
+  cal.customDayOverrides[dateStr] = {
+    type: newType,
+    name: holidayName || null
+  };
+
+  saveCalendarsToStorage();
   renderOrbrayCalendarGrid();
 
-  // คำนวณเงินเดือนเริ่มต้น
+  if (currentPeriod && currentAttendance) {
+    const foundRow = currentAttendance.find(r => r.date === dateStr);
+    if (foundRow) {
+      updateRowOT(foundRow);
+      buildAttendanceTable();
+      recalculateSalary();
+      saveCurrentAttendance();
+    }
+  }
+
+  closeEditDayModal();
+}
+
+// ==========================================================================
+// 12. การสลับแท็บและพิมพ์สลิป (View Navigation & Printing)
+// ==========================================================================
+function toggleCalendarView() {
+  const calSection = document.getElementById('view-calendar');
+  const btnToggle = document.getElementById('btnToggleCalendar');
+  if (!calSection) return;
+
+  if (calSection.style.display === 'none' || !calSection.style.display) {
+    calSection.style.display = 'block';
+    if (btnToggle) btnToggle.innerText = '✖ ปิดปฏิทินวันทำงาน';
+    calSection.scrollIntoView({ behavior: 'smooth' });
+  } else {
+    calSection.style.display = 'none';
+    if (btnToggle) btnToggle.innerText = '📅 ปฏิทินวันทำงาน';
+  }
+}
+
+function closeSlipView() {
+  const mainView = document.getElementById('view-main');
+  const slipView = document.getElementById('view-slip');
+  if (slipView) slipView.style.display = 'none';
+  if (mainView) mainView.style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function switchView(viewName) {
+  const mainView = document.getElementById('view-main');
+  const calView = document.getElementById('view-calendar');
+  const slipView = document.getElementById('view-slip');
+
+  if (viewName === 'main' || viewName === 'timesheet') {
+    if (mainView) mainView.style.display = 'block';
+    if (calView) calView.style.display = 'none';
+    if (slipView) slipView.style.display = 'none';
+  } else if (viewName === 'calendar') {
+    if (mainView) mainView.style.display = 'block';
+    if (calView) calView.style.display = 'block';
+    if (slipView) slipView.style.display = 'none';
+  } else if (viewName === 'slip') {
+    if (mainView) mainView.style.display = 'none';
+    if (calView) calView.style.display = 'none';
+    if (slipView) slipView.style.display = 'block';
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function prepareAndPrint() {
+  switchView('slip');
+  setTimeout(() => {
+    window.print();
+  }, 350);
+}
+
+// ==========================================================================
+// 13. ระบบจัดการหน้าต่างตั้งค่าค่าเงิน (Salary & Rates Settings Modal - Image 2)
+// ==========================================================================
+function openSettingsSalaryModal() {
+  const modal = document.getElementById('settingsSalaryModal');
+  if (!modal) return;
+
+  // นำค่าปัจจุบันใส่ลงในฟอร์ม
+  setInputValue('cfgBaseSalary', currentSalaryConfig.baseSalary);
+  setInputValue('cfgTransportationAllowance', currentSalaryConfig.transportationAllowance);
+  setInputValue('cfgDiligenceFullAmount', currentSalaryConfig.diligenceFullAmount);
+  setInputValue('cfgFoodPerDay', currentSalaryConfig.foodPerDay);
+  setInputValue('cfgOtMealPerDay', currentSalaryConfig.otMealPerDay);
+  setInputValue('cfgOtDivisorHours', currentSalaryConfig.otDivisorHours);
+  setInputValue('cfgOt15Multiplier', currentSalaryConfig.ot15Multiplier);
+  setInputValue('cfgOt1Multiplier', currentSalaryConfig.ot1Multiplier);
+  setInputValue('cfgOt3Multiplier', currentSalaryConfig.ot3Multiplier);
+  setInputValue('cfgSsoDeduction', currentSalaryConfig.ssoDeduction);
+  setInputValue('cfgSsoMaxBase', currentSalaryConfig.ssoMaxBase);
+
+  updateLiveOTPreview();
+  modal.style.display = 'flex';
+}
+
+function closeSettingsSalaryModal() {
+  const modal = document.getElementById('settingsSalaryModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function updateLiveOTPreview() {
+  const base = parseFloat(document.getElementById('cfgBaseSalary')?.value) || 0;
+  const divisor = parseFloat(document.getElementById('cfgOtDivisorHours')?.value) || 240;
+  const rate = divisor > 0 ? (base / divisor) : 0;
+  const previewEl = document.getElementById('cfgLiveOTRate');
+  if (previewEl) previewEl.innerText = formatCurrency(rate);
+}
+
+function saveSalaryConfigFromModal() {
+  const newConfig = {
+    baseSalary: parseFloat(document.getElementById('cfgBaseSalary')?.value) || DEFAULT_SALARY_CONFIG.baseSalary,
+    transportationAllowance: parseFloat(document.getElementById('cfgTransportationAllowance')?.value) || 0,
+    diligenceFullAmount: parseFloat(document.getElementById('cfgDiligenceFullAmount')?.value) || 0,
+    foodPerDay: parseFloat(document.getElementById('cfgFoodPerDay')?.value) || 0,
+    otMealPerDay: parseFloat(document.getElementById('cfgOtMealPerDay')?.value) || 0,
+    otDivisorHours: parseFloat(document.getElementById('cfgOtDivisorHours')?.value) || 240,
+    ot15Multiplier: parseFloat(document.getElementById('cfgOt15Multiplier')?.value) || 1.5,
+    ot1Multiplier: parseFloat(document.getElementById('cfgOt1Multiplier')?.value) || 1.0,
+    ot3Multiplier: parseFloat(document.getElementById('cfgOt3Multiplier')?.value) || 3.0,
+    ssoDeduction: parseFloat(document.getElementById('cfgSsoDeduction')?.value) || 875,
+    ssoMaxBase: parseFloat(document.getElementById('cfgSsoMaxBase')?.value) || 17500
+  };
+
+  currentSalaryConfig = newConfig;
+  try {
+    const userCfgKey = getScopedUserKey(STORAGE_KEY_SALARY_CONFIG);
+    localStorage.setItem(userCfgKey, JSON.stringify(currentSalaryConfig));
+    const activeUid = (typeof getActiveEditingUserId === 'function') ? getActiveEditingUserId() : 'user_admin';
+    if (activeUid === 'user_admin') {
+      localStorage.setItem(STORAGE_KEY_SALARY_CONFIG, JSON.stringify(currentSalaryConfig));
+    }
+  } catch (e) {
+    console.warn('LocalStorage save failed', e);
+  }
+
+  // ซิงค์ขึ้น Cloud ถ้าล็อกอินอยู่
+  if (typeof syncDataToCloud === 'function') {
+    syncDataToCloud('salaryConfig', currentSalaryConfig);
+  }
+
+  closeSettingsSalaryModal();
+  updateRateLabelsOnCards();
   recalculateSalary();
+  showToastNotification('บันทึกโครงสร้างค่าเงินและเบี้ยเลี้ยงเรียบร้อยแล้ว!');
+}
+
+function resetSalaryConfigToDefault() {
+  if (confirm('คุณต้องการคืนค่าอัตราเงินและเบี้ยเลี้ยงเป็นค่ามาตรฐานตามรูปที่ 2 หรือไม่?')) {
+    currentSalaryConfig = { ...DEFAULT_SALARY_CONFIG };
+    setInputValue('cfgBaseSalary', DEFAULT_SALARY_CONFIG.baseSalary);
+    setInputValue('cfgTransportationAllowance', DEFAULT_SALARY_CONFIG.transportationAllowance);
+    setInputValue('cfgDiligenceFullAmount', DEFAULT_SALARY_CONFIG.diligenceFullAmount);
+    setInputValue('cfgFoodPerDay', DEFAULT_SALARY_CONFIG.foodPerDay);
+    setInputValue('cfgOtMealPerDay', DEFAULT_SALARY_CONFIG.otMealPerDay);
+    setInputValue('cfgOtDivisorHours', DEFAULT_SALARY_CONFIG.otDivisorHours);
+    setInputValue('cfgOt15Multiplier', DEFAULT_SALARY_CONFIG.ot15Multiplier);
+    setInputValue('cfgOt1Multiplier', DEFAULT_SALARY_CONFIG.ot1Multiplier);
+    setInputValue('cfgOt3Multiplier', DEFAULT_SALARY_CONFIG.ot3Multiplier);
+    setInputValue('cfgSsoDeduction', DEFAULT_SALARY_CONFIG.ssoDeduction);
+    setInputValue('cfgSsoMaxBase', DEFAULT_SALARY_CONFIG.ssoMaxBase);
+    updateLiveOTPreview();
+  }
+}
+
+function setInputValue(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val;
+}
+
+// ==========================================================================
+// 14. ระบบจัดการ PIN Authentication & ผู้ใช้งาน (ADMIN PIN: 20523)
+// ==========================================================================
+function openAuthModal() {
+  const modal = document.getElementById('authModal');
+  if (!modal) return;
+  clearAuthAlerts();
+  clearPinInput();
+  modal.style.display = 'flex';
+  const pinInput = document.getElementById('pinDisplayInput');
+  if (pinInput) {
+    setTimeout(() => pinInput.focus(), 150);
+  }
+}
+
+function closeAuthModal() {
+  const modal = document.getElementById('authModal');
+  if (modal) modal.style.display = 'none';
+  clearAuthAlerts();
+  clearPinInput();
+}
+
+function clearAuthAlerts() {
+  const err = document.getElementById('authErrorAlert');
+  const succ = document.getElementById('authSuccessAlert');
+  if (err) { err.style.display = 'none'; err.innerText = ''; }
+  if (succ) { succ.style.display = 'none'; succ.innerText = ''; }
+}
+
+function showAuthError(msg) {
+  const err = document.getElementById('authErrorAlert');
+  if (err) { err.innerText = msg; err.style.display = 'block'; }
+}
+
+function showAuthSuccess(msg) {
+  const succ = document.getElementById('authSuccessAlert');
+  if (succ) { succ.innerText = msg; succ.style.display = 'block'; }
+}
+
+function pressPinDigit(digit) {
+  const input = document.getElementById('pinDisplayInput');
+  if (!input) return;
+  clearAuthAlerts();
+  if (input.value.length < 8) {
+    input.value += digit;
+  }
+}
+
+function backspacePinDigit() {
+  const input = document.getElementById('pinDisplayInput');
+  if (!input) return;
+  clearAuthAlerts();
+  input.value = input.value.slice(0, -1);
+}
+
+function clearPinInput() {
+  const input = document.getElementById('pinDisplayInput');
+  if (input) input.value = '';
+}
+
+function togglePinVisibility() {
+  const input = document.getElementById('pinDisplayInput');
+  const icon = document.getElementById('pinVisibilityIcon');
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    if (icon) icon.innerText = '🙈';
+  } else {
+    input.type = 'password';
+    if (icon) icon.innerText = '👁️';
+  }
+}
+
+function handlePinKeydown(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    submitPinLogin();
+  }
+}
+
+async function submitPinLogin() {
+  clearAuthAlerts();
+  const input = document.getElementById('pinDisplayInput');
+  const pin = input ? input.value.trim() : '';
+
+  if (!pin) {
+    showAuthError('กรุณาระบุรหัส PIN');
+    return;
+  }
+
+  const btn = document.getElementById('btnAuthSubmit');
+  const prevText = btn ? btn.innerText : '';
+  if (btn) { btn.disabled = true; btn.innerText = 'กำลังตรวจสอบ...'; }
+
+  try {
+    const res = await loginWithPin(pin);
+    if (res.success) {
+      const roleText = res.user.role === 'admin' ? 'ผู้ดูแลระบบ (ADMIN)' : 'พนักงาน';
+      showAuthSuccess(`เข้าสู่ระบบสำเร็จ! สวัสดีคุณ ${res.user.name} (${roleText})`);
+      setTimeout(() => {
+        closeAuthModal();
+        reloadUserDataAfterAuthChange();
+        showToastNotification(`เข้าสู่ระบบสำเร็จ: ${res.user.name}`);
+      }, 500);
+    } else {
+      showAuthError(res.error || 'รหัส PIN ไม่ถูกต้อง');
+    }
+  } catch (err) {
+    showAuthError(err.message || 'เกิดข้อผิดพลาดในการตรวจสอบรหัส PIN');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerText = prevText; }
+  }
+}
+
+function quickLoginAdmin() {
+  const input = document.getElementById('pinDisplayInput');
+  if (input) input.value = '20523';
+  submitPinLogin();
+}
+
+async function handleLogout() {
+  if (confirm('คุณต้องการออกจากระบบหรือไม่?')) {
+    await logoutCurrentUser();
+    reloadUserDataAfterAuthChange();
+    showToastNotification('ออกจากระบบเรียบร้อยแล้ว');
+  }
+}
+
+/**
+ * โหลดข้อมูลและรีเฟรชหน้าจอทั้งหมดหลังจากผู้ใช้เปลี่ยน
+ */
+function reloadUserDataAfterAuthChange() {
+  loadStorageData();
+  refreshPeriodSelector();
+  renderOrbrayCalendarGrid();
+  updateRateLabelsOnCards();
+  recalculateSalary();
+  updateAdminScopeBanner();
+  updateNavbarAuthUI(currentUser, isFirebaseOnline);
+}
+
+/**
+ * สลับเปลี่ยนพนักงานที่กำลังดู/แก้ไขข้อมูล (เฉพาะ ADMIN)
+ */
+function switchEditingUser(targetUserId) {
+  if (!targetUserId) return;
+
+  // ตรวจสอบสิทธิ์
+  if (!currentUser || currentUser.role !== 'admin') {
+    if (currentUser && currentUser.id !== targetUserId) {
+      showToastNotification('⚠️ คุณไม่มีสิทธิ์แก้ไขข้อมูลของพนักงานคนอื่น');
+      return;
+    }
+  }
+
+  setActiveEditingUserId(targetUserId);
+  const targetUser = getActiveEditingUser();
+
+  // อัปเดตข้อมูลและคำนวณใหม่
+  loadStorageData();
+  refreshPeriodSelector();
+  renderOrbrayCalendarGrid();
+  updateRateLabelsOnCards();
+  recalculateSalary();
+  updateAdminScopeBanner();
+
+  // อัปเดต Dropdown ใน Navbar ให้ตรงกัน
+  const navSelect = document.getElementById('adminUserNavSelect');
+  if (navSelect) navSelect.value = targetUserId;
+
+  showToastNotification(`สลับไปยังข้อมูลของ: ${targetUser.name}`);
+}
+
+/**
+ * อัปเดตแบนเนอร์แจ้งเตือนสถานะการแก้ไขข้อมูลของ Admin
+ */
+function updateAdminScopeBanner() {
+  const banner = document.getElementById('adminScopeBanner');
+  if (!banner) return;
+
+  const currentActiveId = getActiveEditingUserId();
+  const isAdmin = currentUser && currentUser.role === 'admin';
+
+  if (isAdmin && currentActiveId !== 'user_admin') {
+    const targetUser = getActiveEditingUser();
+    banner.innerHTML = `
+      <div class="admin-scope-banner-info">
+        <span style="font-size:1.3rem;">👑</span>
+        <div>
+          กำลังดูและแก้ไขข้อมูลของ: <strong>${escapeHtml(targetUser.name)}</strong> (${escapeHtml(targetUser.department || 'พนักงาน')})
+          <div style="font-size:0.78rem; color:#0369a1; margin-top:2px;">
+            ⚡ สิทธิ์ ADMIN: คุณสามารถแก้ไขเวลาทำงาน ปรับโครงสร้างค่าจ้าง และพิมพ์สลิปของพนักงานคนนี้ได้
+          </div>
+        </div>
+      </div>
+      <div>
+        <button type="button" class="btn btn-xs btn-outline-primary" onclick="switchEditingUser('user_admin')">
+          ↩️ กลับไปที่ข้อมูล ADMIN
+        </button>
+      </div>
+    `;
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+/**
+ * อัปเดต Navbar ส่วนแสดงสถานะการล็อกอินและ User Switcher
+ */
+function updateNavbarAuthUI(user, isOnline) {
+  const container = document.getElementById('navAuthArea');
+  if (!container) return;
+
+  if (user) {
+    const activeUserId = getActiveEditingUserId();
+
+    if (user.role === 'admin') {
+      // ผู้ใช้เป็น ADMIN: แสดง Badge + Dropdown สลับผู้ใช้ + ปุ่มบัญชีของฉัน + ปุ่มจัดการผู้ใช้ + ออกจากระบบ
+      const allUsers = getAllSystemUsers();
+      const optionsHtml = allUsers.map(u => {
+        const selected = (u.id === activeUserId) ? 'selected' : '';
+        const roleLabel = u.role === 'admin' ? '👑 ' : '👤 ';
+        return `<option value="${u.id}" ${selected}>${roleLabel}${escapeHtml(u.name)} (รหัส: ${escapeHtml(u.empCode || '-')}, PIN: ${u.pin})</option>`;
+      }).join('');
+
+      container.innerHTML = `
+        <div class="user-chip-menu">
+          <span class="badge-admin-gold">👑 ADMIN</span>
+          <div class="nav-user-switcher-box" title="เลือกพนักงานเพื่อดูหรือแก้ไขข้อมูล">
+            <span class="nav-user-switcher-label">พนักงาน:</span>
+            <select id="adminUserNavSelect" class="nav-user-switcher-select" onchange="switchEditingUser(this.value)">
+              ${optionsHtml}
+            </select>
+          </div>
+          <button type="button" class="btn btn-xs btn-outline-primary" onclick="openAccountModal()" title="ดูและจัดการข้อมูลบัญชีโปรไฟล์ของฉัน">
+            👤 บัญชีของฉัน
+          </button>
+          <button type="button" class="btn btn-xs btn-outline-primary" onclick="openManageUsersModal()" title="จัดการรายชื่อและรหัส PIN พนักงาน">
+            👥 จัดการผู้ใช้
+          </button>
+          <button type="button" class="btn btn-xs btn-outline-danger" onclick="handleLogout()" title="ออกจากระบบ">
+            ออก
+          </button>
+        </div>
+      `;
+    } else {
+      // พนักงานทั่วไป: แสดงชื่อ + ปุ่มบัญชีของฉัน + ปุ่มออกจากระบบ
+      container.innerHTML = `
+        <div class="user-chip-menu">
+          <div class="user-chip" onclick="openAccountModal()" style="cursor: pointer;" title="คลิกเพื่อดูและจัดการข้อมูลบัญชีของฉัน">
+            <div class="user-avatar-initials">${user.name.charAt(0).toUpperCase()}</div>
+            <span class="user-name-text">${escapeHtml(user.name)}</span>
+            <span class="status-dot dot-online" title="เข้าสู่ระบบแล้ว"></span>
+          </div>
+          <button type="button" class="btn btn-xs btn-outline-primary" onclick="openAccountModal()" title="ดูและจัดการข้อมูลบัญชีของฉัน">
+            👤 บัญชีของฉัน
+          </button>
+          <button type="button" class="btn btn-xs btn-outline-danger" onclick="handleLogout()" title="ออกจากระบบ">
+            ออก
+          </button>
+        </div>
+      `;
+    }
+  } else {
+    // ยังไม่ได้ล็อกอิน: แสดงปุ่มเข้าสู่ระบบ PIN
+    container.innerHTML = `
+      <button type="button" class="btn btn-sm btn-primary btn-cta" onclick="openAuthModal()">
+        🔐 เข้าสู่ระบบ PIN
+      </button>
+    `;
+  }
+
+  updateAdminScopeBanner();
+}
+
+/**
+ * ==========================================================================
+ * ระบบจัดการบัญชีผู้ใช้งานส่วนตัว (My Account Profile Modal)
+ * ==========================================================================
+ */
+function openAccountModal() {
+  const modal = document.getElementById('accountModal');
+  if (!modal) return;
+
+  const user = currentUser || (typeof getActiveEditingUser === 'function' ? getActiveEditingUser() : null);
+  if (!user) {
+    showToastNotification('⚠️ กรุณาเข้าสู่ระบบก่อนจัดการบัญชี');
+    openAuthModal();
+    return;
+  }
+
+  const alertBox = document.getElementById('accountAlert');
+  if (alertBox) {
+    alertBox.style.display = 'none';
+    alertBox.textContent = '';
+  }
+
+  // เติมข้อมูลลงในการ์ดสรุปโปรไฟล์
+  const avatarLarge = document.getElementById('accAvatarLarge');
+  if (avatarLarge) avatarLarge.textContent = user.role === 'admin' ? '👑' : (user.avatar || '👤');
+
+  const summaryName = document.getElementById('accSummaryName');
+  if (summaryName) summaryName.textContent = user.name;
+
+  const summaryRole = document.getElementById('accSummaryRole');
+  if (summaryRole) {
+    summaryRole.className = user.role === 'admin' ? 'badge-account-role' : 'badge-account-role-user';
+    summaryRole.textContent = user.role === 'admin' ? '👑 ผู้ดูแลระบบ (ADMIN)' : '👤 พนักงานทั่วไป';
+  }
+
+  const summaryCode = document.getElementById('accSummaryCode');
+  if (summaryCode) summaryCode.textContent = 'ID: ' + (user.empCode || (user.id === 'user_admin' ? '20523' : ('EMP-' + user.pin)));
+
+  const summaryDept = document.getElementById('accSummaryDept');
+  if (summaryDept) summaryDept.textContent = user.department || 'ฝ่ายปฏิบัติการ';
+
+  // เติมฟอร์ม
+  const elName = document.getElementById('accName');
+  if (elName) elName.value = user.name || '';
+
+  const elCompany = document.getElementById('accCompany');
+  if (elCompany) elCompany.value = user.companyName || 'CACULATION SALARY';
+
+  const elEmpCode = document.getElementById('accEmpCode');
+  if (elEmpCode) elEmpCode.value = user.empCode || (user.id === 'user_admin' ? '20523' : ('EMP-' + user.pin));
+
+  const elDept = document.getElementById('accDept');
+  if (elDept) elDept.value = user.department || '';
+
+  const elPin = document.getElementById('accPin');
+  if (elPin) {
+    elPin.value = user.pin || '';
+    elPin.type = 'password';
+  }
+  const pinIcon = document.getElementById('accPinIcon');
+  if (pinIcon) pinIcon.textContent = '👁️';
+
+  modal.style.display = 'flex';
+}
+
+function closeAccountModal() {
+  const modal = document.getElementById('accountModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function toggleAccPinVisibility() {
+  const input = document.getElementById('accPin');
+  const icon = document.getElementById('accPinIcon');
+  if (!input || !icon) return;
+
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    icon.textContent = '👁️';
+  }
+}
+
+function handleSaveAccountProfile(e) {
+  e.preventDefault();
+  const alertBox = document.getElementById('accountAlert');
+  if (alertBox) {
+    alertBox.style.display = 'none';
+    alertBox.textContent = '';
+  }
+
+  const name = document.getElementById('accName')?.value.trim();
+  const companyName = document.getElementById('accCompany')?.value.trim();
+  const empCode = document.getElementById('accEmpCode')?.value.trim();
+  const department = document.getElementById('accDept')?.value.trim();
+  const pin = document.getElementById('accPin')?.value.trim();
+
+  if (!name) {
+    if (alertBox) {
+      alertBox.className = 'alert alert-danger';
+      alertBox.textContent = 'กรุณาระบุชื่อ-นามสกุล';
+      alertBox.style.display = 'block';
+    }
+    return;
+  }
+
+  if (!pin || !/^\d{4,8}$/.test(pin)) {
+    if (alertBox) {
+      alertBox.className = 'alert alert-danger';
+      alertBox.textContent = 'รหัส PIN ต้องเป็นตัวเลขความยาว 4–8 หลัก';
+      alertBox.style.display = 'block';
+    }
+    return;
+  }
+
+  const res = updateCurrentAccountProfile({
+    name,
+    companyName: (companyName || 'CACULATION SALARY').toUpperCase(),
+    empCode: (empCode || '-').toUpperCase(),
+    department: department || '-',
+    pin
+  });
+
+  if (res.success) {
+    // ซิงก์ข้อมูลพนักงานไปยัง salaryProfile และการคำนวณ
+    syncSalaryProfileWithActiveUser();
+    calculatePayroll();
+    updateNavbarAuthUI(currentUser, isFirebaseOnline);
+
+    closeAccountModal();
+    showToastNotification(`✅ บันทึกข้อมูลบัญชี (${name}) เรียบร้อยแล้ว!`);
+  } else {
+    if (alertBox) {
+      alertBox.className = 'alert alert-danger';
+      alertBox.textContent = res.error || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล';
+      alertBox.style.display = 'block';
+    } else {
+      alert(res.error || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+    }
+  }
+}
+
+/**
+ * ระบบจัดการรายชื่อผู้ใช้และ PIN (Manage Users Modal - Admin Only)
+ */
+function openManageUsersModal() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToastNotification('⚠️ คุณต้องเข้าสู่ระบบเป็น ADMIN เพื่อจัดการผู้ใช้');
+    openAuthModal();
+    return;
+  }
+  const modal = document.getElementById('manageUsersModal');
+  if (!modal) return;
+  renderManageUsersTable();
+  modal.style.display = 'flex';
+}
+
+function closeManageUsersModal() {
+  const modal = document.getElementById('manageUsersModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function renderManageUsersTable() {
+  const tbody = document.getElementById('manageUsersTableBody');
+  if (!tbody) return;
+
+  const users = getAllSystemUsers();
+  tbody.innerHTML = users.map(u => {
+    const isAdmin = u.role === 'admin';
+    const badge = isAdmin 
+      ? '<span class="user-role-badge-admin">👑 ADMIN</span>' 
+      : '<span class="user-role-badge-user">👤 พนักงาน</span>';
+
+    const deleteBtnOrBadge = isAdmin 
+      ? '<span class="badge-pill-locked" title="บัญชีผู้ดูแลระบบหลัก (ไม่สามารถลบได้)">🔒 บัญชีหลัก</span>' 
+      : `<button type="button" class="btn btn-outline-danger btn-action-pill" onclick="confirmDeleteUser('${u.id}')" title="ลบพนักงานคนนี้">🗑️ ลบ</button>`;
+
+    return `
+      <tr>
+        <td style="text-align: center;">${badge}</td>
+        <td><strong style="color: #0c4a6e;">${escapeHtml(u.name)}</strong></td>
+        <td><span class="badge-account-code">${escapeHtml(u.empCode || '-')}</span></td>
+        <td><span style="color: #475569;">${escapeHtml(u.department || '-')}</span></td>
+        <td style="text-align: center;"><span class="pin-code-badge">${escapeHtml(u.pin)}</span></td>
+        <td style="text-align: center;">
+          <div class="user-action-group">
+            <button type="button" class="btn btn-outline-primary btn-action-pill" onclick="promptEditStaffUser('${u.id}')" title="แก้ไขข้อมูลพนักงาน">
+              ✏️ แก้ไข
+            </button>
+            ${deleteBtnOrBadge}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function handleAddNewUserSubmit(e) {
+  e.preventDefault();
+  const name = document.getElementById('newUserName')?.value.trim();
+  const empCode = document.getElementById('newUserEmpCode')?.value.trim();
+  const pin = document.getElementById('newUserPin')?.value.trim();
+  const dept = document.getElementById('newUserDept')?.value.trim();
+
+  const res = registerNewUser(name, pin, 'user', dept, 'CACULATION SALARY', empCode);
+  if (res.success) {
+    document.getElementById('newUserName').value = '';
+    if (document.getElementById('newUserEmpCode')) document.getElementById('newUserEmpCode').value = '';
+    document.getElementById('newUserPin').value = '';
+    document.getElementById('newUserDept').value = '';
+    renderManageUsersTable();
+    updateNavbarAuthUI(currentUser, isFirebaseOnline);
+    showToastNotification(`เพิ่มพนักงาน ${name} (รหัส: ${res.user.empCode}, PIN: ${pin}) เรียบร้อยแล้ว!`);
+  } else {
+    alert(res.error || 'ไม่สามารถเพิ่มผู้ใช้ได้');
+  }
+}
+
+function promptEditStaffUser(userId) {
+  const users = getAllSystemUsers();
+  const u = users.find(x => x.id === userId);
+  if (!u) return;
+
+  const newName = prompt(`ชื่อ-นามสกุล ของพนักงาน:`, u.name);
+  if (newName === null) return;
+
+  const newEmpCode = prompt(`รหัสประจำตัวพนักงาน:`, u.empCode || '');
+  if (newEmpCode === null) return;
+
+  const newDept = prompt(`แผนก / ฝ่าย:`, u.department || '');
+  if (newDept === null) return;
+
+  const newPin = prompt(`รหัส PIN เข้าสู่ระบบ (ตัวเลข 4–8 หลัก):`, u.pin);
+  if (newPin === null) return;
+
+  const cleanPin = String(newPin).trim();
+  if (!/^\d{4,8}$/.test(cleanPin)) {
+    alert('รหัส PIN ต้องเป็นตัวเลขความยาว 4–8 หลักเท่านั้น');
+    return;
+  }
+
+  const res = updateSystemUser(userId, {
+    name: newName.trim(),
+    empCode: newEmpCode.trim(),
+    department: newDept.trim(),
+    pin: cleanPin
+  });
+
+  if (res.success) {
+    renderManageUsersTable();
+    updateNavbarAuthUI(currentUser, isFirebaseOnline);
+    if (getActiveEditingUserId() === userId) {
+      syncSalaryProfileWithActiveUser();
+      calculatePayroll();
+    }
+    showToastNotification(`อัปเดตข้อมูลพนักงาน ${u.name} สำเร็จ!`);
+  } else {
+    alert(res.error || 'เกิดข้อผิดพลาดในการแก้ไขข้อมูล');
+  }
+}
+
+function confirmDeleteUser(userId) {
+  const users = getAllSystemUsers();
+  const u = users.find(x => x.id === userId);
+  if (!u) return;
+
+  if (confirm(`คุณต้องการลบพนักงาน "${u.name}" (PIN: ${u.pin}) ออกจากระบบหรือไม่?`)) {
+    const res = deleteSystemUser(userId);
+    if (res.success) {
+      renderManageUsersTable();
+      updateNavbarAuthUI(currentUser, isFirebaseOnline);
+      reloadUserDataAfterAuthChange();
+      showToastNotification(`ลบพนักงาน "${u.name}" เรียบร้อยแล้ว`);
+    } else {
+      alert(res.error || 'ไม่สามารถลบได้');
+    }
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ==========================================================================
+// 15. ระบบตั้งค่า Firebase Project Credentials Modal
+// ==========================================================================
+function openFirebaseConfigModal() {
+  closeAuthModal();
+  const modal = document.getElementById('firebaseConfigModal');
+  if (!modal) return;
+  const cfg = typeof getActiveFirebaseConfig === 'function' ? getActiveFirebaseConfig() : DEFAULT_FIREBASE_CONFIG;
+  setInputValue('fbCfgApiKey', cfg.apiKey || '');
+  setInputValue('fbCfgAuthDomain', cfg.authDomain || '');
+  setInputValue('fbCfgProjectId', cfg.projectId || '');
+  setInputValue('fbCfgStorageBucket', cfg.storageBucket || '');
+  setInputValue('fbCfgMessagingSenderId', cfg.messagingSenderId || '');
+  setInputValue('fbCfgAppId', cfg.appId || '');
+  modal.style.display = 'flex';
+}
+
+function closeFirebaseConfigModal() {
+  const modal = document.getElementById('firebaseConfigModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function saveFirebaseConfigFromModal() {
+  const newCfg = {
+    apiKey: document.getElementById('fbCfgApiKey')?.value.trim(),
+    authDomain: document.getElementById('fbCfgAuthDomain')?.value.trim(),
+    projectId: document.getElementById('fbCfgProjectId')?.value.trim(),
+    storageBucket: document.getElementById('fbCfgStorageBucket')?.value.trim(),
+    messagingSenderId: document.getElementById('fbCfgMessagingSenderId')?.value.trim(),
+    appId: document.getElementById('fbCfgAppId')?.value.trim()
+  };
+
+  if (typeof saveFirebaseConfig === 'function') {
+    saveFirebaseConfig(newCfg);
+  }
+  closeFirebaseConfigModal();
+  alert('บันทึกคอนฟิก Firebase เรียบร้อยแล้ว! ระบบจะรีโหลดเพื่อเริ่มต้นการเชื่อมต่อใหม่');
+  location.reload();
+}
+
+function resetFirebaseConfigDefault() {
+  if (confirm('คุณต้องการรีเซ็ตค่า Firebase Config เป็นค่าเริ่มต้นหรือไม่?')) {
+    if (typeof saveFirebaseConfig === 'function') {
+      saveFirebaseConfig(DEFAULT_FIREBASE_CONFIG);
+    }
+    closeFirebaseConfigModal();
+    location.reload();
+  }
+}
+
+// ระบบ Toast Notification แจ้งเตือนสวยงาม
+function showToastNotification(message) {
+  let toast = document.getElementById('appGlobalToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'appGlobalToast';
+    toast.className = 'app-toast';
+    document.body.appendChild(toast);
+  }
+  toast.innerText = message;
+  toast.classList.add('show');
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3000);
+}
+
+// ==========================================================================
+// 16. เริ่มต้นระบบ (DOM Ready Initialization)
+// ==========================================================================
+window.addEventListener('DOMContentLoaded', () => {
+  loadStorageData();
+  updateYearSelectDropdown();
+  refreshPeriodSelector();
+  renderOrbrayCalendarGrid();
+  updateRateLabelsOnCards();
+
+  // ลงทะเบียนติดตามสถานะผู้ใช้จาก Firebase
+  if (typeof addAuthStateListener === 'function') {
+    addAuthStateListener(updateNavbarAuthUI);
+  }
+
+  updateAdminScopeBanner();
 });
