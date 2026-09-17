@@ -106,7 +106,7 @@
       <!-- Hero KPI Metrics Row -->
       <div class="hero-stats-grid">
         <div class="hero-stat-card">
-          <div class="stat-num" id="heroTargetDays">24</div>
+          <div class="stat-num" id="heroTargetDays">22</div>
           <div class="stat-title">วันทำงานเป้าหมาย</div>
           <div class="stat-desc">ตามปฏิทินงวดปัจจุบัน</div>
         </div>
@@ -237,11 +237,15 @@
         <div class="card salary-breakdown-card">
           <div class="card-header-flex">
             <div>
-              <h2 class="card-header-title">📋 สรุปรายการคำนวณเงินเดือนประจำรอบ</h2>
-              <p class="subtitle text-muted small">คำนวณจากยอดลงเวลา 31 วันตามสูตรโครงสร้างเงินได้</p>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <h2 class="card-header-title" style="margin-bottom: 0;">📋 สรุปรายการคำนวณเงินเดือนประจำรอบ</h2>
+                <span class="card-paydate-badge" id="cardPeriodBadge" style="padding: 4px 10px; font-size: 0.82rem; background: #e0f2fe; color: #0369a1; border-color: #bae6fd;">งวด: -</span>
+                <span class="card-paydate-badge" id="cardPeriodConfigStatusBadge" style="padding: 4px 10px; font-size: 0.82rem; background: #f8fafc; color: #475569; border-color: #cbd5e1;">🌐 ค่ามาตรฐาน</span>
+              </div>
+              <p class="subtitle text-muted small" id="cardPeriodSubtitle" style="margin-top: 4px;">คำนวณจากยอดลงเวลาตามสูตรโครงสร้างเงินได้</p>
             </div>
             <div class="card-header-actions">
-              <button type="button" class="btn btn-sm btn-primary" onclick="openSettingsSalaryModal()" title="แก้ไขค่าเงินเดือน เบี้ยเลี้ยง และอัตรา OT">
+              <button type="button" class="btn btn-sm btn-primary" onclick="openSettingsSalaryModal()" title="แก้ไขค่าเงินเดือน เบี้ยเลี้ยง และอัตรา OT เฉพาะงวดนี้">
                 ⚙️ แก้ไขค่าเงินและเบี้ยเลี้ยง
               </button>
               <div class="card-paydate-badge">
@@ -442,7 +446,7 @@
               <p class="subtitle" id="timesheetPeriodSubtitle">รอบการลงเวลาทำงาน</p>
             </div>
             <div class="ot-quick-badges">
-              <span class="badge-rule">เข้า: ติ๊กวันทำงาน = 08:00</span>
+              <span class="badge-rule">เข้า: ติ๊กวันที่มาทำงาน = 08:00</span>
               <span class="badge-rule">ออก: เลือกจาก Drop Down</span>
               <span class="badge-rule">OT: คำนวณและปัดเศษเต็มบาทอัตโนมัติ</span>
             </div>
@@ -468,7 +472,7 @@
                     <th style="width:85px;">OT (1.5)</th>
                     <th style="width:85px;">Holiday (1)</th>
                     <th style="width:85px;">OT Hol (3)</th>
-                    <th style="width:70px;">วันทำงาน</th>
+                    <th style="width:85px;">วันที่มาทำงาน</th>
                     <th style="width:65px;">วันที่มา</th>
                     <th style="width:70px;">วันทำ OT</th>
                   </tr>
@@ -802,8 +806,12 @@
     <div class="modal-dialog modal-dialog-lg">
       <div class="modal-header">
         <div>
-          <h3>⚙️ ตั้งค่าโครงสร้างเงินเดือนและเบี้ยเลี้ยง</h3>
-          <p class="subtitle text-muted small" style="margin:2px 0 0 0;">ปรับเปลี่ยนอัตราเงินเดือน เบี้ยเลี้ยง และสูตร OT สำหรับคำนวณเงินได้สุทธิ</p>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <h3>⚙️ ตั้งค่าโครงสร้างเงินเดือนและเบี้ยเลี้ยง</h3>
+            <span class="card-paydate-badge" id="modalSalaryPeriodBadge" style="padding: 3px 10px; font-size: 0.82rem; background: #e0f2fe; color: #0369a1; border-color: #bae6fd;">งวด: -</span>
+            <span class="card-paydate-badge" id="modalSalaryConfigStatusBadge" style="padding: 3px 10px; font-size: 0.82rem; background: #f8fafc; color: #475569; border-color: #cbd5e1;">🌐 ค่ามาตรฐาน</span>
+          </div>
+          <p class="subtitle text-muted small" id="modalSalaryPeriodSubtitle" style="margin:4px 0 0 0;">ปรับเปลี่ยนอัตราเงินเดือน เบี้ยเลี้ยง และสูตร OT สำหรับคำนวณเงินได้สุทธิ</p>
         </div>
         <button type="button" class="modal-close" onclick="closeSettingsSalaryModal()">&times;</button>
       </div>
@@ -909,17 +917,23 @@
       </div>
       <div class="modal-footer modal-footer-between">
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button type="button" class="btn btn-outline-danger" onclick="resetSalaryConfigToDefault()">
-            🔄 คืนค่าเริ่มต้นตามรูปที่ 2
+          <button type="button" class="btn btn-outline-danger" onclick="resetSalaryConfigToDefault()" title="รีเซ็ตค่าในฟอร์มเป็นค่ามาตรฐานเริ่มต้นตามรูปที่ 2">
+            🔄 รีเซ็ตเป็นค่าเริ่มต้น
           </button>
           <button type="button" class="btn btn-outline-warning" onclick="clearSalaryConfigToZero()" style="color: #b45309; border-color: #f59e0b; background: #fffbeb;" title="ปรับยอดเงินเดือน เบี้ยเลี้ยง และเงินหักเป็น 0 ทั้งหมด (สำหรับเดือนที่ยังไม่เริ่มทำงาน/ไม่มีรายได้)">
-            🧹 เคลียร์ค่าเป็น 0 ทั้งหมด (ยังไม่เริ่มงาน)
+            🧹 เคลียร์เป็น 0 (ยังไม่เริ่มงาน)
+          </button>
+          <button type="button" class="btn btn-outline-secondary" id="btnResetPeriodSalaryConfig" onclick="resetPeriodSalaryConfigToDefault()" style="display: none;" title="ลบการตั้งค่าเฉพาะงวดนี้ แล้วกลับไปใช้ค่ามาตรฐาน">
+            ↩️ ล้างค่าเฉพาะงวดนี้ (ใช้ค่ามาตรฐาน)
           </button>
         </div>
-        <div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
           <button type="button" class="btn btn-secondary" onclick="closeSettingsSalaryModal()">ยกเลิก</button>
-          <button type="button" class="btn btn-primary" onclick="saveSalaryConfigFromModal()">
-            💾 บันทึกการตั้งค่า
+          <button type="button" class="btn btn-outline-primary" id="btnSaveSalaryForAllPeriods" onclick="saveSalaryConfigFromModal('all')" title="บันทึกใช้เป็นค่ามาตรฐานเริ่มต้นสำหรับทุกงวด">
+            🌐 บันทึกใช้กับทุกงวด
+          </button>
+          <button type="button" class="btn btn-primary" id="btnSaveSalaryForPeriod" onclick="saveSalaryConfigFromModal('period')" title="บันทึกการตั้งค่าเฉพาะของงวดเดือนนี้เท่านั้น">
+            💾 บันทึกเฉพาะงวดนี้
           </button>
         </div>
       </div>

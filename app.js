@@ -109,9 +109,9 @@ const DEFAULT_SALARY_CONFIG = {
 };
 
 let currentSalaryConfig = { ...DEFAULT_SALARY_CONFIG };
+let userBaseSalaryConfig = { ...DEFAULT_SALARY_CONFIG };
+let periodSalaryConfigs = {}; // จัดเก็บการตั้งค่าค่าเงินแยกตามงวด { '2026-09': {...}, '2026-08': {...} }
 
-// ==========================================================================
-// 4. ระบบจัดเก็บข้อมูล LocalStorage (Storage Manager)
 // ==========================================================================
 // 4. ระบบจัดเก็บข้อมูล LocalStorage (Storage Manager Scoped by User)
 // ==========================================================================
@@ -119,6 +119,7 @@ const STORAGE_KEY_CALENDARS = 'orbray_salary_calendars_v2';
 const STORAGE_KEY_YEAR = 'orbray_salary_active_year_v2';
 const STORAGE_KEY_ATTENDANCE = 'orbray_salary_attendance_store_v2';
 const STORAGE_KEY_SALARY_CONFIG = 'salary_rates_config_v2';
+const STORAGE_KEY_PERIOD_SALARY_CONFIGS = 'period_salary_configs_v2';
 
 function getScopedUserKey(baseKey) {
   const uid = (typeof getActiveEditingUserId === 'function') ? getActiveEditingUserId() : 'user_admin';
@@ -135,6 +136,29 @@ function syncSalaryProfileWithActiveUser() {
       salaryProfile.department = u.department || 'ฝ่ายปฏิบัติการ';
       salaryProfile.userName = u.role === 'admin' ? 'ADMIN' : u.name;
     }
+  }
+}
+
+function getSalaryConfigForPeriod(periodId) {
+  if (periodId && periodSalaryConfigs && periodSalaryConfigs[periodId]) {
+    return Object.assign({}, DEFAULT_SALARY_CONFIG, periodSalaryConfigs[periodId]);
+  }
+  return Object.assign({}, DEFAULT_SALARY_CONFIG, userBaseSalaryConfig || DEFAULT_SALARY_CONFIG);
+}
+
+function savePeriodSalaryConfigsToStorage() {
+  try {
+    const userPeriodCfgKey = getScopedUserKey(STORAGE_KEY_PERIOD_SALARY_CONFIGS);
+    localStorage.setItem(userPeriodCfgKey, JSON.stringify(periodSalaryConfigs));
+    const activeUid = (typeof getActiveEditingUserId === 'function') ? getActiveEditingUserId() : 'user_admin';
+    if (activeUid === 'user_admin') {
+      localStorage.setItem(STORAGE_KEY_PERIOD_SALARY_CONFIGS, JSON.stringify(periodSalaryConfigs));
+    }
+    if (typeof syncDataToCloud === 'function') {
+      syncDataToCloud('periodSalaryConfigs', periodSalaryConfigs);
+    }
+  } catch (e) {
+    console.warn('LocalStorage save periodSalaryConfigs failed', e);
   }
 }
 
@@ -162,12 +186,33 @@ function loadStorageData() {
     const userCfgKey = getScopedUserKey(STORAGE_KEY_SALARY_CONFIG);
     const rawSalaryCfg = localStorage.getItem(userCfgKey);
     if (rawSalaryCfg) {
-      currentSalaryConfig = Object.assign({}, DEFAULT_SALARY_CONFIG, JSON.parse(rawSalaryCfg));
+      userBaseSalaryConfig = Object.assign({}, DEFAULT_SALARY_CONFIG, JSON.parse(rawSalaryCfg));
     } else if (uid === 'user_admin') {
       const legacyCfg = localStorage.getItem(STORAGE_KEY_SALARY_CONFIG);
-      currentSalaryConfig = legacyCfg ? Object.assign({}, DEFAULT_SALARY_CONFIG, JSON.parse(legacyCfg)) : { ...DEFAULT_SALARY_CONFIG };
+      userBaseSalaryConfig = legacyCfg ? Object.assign({}, DEFAULT_SALARY_CONFIG, JSON.parse(legacyCfg)) : { ...DEFAULT_SALARY_CONFIG };
     } else {
-      currentSalaryConfig = { ...DEFAULT_SALARY_CONFIG };
+      userBaseSalaryConfig = { ...DEFAULT_SALARY_CONFIG };
+    }
+    currentSalaryConfig = { ...userBaseSalaryConfig };
+
+    // โหลดการตั้งค่าค่าเงินเฉพาะของแต่ละงวดเดือน
+    const userPeriodCfgKey = getScopedUserKey(STORAGE_KEY_PERIOD_SALARY_CONFIGS);
+    const rawPeriodSalaryCfg = localStorage.getItem(userPeriodCfgKey);
+    if (rawPeriodSalaryCfg) {
+      try {
+        periodSalaryConfigs = JSON.parse(rawPeriodSalaryCfg) || {};
+      } catch (e) {
+        periodSalaryConfigs = {};
+      }
+    } else if (uid === 'user_admin') {
+      const legacyPeriodCfg = localStorage.getItem(STORAGE_KEY_PERIOD_SALARY_CONFIGS);
+      try {
+        periodSalaryConfigs = legacyPeriodCfg ? JSON.parse(legacyPeriodCfg) : {};
+      } catch (e) {
+        periodSalaryConfigs = {};
+      }
+    } else {
+      periodSalaryConfigs = {};
     }
 
     // อัปเดตข้อมูลพนักงานในสลิปตาม Active User
@@ -176,6 +221,8 @@ function loadStorageData() {
     console.error('Storage load failed, using default', e);
     allCalendars = { '2026': JSON.parse(JSON.stringify(DEFAULT_CALENDAR_2026)) };
     activeYearCE = 2026;
+    userBaseSalaryConfig = { ...DEFAULT_SALARY_CONFIG };
+    periodSalaryConfigs = {};
     currentSalaryConfig = { ...DEFAULT_SALARY_CONFIG };
   }
 }
@@ -254,10 +301,7 @@ function generatePayrollPeriodsForYear(yearCE) {
   const yearBE = yearCE + 543;
   const periods = [];
 
-  // สำหรับปีนี้ (2026 / 2569) คิดตั้งแต่เดือน 7 (กรกฎาคม: m=6) ขึ้นไป
-  const startM = (yearCE === 2026) ? 6 : 0;
-
-  for (let m = startM; m < 12; m++) {
+  for (let m = 0; m < 12; m++) {
     const monthNum = m + 1;
     const monthName = `${THAI_MONTHS[m]} ${yearBE}`;
     const periodId = `${yearCE}-${formatDay2Digit(monthNum)}`;
@@ -567,7 +611,22 @@ function recalculateAttendanceTotals() {
     totalOT15 += parseFloat(row.ot) || 0;
     totalHol += parseFloat(row.hol) || 0;
     totalOTHol += parseFloat(row.otHol) || 0;
-    totalTargetDays += parseInt(row.workDay, 10) || 0;
+
+    // วันทำงานเป้าหมาย: นับตามจำนวนวันทำงานปกติ และเสาร์ทำงาน รวมกันแทน
+    const dayInfo = getOrbrayDayInfo(row.date);
+    const isTargetDay = (
+      dayInfo.type === 'NORMAL_WORKDAY' ||
+      dayInfo.type === 'WORKING_SATURDAY' ||
+      dayInfo.type === 'ORBRAY_WORKDAY' ||
+      dayInfo.name === 'วันทำงานปกติ' ||
+      dayInfo.name === 'เสาร์ทำงาน' ||
+      dayInfo.name === 'วันเสาร์ทำงานปกติ' ||
+      dayInfo.name === 'วันทำงานพิเศษ'
+    );
+    if (isTargetDay) {
+      totalTargetDays += 1;
+    }
+
     totalCameDays += parseInt(row.come, 10) || 0;
     totalOTDays += parseInt(row.otDay, 10) || 0;
   });
@@ -636,11 +695,16 @@ function clearAttendanceTable() {
 
 function generateAttendanceForPeriod(startStr, endStr) {
   const rows = [];
-  let cur = new Date(startStr);
-  const end = new Date(endStr);
+  const [sy, sm, sd] = startStr.split('-').map(Number);
+  const [ey, em, ed] = endStr.split('-').map(Number);
+  let cur = new Date(sy, sm - 1, sd);
+  const end = new Date(ey, em - 1, ed);
 
   while (cur <= end) {
-    const dStr = cur.toISOString().split('T')[0];
+    const y = cur.getFullYear();
+    const m = ('0' + (cur.getMonth() + 1)).slice(-2);
+    const d = ('0' + cur.getDate()).slice(-2);
+    const dStr = `${y}-${m}-${d}`;
     const dayInfo = getOrbrayDayInfo(dStr);
     rows.push({
       date: dStr,
@@ -837,6 +901,40 @@ function updateRateLabelsOnCards() {
   setElText('lblOT3Divisor', div);
 
   setElText('lblSSOMaxBase', formatCurrency(currentSalaryConfig.ssoMaxBase));
+}
+
+function updateCardPeriodBadge() {
+  const badgeEl = document.getElementById('cardPeriodBadge');
+  const statusEl = document.getElementById('cardPeriodConfigStatusBadge');
+  const subtitleEl = document.getElementById('cardPeriodSubtitle');
+
+  if (!currentPeriod) return;
+
+  if (badgeEl) {
+    badgeEl.innerText = `งวด: ${currentPeriod.endMonthName} ${currentPeriod.yearBE}`;
+  }
+
+  const hasOverride = Boolean(periodSalaryConfigs && periodSalaryConfigs[currentPeriod.id]);
+  if (statusEl) {
+    if (hasOverride) {
+      statusEl.innerText = '✏️ ค่าเงินเฉพาะงวดนี้';
+      statusEl.title = `งวดนี้มีการกำหนดค่าเงินเดือนหรือเบี้ยเลี้ยงแยกเฉพาะงวด ${currentPeriod.displayName}`;
+      statusEl.style.background = '#eff6ff';
+      statusEl.style.color = '#1d4ed8';
+      statusEl.style.borderColor = '#bfdbfe';
+    } else {
+      statusEl.innerText = '🌐 ค่ามาตรฐาน';
+      statusEl.title = 'งวดนี้ใช้ค่าเงินเดือนและเบี้ยเลี้ยงตามโครงสร้างมาตรฐาน';
+      statusEl.style.background = '#f8fafc';
+      statusEl.style.color = '#475569';
+      statusEl.style.borderColor = '#cbd5e1';
+    }
+  }
+
+  if (subtitleEl) {
+    const daysCount = (currentAttendance && currentAttendance.length) ? currentAttendance.length : 31;
+    subtitleEl.innerText = `คำนวณจากยอดลงเวลา ${daysCount} วัน (${currentPeriod.startDate} - ${currentPeriod.endDate}) ${hasOverride ? '• โครงสร้างค่าเงินเฉพาะงวดนี้' : '• โครงสร้างค่าเงินมาตรฐาน'}`;
+  }
 }
 
 function updatePayslip(calc) {
@@ -1053,6 +1151,11 @@ function onPayrollPeriodSelectChange() {
   currentPeriod = found;
   salaryProfile.periodMonth = `${found.endMonthNameEN} ${found.yearCE}`;
   salaryProfile.payDate = found.payDate;
+
+  // โหลดการตั้งค่าค่าเงินเฉพาะของงวดนี้ (ถ้ามีบันทึกแยกไว้) หรือใช้ค่ามาตรฐาน
+  currentSalaryConfig = getSalaryConfigForPeriod(found.id);
+  updateRateLabelsOnCards();
+  updateCardPeriodBadge();
 
   const uid = (typeof getActiveEditingUserId === 'function') ? getActiveEditingUserId() : 'user_admin';
   const savedAtt = loadAttendanceFromStorage(found.id);
@@ -1373,6 +1476,11 @@ function openSettingsSalaryModal() {
   const modal = document.getElementById('settingsSalaryModal');
   if (!modal) return;
 
+  // อัปเดต currentSalaryConfig ให้ตรงกับงวดที่กำลังเลือกอยู่
+  if (currentPeriod && currentPeriod.id) {
+    currentSalaryConfig = getSalaryConfigForPeriod(currentPeriod.id);
+  }
+
   // นำค่าปัจจุบันใส่ลงในฟอร์ม
   setInputValue('cfgBaseSalary', typeof currentSalaryConfig.baseSalary !== 'undefined' ? currentSalaryConfig.baseSalary : DEFAULT_SALARY_CONFIG.baseSalary);
   setInputValue('cfgTransportationAllowance', currentSalaryConfig.transportationAllowance ?? 0);
@@ -1386,8 +1494,47 @@ function openSettingsSalaryModal() {
   setInputValue('cfgSsoDeduction', typeof currentSalaryConfig.ssoDeduction !== 'undefined' ? currentSalaryConfig.ssoDeduction : DEFAULT_SALARY_CONFIG.ssoDeduction);
   setInputValue('cfgSsoMaxBase', currentSalaryConfig.ssoMaxBase ?? 17500);
 
+  updateModalPeriodInfo();
   updateLiveOTPreview();
   modal.style.display = 'flex';
+}
+
+function updateModalPeriodInfo() {
+  const badgeEl = document.getElementById('modalSalaryPeriodBadge');
+  const statusEl = document.getElementById('modalSalaryConfigStatusBadge');
+  const subtitleEl = document.getElementById('modalSalaryPeriodSubtitle');
+  const btnSavePeriod = document.getElementById('btnSaveSalaryForPeriod');
+  const btnResetPeriod = document.getElementById('btnResetPeriodSalaryConfig');
+
+  const pName = currentPeriod ? currentPeriod.displayName : 'งวดปัจจุบัน';
+  const pMonth = currentPeriod ? currentPeriod.endMonthName : 'งวดนี้';
+  const hasPeriodOverride = Boolean(currentPeriod && periodSalaryConfigs && periodSalaryConfigs[currentPeriod.id]);
+
+  if (badgeEl) {
+    badgeEl.innerText = `งวด: ${pName}`;
+  }
+  if (statusEl) {
+    if (hasPeriodOverride) {
+      statusEl.innerText = '✏️ มีการตั้งค่าเฉพาะงวดนี้';
+      statusEl.style.background = '#dbeafe';
+      statusEl.style.color = '#1e40af';
+      statusEl.style.borderColor = '#bfdbfe';
+    } else {
+      statusEl.innerText = '🌐 ใช้ค่ามาตรฐาน (Global)';
+      statusEl.style.background = '#f1f5f9';
+      statusEl.style.color = '#475569';
+      statusEl.style.borderColor = '#cbd5e1';
+    }
+  }
+  if (subtitleEl) {
+    subtitleEl.innerText = `ปรับเปลี่ยนอัตราเงินเดือน เบี้ยเลี้ยง และสูตร OT สำหรับ ${pName}`;
+  }
+  if (btnSavePeriod) {
+    btnSavePeriod.innerText = `💾 บันทึกเฉพาะงวดนี้ (${pMonth})`;
+  }
+  if (btnResetPeriod) {
+    btnResetPeriod.style.display = hasPeriodOverride ? 'inline-flex' : 'none';
+  }
 }
 
 function closeSettingsSalaryModal() {
@@ -1409,7 +1556,7 @@ function parseFormNumber(val, defaultVal = 0) {
   return isNaN(n) ? defaultVal : n;
 }
 
-function saveSalaryConfigFromModal() {
+function saveSalaryConfigFromModal(scope = 'period') {
   const newConfig = {
     baseSalary: parseFormNumber(document.getElementById('cfgBaseSalary')?.value, 0),
     transportationAllowance: parseFormNumber(document.getElementById('cfgTransportationAllowance')?.value, 0),
@@ -1424,32 +1571,75 @@ function saveSalaryConfigFromModal() {
     ssoMaxBase: parseFormNumber(document.getElementById('cfgSsoMaxBase')?.value, 17500)
   };
 
-  currentSalaryConfig = newConfig;
-  try {
-    const userCfgKey = getScopedUserKey(STORAGE_KEY_SALARY_CONFIG);
-    localStorage.setItem(userCfgKey, JSON.stringify(currentSalaryConfig));
-    const activeUid = (typeof getActiveEditingUserId === 'function') ? getActiveEditingUserId() : 'user_admin';
-    if (activeUid === 'user_admin') {
-      localStorage.setItem(STORAGE_KEY_SALARY_CONFIG, JSON.stringify(currentSalaryConfig));
+  const periodId = currentPeriod ? currentPeriod.id : null;
+  const periodName = currentPeriod ? currentPeriod.displayName : 'งวดปัจจุบัน';
+
+  if (scope === 'all') {
+    // บันทึกเป็นค่ามาตรฐานสำหรับทุกงวด
+    userBaseSalaryConfig = { ...newConfig };
+    try {
+      const userCfgKey = getScopedUserKey(STORAGE_KEY_SALARY_CONFIG);
+      localStorage.setItem(userCfgKey, JSON.stringify(userBaseSalaryConfig));
+      const activeUid = (typeof getActiveEditingUserId === 'function') ? getActiveEditingUserId() : 'user_admin';
+      if (activeUid === 'user_admin') {
+        localStorage.setItem(STORAGE_KEY_SALARY_CONFIG, JSON.stringify(userBaseSalaryConfig));
+      }
+    } catch (e) {
+      console.warn('LocalStorage save base config failed', e);
     }
-  } catch (e) {
-    console.warn('LocalStorage save failed', e);
+    // หากงวดปัจจุบันมีการตั้งค่าเฉพาะอยู่ ให้อัปเดตงวดปัจจุบันด้วย
+    if (periodId) {
+      periodSalaryConfigs[periodId] = { ...newConfig };
+      savePeriodSalaryConfigsToStorage();
+    }
+    currentSalaryConfig = { ...newConfig };
+    if (typeof syncDataToCloud === 'function') {
+      syncDataToCloud('salaryConfig', currentSalaryConfig);
+    }
+    closeSettingsSalaryModal();
+    updateRateLabelsOnCards();
+    updateCardPeriodBadge();
+    recalculateSalary();
+    showSuccessPopup('บันทึกสำเร็จ', 'บันทึกโครงสร้างค่าเงินเป็นค่ามาตรฐานสำหรับทุกงวดเรียบร้อยแล้ว');
+    showToastNotification('🌐 บันทึกค่ามาตรฐานสำหรับทุกงวดเรียบร้อยแล้ว!');
+  } else {
+    // บันทึกเฉพาะงวดนี้ (Default behavior)
+    if (periodId) {
+      periodSalaryConfigs[periodId] = { ...newConfig };
+      savePeriodSalaryConfigsToStorage();
+    }
+    currentSalaryConfig = { ...newConfig };
+    closeSettingsSalaryModal();
+    updateRateLabelsOnCards();
+    updateCardPeriodBadge();
+    recalculateSalary();
+    showSuccessPopup('บันทึกเฉพาะงวดสำเร็จ', `บันทึกโครงสร้างค่าเงินเฉพาะงวด ${periodName} เรียบร้อยแล้ว (งวดเดือนอื่นจะไม่ได้รับผลกระทบ)`);
+    showToastNotification(`💾 บันทึกค่าเงินเฉพาะงวด ${periodName} เรียบร้อยแล้ว!`);
   }
+}
 
-  // ซิงค์ขึ้น Cloud ถ้าล็อกอินอยู่
-  if (typeof syncDataToCloud === 'function') {
-    syncDataToCloud('salaryConfig', currentSalaryConfig);
+function resetPeriodSalaryConfigToDefault() {
+  if (!currentPeriod || !currentPeriod.id) return;
+  if (!periodSalaryConfigs || !periodSalaryConfigs[currentPeriod.id]) {
+    showToastNotification('งวดนี้ใช้ค่ามาตรฐานอยู่แล้ว');
+    return;
   }
-
-  closeSettingsSalaryModal();
-  updateRateLabelsOnCards();
-  recalculateSalary();
-  showSuccessPopup('บันทึกสำเร็จ', 'บันทึกโครงสร้างค่าเงินและเบี้ยเลี้ยงเรียบร้อยแล้ว');
-  showToastNotification('✅ บันทึกโครงสร้างค่าเงินและเบี้ยเลี้ยงเรียบร้อยแล้ว!');
+  if (confirm(`คุณต้องการลบการตั้งค่าเฉพาะงวด "${currentPeriod.displayName}" และกลับไปใช้ค่ามาตรฐานหรือไม่?`)) {
+    delete periodSalaryConfigs[currentPeriod.id];
+    savePeriodSalaryConfigsToStorage();
+    currentSalaryConfig = getSalaryConfigForPeriod(currentPeriod.id);
+    closeSettingsSalaryModal();
+    updateRateLabelsOnCards();
+    updateCardPeriodBadge();
+    recalculateSalary();
+    showSuccessPopup('คืนค่ามาตรฐานสำเร็จ', `คืนโครงสร้างค่าเงินงวด ${currentPeriod.displayName} กลับเป็นค่ามาตรฐานเรียบร้อยแล้ว`);
+    showToastNotification(`↩️ คืนค่ามาตรฐานสำหรับงวด ${currentPeriod.displayName} เรียบร้อยแล้ว`);
+  }
 }
 
 function clearSalaryConfigToZero() {
-  if (confirm('คุณต้องการปรับยอดเงินเดือน เบี้ยเลี้ยง และเงินหักทั้งหมดให้เป็น 0 ใช่หรือไม่?\n\n(สำหรับกรณีเดือนที่ยังไม่ได้เข้าทำงาน หรือยังไม่มีรายได้)')) {
+  const periodName = currentPeriod ? currentPeriod.displayName : 'งวดนี้';
+  if (confirm(`คุณต้องการปรับยอดเงินเดือน เบี้ยเลี้ยง และเงินหักทั้งหมดให้เป็น 0 ใช่หรือไม่?\n\n(สำหรับกรณีงวด ${periodName} ที่ยังไม่ได้เข้าทำงาน หรือยังไม่มีรายได้)`)) {
     setInputValue('cfgBaseSalary', 0);
     setInputValue('cfgTransportationAllowance', 0);
     setInputValue('cfgDiligenceFullAmount', 0);
@@ -1458,13 +1648,12 @@ function clearSalaryConfigToZero() {
     setInputValue('cfgSsoDeduction', 0);
     setInputValue('cfgSsoMaxBase', 0);
     updateLiveOTPreview();
-    showToastNotification('🧹 เคลียร์ค่าเงินและเบี้ยเลี้ยงเป็น 0 ทั้งหมดแล้ว (กรุณากด "💾 บันทึกการตั้งค่า" เพื่อยืนยัน)');
+    showToastNotification('🧹 เคลียร์ค่าเงินและเบี้ยเลี้ยงเป็น 0 ทั้งหมดแล้ว (กรุณากด "💾 บันทึกเฉพาะงวดนี้" เพื่อยืนยัน)');
   }
 }
 
 function resetSalaryConfigToDefault() {
-  if (confirm('คุณต้องการคืนค่าอัตราเงินและเบี้ยเลี้ยงเป็นค่ามาตรฐานตามรูปที่ 2 หรือไม่?')) {
-    currentSalaryConfig = { ...DEFAULT_SALARY_CONFIG };
+  if (confirm('คุณต้องการรีเซ็ตค่าในฟอร์มเป็นค่ามาตรฐานเริ่มต้นตามรูปที่ 2 หรือไม่?')) {
     setInputValue('cfgBaseSalary', DEFAULT_SALARY_CONFIG.baseSalary);
     setInputValue('cfgTransportationAllowance', DEFAULT_SALARY_CONFIG.transportationAllowance);
     setInputValue('cfgDiligenceFullAmount', DEFAULT_SALARY_CONFIG.diligenceFullAmount);
@@ -1477,6 +1666,7 @@ function resetSalaryConfigToDefault() {
     setInputValue('cfgSsoDeduction', DEFAULT_SALARY_CONFIG.ssoDeduction);
     setInputValue('cfgSsoMaxBase', DEFAULT_SALARY_CONFIG.ssoMaxBase);
     updateLiveOTPreview();
+    showToastNotification('🔄 รีเซ็ตค่าในฟอร์มเป็นค่ามาตรฐานแล้ว (กรุณากดบันทึกเพื่อยืนยัน)');
   }
 }
 
@@ -1621,6 +1811,7 @@ function reloadUserDataAfterAuthChange() {
   refreshPeriodSelector();
   renderOrbrayCalendarGrid();
   updateRateLabelsOnCards();
+  updateCardPeriodBadge();
   recalculateSalary();
   updateAdminScopeBanner();
   updateNavbarAuthUI(currentUser, isFirebaseOnline);
@@ -1646,6 +1837,7 @@ function switchEditingUser(targetUserId) {
   refreshPeriodSelector();
   renderOrbrayCalendarGrid();
   updateRateLabelsOnCards();
+  updateCardPeriodBadge();
   recalculateSalary();
   updateAdminScopeBanner();
 
@@ -2338,6 +2530,7 @@ window.addEventListener('DOMContentLoaded', () => {
   refreshPeriodSelector();
   renderOrbrayCalendarGrid();
   updateRateLabelsOnCards();
+  updateCardPeriodBadge();
 
   // ลงทะเบียนติดตามสถานะผู้ใช้จาก Firebase
   if (typeof addAuthStateListener === 'function') {
