@@ -35,12 +35,16 @@ const DEFAULT_SYSTEM_USERS = [
   }
 ];
 
-let firebaseApp = null;
-let firebaseAuth = null;
-let firebaseDb = null;
-let currentUser = null;
-let isFirebaseOnline = false;
-let activeEditingUserId = 'user_admin';
+var firebaseApp = null;
+var firebaseAuth = null;
+var firebaseDb = null;
+var currentUser = null;
+var isFirebaseOnline = false;
+var activeEditingUserId = 'user_admin';
+
+function getCurrentUser() {
+  return currentUser;
+}
 
 // Callback แจ้งเตือนเมื่อสถานะผู้ใช้เปลี่ยน
 let onAuthStateListeners = [];
@@ -54,6 +58,9 @@ function addAuthStateListener(callback) {
 
 function notifyAuthState(user) {
   currentUser = user;
+  if (typeof window !== 'undefined') {
+    window.currentUser = user;
+  }
   if (user) {
     localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(user));
     // กฎเหล็ก: ถ้าผู้ใช้ไม่ใช่ ADMIN (JITTRAKAN K.) จะต้องบังคับดูเฉพาะข้อมูลตัวเองเท่านั้น
@@ -119,7 +126,7 @@ function getAllSystemUsers(internalBypass = false) {
           modified = true;
         }
 
-        // 2. ตรวจสอบและสร้าง/อัปเดต Master Admin (JITTRAKAN K., PIN 20523) เพียงหนึ่งเดียว
+        // 2. ตรวจสอบและสร้าง/อัปเดต Master Admin เพียงหนึ่งเดียว
         let adminUser = parsed.find(u => u.id === 'user_admin');
         if (!adminUser) {
           adminUser = { ...DEFAULT_SYSTEM_USERS[0] };
@@ -127,20 +134,36 @@ function getAllSystemUsers(internalBypass = false) {
           modified = true;
         }
 
-        // บังคับค่าที่ถูกต้องแน่นอนของ ADMIN หลัก
+        // บังคับสิทธิ์ Admin สูงสุด และรักษาค่าที่ผู้ใช้แก้ไขล่าสุดไว้ (ไม่เขียนทับค่าที่บันทึกไว้)
         adminUser.id = 'user_admin';
-        adminUser.name = 'JITTRAKAN K.';
-        adminUser.companyName = 'CACULATION SALARY';
-        adminUser.empCode = '20523';
-        adminUser.department = 'PRODUCTION TECHNOLOGY';
-        adminUser.pin = '20523';
         adminUser.role = 'admin';
         adminUser.avatar = '👑';
+        if (!adminUser.name || !String(adminUser.name).trim()) {
+          adminUser.name = 'JITTRAKAN K.';
+          modified = true;
+        }
+        if (!adminUser.companyName || !String(adminUser.companyName).trim()) {
+          adminUser.companyName = 'CACULATION SALARY';
+          modified = true;
+        }
+        if (!adminUser.empCode || !String(adminUser.empCode).trim()) {
+          adminUser.empCode = '20523';
+          modified = true;
+        }
+        if (!adminUser.department || !String(adminUser.department).trim()) {
+          adminUser.department = 'PRODUCTION TECHNOLOGY';
+          modified = true;
+        }
+        if (!adminUser.pin || !String(adminUser.pin).trim()) {
+          adminUser.pin = '20523';
+          modified = true;
+        }
 
         // 3. กรองบัญชีที่มี ID หรือ PIN ซ้ำกันออก
         const seenIds = new Set();
         const seenPins = new Set();
-        seenPins.add('20523'); // จอง PIN ของ Admin ไว้
+        const adminPin = String(adminUser.pin || '').trim();
+        if (adminPin) seenPins.add(adminPin); // จอง PIN ของ Admin ไว้
         const cleanList = [adminUser];
         seenIds.add('user_admin');
 
@@ -173,7 +196,7 @@ function getAllSystemUsers(internalBypass = false) {
             u.companyName = u.companyName.toUpperCase();
           }
           if (!u.empCode) {
-            u.empCode = (u.id === 'user_admin' ? '20523' : ('EMP-' + (u.pin || '001'))).toUpperCase();
+            u.empCode = (u.id === 'user_admin' ? (adminUser.empCode || '20523') : ('EMP-' + (u.pin || '001'))).toUpperCase();
             modified = true;
           } else {
             u.empCode = u.empCode.toUpperCase();
@@ -193,9 +216,17 @@ function getAllSystemUsers(internalBypass = false) {
         if (currentAuthRaw) {
           try {
             const authObj = JSON.parse(currentAuthRaw);
-            if (authObj && (String(authObj.pin).trim() === '09718455' || authObj.name?.includes("'") || authObj.id !== 'user_admin')) {
-              localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(adminUser));
-              currentUser = adminUser;
+            if (authObj) {
+              if (String(authObj.pin).trim() === '09718455' || authObj.name?.includes("'")) {
+                localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(adminUser));
+                currentUser = adminUser;
+              } else if (authObj.id === 'user_admin') {
+                // ซิงก์ข้อมูลอัปเดตล่าสุดของ adminUser
+                localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(adminUser));
+                if (currentUser && currentUser.id === 'user_admin') {
+                  currentUser = adminUser;
+                }
+              }
             }
           } catch(e) {}
         }
@@ -216,16 +247,18 @@ function getAllSystemUsers(internalBypass = false) {
  * ล้างรายชื่อพนักงานทั้งหมด เหลือไว้เฉพาะ ADMIN หลัก
  */
 function clearAllStaffUsers() {
+  const allCurrent = getAllSystemUsers(true);
+  const currentAdmin = allCurrent.find(u => u.id === 'user_admin') || DEFAULT_SYSTEM_USERS[0];
   const adminUser = {
     id: 'user_admin',
-    name: 'JITTRAKAN K.',
-    companyName: 'CACULATION SALARY',
-    empCode: '20523',
-    department: 'PRODUCTION TECHNOLOGY',
-    pin: '20523',
+    name: currentAdmin.name || 'JITTRAKAN K.',
+    companyName: currentAdmin.companyName || 'CACULATION SALARY',
+    empCode: currentAdmin.empCode || '20523',
+    department: currentAdmin.department || 'PRODUCTION TECHNOLOGY',
+    pin: currentAdmin.pin || '20523',
     role: 'admin',
     avatar: '👑',
-    createdAt: '2026-01-01T00:00:00.000Z'
+    createdAt: currentAdmin.createdAt || '2026-01-01T00:00:00.000Z'
   };
   const list = [adminUser];
   saveSystemUsers(list);
@@ -343,7 +376,7 @@ function registerNewUser(name, pin, role = 'user', department = '', companyName 
     return { success: false, error: 'รหัส PIN ต้องเป็นตัวเลข 4–8 หลักเท่านั้น' };
   }
 
-  const users = getAllSystemUsers();
+  const users = getAllSystemUsers(true);
   if (users.some(u => u.pin === cleanPin)) {
     return { success: false, error: 'รหัส PIN นี้ถูกใช้งานแล้ว กรุณาเลือกรหัสอื่น' };
   }
@@ -376,7 +409,7 @@ function updateSystemUser(userId, updateData) {
     return { success: false, error: 'คุณไม่มีสิทธิ์แก้ไขข้อมูลบัญชีของผู้อื่น' };
   }
 
-  const users = getAllSystemUsers();
+  const users = getAllSystemUsers(true);
   const idx = users.findIndex(u => u.id === userId);
   if (idx === -1) {
     return { success: false, error: 'ไม่พบผู้ใช้นี้ในระบบ' };
@@ -438,7 +471,7 @@ function deleteSystemUser(userId) {
     return { success: false, error: 'ไม่สามารถลบบัญชี ADMIN หลัก (JITTRAKAN K.) ได้' };
   }
 
-  let users = getAllSystemUsers();
+  let users = getAllSystemUsers(true);
   users = users.filter(u => u.id !== userId);
   saveSystemUsers(users);
 
@@ -460,12 +493,29 @@ async function logoutCurrentUser() {
 }
 
 /**
+ * ตรวจสอบว่ากำลังใช้เซิร์ฟเวอร์ Firebase ที่กำหนดเองหรือไม่
+ */
+function isUsingCustomFirebaseServer() {
+  try {
+    const custom = localStorage.getItem(STORAGE_KEY_FIREBASE_CFG);
+    if (!custom) return false;
+    const parsed = JSON.parse(custom);
+    return Boolean(parsed && parsed.projectId && parsed.projectId !== 'caculation-salary-app');
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
  * ดึงการตั้งค่า Firebase
  */
 function getActiveFirebaseConfig() {
   try {
     const custom = localStorage.getItem(STORAGE_KEY_FIREBASE_CFG);
-    if (custom) return JSON.parse(custom);
+    if (custom) {
+      const parsed = JSON.parse(custom);
+      if (parsed && parsed.projectId) return parsed;
+    }
   } catch (e) {
     console.warn('Cannot parse stored firebase config', e);
   }
@@ -486,10 +536,93 @@ function saveFirebaseConfig(cfg) {
 }
 
 /**
+ * ทดสอบการเชื่อมต่อกับเซิร์ฟเวอร์ Firebase
+ */
+async function testFirebaseConnection(cfg) {
+  if (!cfg || !cfg.projectId || !cfg.apiKey) {
+    return { success: false, error: 'กรุณาระบุ Project ID และ API Key ให้ครบถ้วนก่อนทดสอบ' };
+  }
+  if (typeof firebase === 'undefined' || !firebase.initializeApp) {
+    return { success: false, error: 'ไม่พบไลบรารี Firebase SDK บนเบราว์เซอร์' };
+  }
+
+  const testAppName = 'test_conn_' + Date.now();
+  let testApp = null;
+  try {
+    testApp = firebase.initializeApp(cfg, testAppName);
+    const testDb = testApp.firestore();
+
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('การเชื่อมต่อหมดเวลา (Timeout) กรุณาตรวจสอบอินเทอร์เน็ตหรือ Project ID')), 8000)
+    );
+
+    const testPromise = testDb.collection('app_system').doc('ping').set({
+      lastTestedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      testClient: 'web_payroll'
+    }, { merge: true });
+
+    await Promise.race([testPromise, timeoutPromise]);
+
+    try { await testApp.delete(); } catch(e) {}
+    return { 
+      success: true, 
+      message: `เชื่อมต่อเซิร์ฟเวอร์ Firebase "${cfg.projectId}" สำเร็จ! สามารถเขียนและอ่านฐานข้อมูล Firestore ได้ตามปกติ` 
+    };
+  } catch (err) {
+    if (testApp) {
+      try { await testApp.delete(); } catch(e) {}
+    }
+    // หากติดสิทธิ์ Security Rules (permission-denied) แสดงว่าติดต่อเซิร์ฟเวอร์และพบ Project ID แล้ว
+    if (err.code === 'permission-denied' || String(err.message).toLowerCase().includes('permission')) {
+      return { 
+        success: true, 
+        message: `เชื่อมต่อเซิร์ฟเวอร์ Firebase "${cfg.projectId}" สำเร็จ! (พบเซิร์ฟเวอร์เรียบร้อย แต่อาจมีข้อจำกัดด้าน Firestore Security Rules)` 
+      };
+    }
+    return { success: false, error: `เชื่อมต่อไม่สำเร็จ: ${err.message || err}` };
+  }
+}
+
+/**
+ * นำคอนฟิกเซิร์ฟเวอร์ใหม่ไปใช้งานและรีเฟรชการเชื่อมต่อแบบเรียลไทม์
+ */
+async function reinitFirebaseWithNewConfig(newCfg) {
+  saveFirebaseConfig(newCfg);
+  if (typeof firebase !== 'undefined' && firebase.apps) {
+    for (let app of [...firebase.apps]) {
+      try { await app.delete(); } catch (e) {}
+    }
+  }
+  initFirebaseApp();
+  onAuthStateListeners.forEach(cb => {
+    try { cb(currentUser, isFirebaseOnline); } catch (e) {}
+  });
+  return true;
+}
+
+/**
+ * คืนค่าเซิร์ฟเวอร์เป็นค่าเริ่มต้น (โหมด Local Storage ออฟไลน์)
+ */
+async function resetFirebaseConfigToDefault() {
+  localStorage.removeItem(STORAGE_KEY_FIREBASE_CFG);
+  if (typeof firebase !== 'undefined' && firebase.apps) {
+    for (let app of [...firebase.apps]) {
+      try { await app.delete(); } catch (e) {}
+    }
+  }
+  initFirebaseApp();
+  onAuthStateListeners.forEach(cb => {
+    try { cb(currentUser, isFirebaseOnline); } catch (e) {}
+  });
+  return true;
+}
+
+/**
  * เริ่มต้นการทำงานของ Firebase
  */
 function initFirebaseApp() {
   const cfg = getActiveFirebaseConfig();
+  const hasCustom = isUsingCustomFirebaseServer();
 
   if (typeof firebase !== 'undefined' && firebase.initializeApp) {
     try {
@@ -500,14 +633,17 @@ function initFirebaseApp() {
       }
       if (firebase.auth) firebaseAuth = firebase.auth();
       if (firebase.firestore) firebaseDb = firebase.firestore();
-      isFirebaseOnline = true;
-      console.log('Firebase initialized successfully!');
+      isFirebaseOnline = hasCustom;
+      if (typeof window !== 'undefined') window.isFirebaseOnline = isFirebaseOnline;
+      console.log('Firebase initialized successfully!', hasCustom ? `(Custom Cloud Server: ${cfg.projectId})` : '(Local Mode)');
     } catch (err) {
       console.warn('Firebase init note (Local PIN Mode active):', err.message);
       isFirebaseOnline = false;
+      if (typeof window !== 'undefined') window.isFirebaseOnline = false;
     }
   } else {
     isFirebaseOnline = false;
+    if (typeof window !== 'undefined') window.isFirebaseOnline = false;
   }
 
   // ตรวจสอบผู้ใช้ที่เคยล็อกอินค้างไว้
@@ -519,7 +655,7 @@ function checkStoredCurrentUser() {
     const raw = localStorage.getItem(STORAGE_KEY_AUTH_USER);
     if (raw) {
       const u = JSON.parse(raw);
-      const all = getAllSystemUsers();
+      const all = getAllSystemUsers(true);
       const match = all.find(x => x.id === u.id);
       if (match) {
         notifyAuthState(match);

@@ -80,7 +80,7 @@ let currentPeriod = null;   // งวดการจ่ายปัจจุบ�
 let currentAttendance = []; // รายการลงเวลา 31 วันของงวดปัจจุบัน
 
 // ข้อมูลพนักงานและข้อมูลคงที่
-const salaryProfile = {
+var salaryProfile = {
   companyName: 'CACULATION SALARY',
   empCode: '20523',
   empName: 'JITTRAKAN K.',
@@ -92,6 +92,9 @@ const salaryProfile = {
   userName: 'JITTRAKAN K.',
   printDate: '13/09/2569'
 };
+if (typeof window !== 'undefined') {
+  window.salaryProfile = salaryProfile;
+}
 
 // โครงสร้างอัตราค่าเงินเริ่มต้นตามรูปที่ 2 (สามารถแก้ไขได้ตลอดเวลา)
 const DEFAULT_SALARY_CONFIG = {
@@ -760,7 +763,6 @@ function recalculateSalary() {
   const transportationAllowance = Number(currentSalaryConfig.transportationAllowance) || 0;
   const foodPerDay = Number(currentSalaryConfig.foodPerDay) || 0;
   const otMealPerDay = Number(currentSalaryConfig.otMealPerDay) || 0;
-  const otDivisor = Number(currentSalaryConfig.otDivisorHours) || 240;
   const ot15Multiplier = Number(currentSalaryConfig.ot15Multiplier) || 1.5;
   const ot1Multiplier = Number(currentSalaryConfig.ot1Multiplier) || 1.0;
   const ot3Multiplier = Number(currentSalaryConfig.ot3Multiplier) || 3.0;
@@ -776,10 +778,18 @@ function recalculateSalary() {
   const L2_travelAllowance = transportationAllowance;
   const M2_diligenceAllowance = (B2_targetDays > 0 && D2_cameDays >= B2_targetDays) ? diligenceFullAmount : 0;
 
-  const hourlyOTRate = otDivisor > 0 ? (baseSalary / otDivisor) : 0;
-  const N2_ot15Amount = Math.round(hourlyOTRate * ot15Multiplier * G2_ot15Hours);
-  const O2_ot1Amount = Math.round(hourlyOTRate * ot1Multiplier * H2_ot1Hours);
-  const P2_ot3Amount = Math.round(hourlyOTRate * ot3Multiplier * I2_ot3Hours);
+  // ฐานค่าจ้างต่อชั่วโมงปกติ: (เงินเดือน / 30 / 8)
+  const baseHourlyRate = baseSalary > 0 ? (baseSalary / 30 / 8) : 0;
+  const hourlyOTRate = baseHourlyRate;
+
+  // 1. วันปกติ: (เงินเดือน/30/8) * (1.5 * ชั่วโมง OT1.5) -> ปัดเศษ >= 0.5 ขึ้น, < 0.5 ลง
+  const N2_ot15Amount = Math.round(baseHourlyRate * (ot15Multiplier * G2_ot15Hours));
+
+  // 2. วันฮอลิเดย์: (เงินเดือน/30/8) * (1 * ชั่วโมง OT1 หรือทำงาน 08:00-17:00 ของช่วงวันหยุดฮอลิเดย์) -> ปัดเศษ >= 0.5 ขึ้น, < 0.5 ลง
+  const O2_ot1Amount = Math.round(baseHourlyRate * (ot1Multiplier * H2_ot1Hours));
+
+  // 3. OT ฮอลิเดย์: (เงินเดือน/30/8) * (3 * ชั่วโมง OT3 หรือทำงาน 17:00-19:20 ของช่วงวันหยุดฮอลิเดย์) -> ปัดเศษ >= 0.5 ขึ้น, < 0.5 ลง
+  const P2_ot3Amount = Math.round(baseHourlyRate * (ot3Multiplier * I2_ot3Hours));
 
   // ยอดหักประกันสังคม: ถ้าไม่มีรายได้เลยและไม่มีฐานเงินเดือน (เช่น ยังไม่ได้เริ่มงาน) ให้ยอดหักเป็น 0
   const totalEarnings = E2_actualSalary + J2_foodAllowance + K2_otMealAllowance + L2_travelAllowance +
@@ -884,21 +894,21 @@ function updateRateLabelsOnCards() {
   setElText('calcTravelTotal', formatCurrency(currentSalaryConfig.transportationAllowance));
   
   const baseFormatted = formatCurrency(currentSalaryConfig.baseSalary);
-  const div = currentSalaryConfig.otDivisorHours;
+
   setElText('lblOT15Title', `ค่าล่วงเวลา OT ${currentSalaryConfig.ot15Multiplier} เท่า (วันปกติ)`);
   setElText('lblOT15Mult', currentSalaryConfig.ot15Multiplier);
   setElText('lblOT15Base', baseFormatted);
-  setElText('lblOT15Divisor', div);
+  setElText('lblOT15Days', '30');
 
   setElText('lblOT1Title', `ค่าล่วงเวลา OT ${currentSalaryConfig.ot1Multiplier} เท่า (วันหยุด 8 ชม.)`);
   setElText('lblOT1Mult', currentSalaryConfig.ot1Multiplier);
   setElText('lblOT1Base', baseFormatted);
-  setElText('lblOT1Divisor', div);
+  setElText('lblOT1Days', '30');
 
   setElText('lblOT3Title', `ค่าล่วงเวลา OT ${currentSalaryConfig.ot3Multiplier} เท่า (วันหยุดหลัง 17:00)`);
   setElText('lblOT3Mult', currentSalaryConfig.ot3Multiplier);
   setElText('lblOT3Base', baseFormatted);
-  setElText('lblOT3Divisor', div);
+  setElText('lblOT3Days', '30');
 
   setElText('lblSSOMaxBase', formatCurrency(currentSalaryConfig.ssoMaxBase));
 }
@@ -938,42 +948,7 @@ function updateCardPeriodBadge() {
 }
 
 function updatePayslip(calc) {
-  setElText('slipPeriodMonth', salaryProfile.periodMonth);
-  setElText('slipPayDate', salaryProfile.payDate);
-  setElText('slipCompanyName', salaryProfile.companyName || 'CACULATION SALARY');
-  setElText('slipEmpCode', salaryProfile.empCode || '-');
-  setElText('slipEmpName', salaryProfile.empName || '-');
-  setElText('slipDepartment', salaryProfile.department || '-');
-
-  const tbodyIncome = document.getElementById('slipIncomeRows');
-  if (tbodyIncome) {
-    const items = [
-      { name: 'เงินเดือน', amount: calc.actualSalary },
-      { name: 'เบี้ยขยัน', amount: calc.diligence },
-      { name: 'เงินช่วยเหลือค่าเดินทาง', amount: calc.travel },
-      { name: 'ค่าอาหาร', amount: calc.food },
-      { name: 'อาหารโอที', amount: calc.otMeal },
-      { name: 'OT*1.5', amount: calc.ot15 },
-      { name: 'OT*1', amount: calc.ot1 },
-      { name: 'OT*3', amount: calc.ot3 }
-    ];
-
-    tbodyIncome.innerHTML = '';
-    items.forEach(item => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${item.name}</td><td class="text-right">${formatCurrency(item.amount)}</td>`;
-      tbodyIncome.appendChild(tr);
-    });
-  }
-
-  const tbodyDeduct = document.getElementById('slipDeductRows');
-  if (tbodyDeduct) {
-    tbodyDeduct.innerHTML = `<tr><td>ประกันสังคม</td><td class="text-right">${formatCurrency(calc.totalDeductions)}</td></tr>`;
-  }
-
-  setElText('slipTotalIncome', formatCurrency(calc.totalEarnings));
-  setElText('slipTotalDeduct', formatCurrency(calc.totalDeductions));
-  setElText('slipNetPay', formatCurrency(calc.netPay));
+  // หน้าสลิปเงินเดือนถูกนำออกตามที่ผู้ใช้ร้องขอ
 }
 
 function setElText(id, text) {
@@ -1416,12 +1391,10 @@ function switchView(viewName) {
   const mainView = document.getElementById('view-main');
   const attView = document.getElementById('view-attendance');
   const calView = document.getElementById('view-calendar');
-  const slipView = document.getElementById('view-slip');
 
   const navBtnMain = document.getElementById('navBtnMain');
   const navBtnAtt = document.getElementById('navBtnAttendance');
   const navBtnCal = document.getElementById('navBtnCalendar');
-  const navBtnSlip = document.getElementById('navBtnSlip');
 
   // Track the primary view
   if (viewName === 'attendance' || viewName === 'timesheet') {
@@ -1434,10 +1407,9 @@ function switchView(viewName) {
   if (mainView) mainView.style.display = 'none';
   if (attView) attView.style.display = 'none';
   if (calView) calView.style.display = 'none';
-  if (slipView) slipView.style.display = 'none';
 
   // Remove active class from nav buttons
-  [navBtnMain, navBtnAtt, navBtnCal, navBtnSlip].forEach(btn => {
+  [navBtnMain, navBtnAtt, navBtnCal].forEach(btn => {
     if (btn) btn.classList.remove('active');
   });
 
@@ -1455,18 +1427,12 @@ function switchView(viewName) {
     }
     if (calView) calView.style.display = 'block';
     if (navBtnCal) navBtnCal.classList.add('active');
-  } else if (viewName === 'slip') {
-    if (slipView) slipView.style.display = 'block';
-    if (navBtnSlip) navBtnSlip.classList.add('active');
   }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function prepareAndPrint() {
-  switchView('slip');
-  setTimeout(() => {
-    window.print();
-  }, 350);
+  window.print();
 }
 
 // ==========================================================================
@@ -1487,7 +1453,6 @@ function openSettingsSalaryModal() {
   setInputValue('cfgDiligenceFullAmount', currentSalaryConfig.diligenceFullAmount ?? 0);
   setInputValue('cfgFoodPerDay', currentSalaryConfig.foodPerDay ?? 0);
   setInputValue('cfgOtMealPerDay', currentSalaryConfig.otMealPerDay ?? 0);
-  setInputValue('cfgOtDivisorHours', currentSalaryConfig.otDivisorHours ?? 240);
   setInputValue('cfgOt15Multiplier', currentSalaryConfig.ot15Multiplier ?? 1.5);
   setInputValue('cfgOt1Multiplier', currentSalaryConfig.ot1Multiplier ?? 1.0);
   setInputValue('cfgOt3Multiplier', currentSalaryConfig.ot3Multiplier ?? 3.0);
@@ -1544,10 +1509,13 @@ function closeSettingsSalaryModal() {
 
 function updateLiveOTPreview() {
   const base = parseFloat(document.getElementById('cfgBaseSalary')?.value) || 0;
-  const divisor = parseFloat(document.getElementById('cfgOtDivisorHours')?.value) || 240;
-  const rate = divisor > 0 ? (base / divisor) : 0;
+  const rate = base > 0 ? (base / 30 / 8) : 0;
+
   const previewEl = document.getElementById('cfgLiveOTRate');
   if (previewEl) previewEl.innerText = formatCurrency(rate);
+
+  const salaryEl = document.getElementById('cfgLiveOTSalary');
+  if (salaryEl) salaryEl.innerText = formatCurrency(base);
 }
 
 function parseFormNumber(val, defaultVal = 0) {
@@ -1563,12 +1531,12 @@ function saveSalaryConfigFromModal(scope = 'period') {
     diligenceFullAmount: parseFormNumber(document.getElementById('cfgDiligenceFullAmount')?.value, 0),
     foodPerDay: parseFormNumber(document.getElementById('cfgFoodPerDay')?.value, 0),
     otMealPerDay: parseFormNumber(document.getElementById('cfgOtMealPerDay')?.value, 0),
-    otDivisorHours: parseFormNumber(document.getElementById('cfgOtDivisorHours')?.value, 240),
+    otDivisorHours: currentSalaryConfig?.otDivisorHours ?? 240,
     ot15Multiplier: parseFormNumber(document.getElementById('cfgOt15Multiplier')?.value, 1.5),
     ot1Multiplier: parseFormNumber(document.getElementById('cfgOt1Multiplier')?.value, 1.0),
     ot3Multiplier: parseFormNumber(document.getElementById('cfgOt3Multiplier')?.value, 3.0),
     ssoDeduction: parseFormNumber(document.getElementById('cfgSsoDeduction')?.value, 0),
-    ssoMaxBase: parseFormNumber(document.getElementById('cfgSsoMaxBase')?.value, 17500)
+    ssoMaxBase: parseFormNumber(document.getElementById('cfgSsoMaxBase')?.value, currentSalaryConfig?.ssoMaxBase ?? 17500)
   };
 
   const periodId = currentPeriod ? currentPeriod.id : null;
@@ -1659,7 +1627,6 @@ function resetSalaryConfigToDefault() {
     setInputValue('cfgDiligenceFullAmount', DEFAULT_SALARY_CONFIG.diligenceFullAmount);
     setInputValue('cfgFoodPerDay', DEFAULT_SALARY_CONFIG.foodPerDay);
     setInputValue('cfgOtMealPerDay', DEFAULT_SALARY_CONFIG.otMealPerDay);
-    setInputValue('cfgOtDivisorHours', DEFAULT_SALARY_CONFIG.otDivisorHours);
     setInputValue('cfgOt15Multiplier', DEFAULT_SALARY_CONFIG.ot15Multiplier);
     setInputValue('cfgOt1Multiplier', DEFAULT_SALARY_CONFIG.ot1Multiplier);
     setInputValue('cfgOt3Multiplier', DEFAULT_SALARY_CONFIG.ot3Multiplier);
@@ -1914,16 +1881,52 @@ window.addEventListener('click', (e) => {
 /**
  * อัปเดต Navbar ส่วนแสดงสถานะการล็อกอินและ User Dropdown Menu
  */
+function getFirebaseStatusPillHtml(isOnline) {
+  const isCustom = (typeof isUsingCustomFirebaseServer === 'function') ? isUsingCustomFirebaseServer() : false;
+  const cfg = (typeof getActiveFirebaseConfig === 'function') ? getActiveFirebaseConfig() : null;
+  const isOnlineBool = Boolean(isOnline);
+
+  let statusClass = 'status-local';
+  let dotColor = '#f59e0b';
+  let labelText = '🔥 เซิร์ฟเวอร์: Local';
+  let tooltip = 'เซิร์ฟเวอร์ Firebase: โหมด Local Storage (ออฟไลน์) - คลิกเพื่อเพิ่ม/ตั้งค่าเซิร์ฟเวอร์';
+
+  if (isOnlineBool) {
+    statusClass = 'status-online';
+    dotColor = '#22c55e';
+    const pId = cfg?.projectId || 'Cloud';
+    const shortId = pId.length > 14 ? pId.substring(0, 12) + '..' : pId;
+    labelText = `🔥 ${shortId}`;
+    tooltip = `เซิร์ฟเวอร์ Firebase: เชื่อมต่อ Cloud สำเร็จ (${pId}) - คลิกเพื่อจัดการ`;
+  } else if (isCustom) {
+    statusClass = 'status-offline';
+    dotColor = '#ef4444';
+    const pId = cfg?.projectId || 'Offline';
+    const shortId = pId.length > 14 ? pId.substring(0, 12) + '..' : pId;
+    labelText = `🔥 ${shortId}`;
+    tooltip = `เซิร์ฟเวอร์ Firebase: ออฟไลน์ (${pId}) - คลิกเพื่อตรวจสอบการตั้งค่า`;
+  }
+
+  return `
+    <button type="button" class="btn-firebase-pill ${statusClass}" onclick="openFirebaseConfigModal()" title="${tooltip}">
+      <span class="status-indicator-dot" style="background-color: ${dotColor};"></span>
+      <span class="fb-pill-name">${escapeHtml(labelText)}</span>
+    </button>
+  `;
+}
+
 function updateNavbarAuthUI(user, isOnline) {
   const container = document.getElementById('navAuthArea');
   if (!container) return;
+
+  const fbPillHtml = getFirebaseStatusPillHtml(isOnline);
 
   if (user) {
     const activeUserId = getActiveEditingUserId();
     const activeUser = getActiveEditingUser() || user;
 
     if (user.role === 'admin') {
-      // ผู้ใช้เป็น ADMIN: แสดง Badge + ชื่อผู้ใช้ (กดเพื่อเปิดเมนู บัญชีของฉัน, จัดการผู้ใช้, สลับพนักงาน) + ปุ่มออกจากระบบ
+      // ผู้ใช้เป็น ADMIN: แสดง Badge + ชื่อผู้ใช้ (กดเพื่อเปิดเมนู บัญชีของฉัน, จัดการผู้ใช้, เซิร์ฟเวอร์ Firebase, สลับพนักงาน) + ปุ่มออกจากระบบ
       const allUsers = getAllSystemUsers();
       const optionsHtml = allUsers.map(u => {
         const selected = (u.id === activeUserId) ? 'selected' : '';
@@ -1932,6 +1935,8 @@ function updateNavbarAuthUI(user, isOnline) {
 
       container.innerHTML = `
         <div class="factorium-auth-group">
+          ${fbPillHtml}
+
           <div class="user-menu-container">
             <button type="button" class="btn-user-profile-trigger" id="userProfileTriggerBtn" onclick="toggleUserMenu(event)" title="คลิกเพื่อจัดการบัญชีและข้อมูลผู้ใช้">
               <span class="user-role-badge">👑 ADMIN</span>
@@ -1950,7 +1955,7 @@ function updateNavbarAuthUI(user, isOnline) {
               </div>
               <div class="user-dropdown-divider"></div>
 
-              <!-- รวมคำว่า บัญชีของฉัน และ จัดการผู้ใช้ ในเมนูนี้ -->
+              <!-- รวมคำว่า บัญชีของฉัน, จัดการผู้ใช้ และ เซิร์ฟเวอร์ Firebase ในเมนูนี้ -->
               <button type="button" class="user-dropdown-item" onclick="closeUserMenu(); openAccountModal();" title="ดูและจัดการข้อมูลบัญชีโปรไฟล์ของฉัน">
                 <span class="user-dropdown-icon">👤</span>
                 <span>บัญชีของฉัน</span>
@@ -1959,6 +1964,11 @@ function updateNavbarAuthUI(user, isOnline) {
               <button type="button" class="user-dropdown-item" onclick="closeUserMenu(); openManageUsersModal();" title="จัดการรายชื่อและรหัส PIN พนักงาน">
                 <span class="user-dropdown-icon">👥</span>
                 <span>จัดการผู้ใช้</span>
+              </button>
+
+              <button type="button" class="user-dropdown-item" onclick="closeUserMenu(); openFirebaseConfigModal();" title="เพิ่มและตั้งค่าเซิร์ฟเวอร์ Firebase Cloud Database">
+                <span class="user-dropdown-icon">🔥</span>
+                <span>เซิร์ฟเวอร์ Firebase</span>
               </button>
 
               <!-- สลับดูข้อมูลพนักงานสำหรับ Admin -->
@@ -1984,9 +1994,11 @@ function updateNavbarAuthUI(user, isOnline) {
         </div>
       `;
     } else {
-      // พนักงานทั่วไป: แสดงชื่อ + กดเพื่อเปิดเมนู บัญชีของฉัน + ออกจากระบบ
+      // พนักงานทั่วไป: แสดงชื่อ + กดเพื่อเปิดเมนู บัญชีของฉัน + เซิร์ฟเวอร์ Firebase + ออกจากระบบ
       container.innerHTML = `
         <div class="factorium-auth-group">
+          ${fbPillHtml}
+
           <div class="user-menu-container">
             <button type="button" class="btn-user-profile-trigger" id="userProfileTriggerBtn" onclick="toggleUserMenu(event)" title="คลิกเพื่อจัดการบัญชี">
               <span class="user-role-badge badge-user">👤 ทั่วไป</span>
@@ -2009,6 +2021,11 @@ function updateNavbarAuthUI(user, isOnline) {
                 <span>บัญชีของฉัน</span>
               </button>
 
+              <button type="button" class="user-dropdown-item" onclick="closeUserMenu(); openFirebaseConfigModal();">
+                <span class="user-dropdown-icon">🔥</span>
+                <span>เซิร์ฟเวอร์ Firebase</span>
+              </button>
+
               <div class="user-dropdown-divider"></div>
 
               <button type="button" class="user-dropdown-item text-danger" onclick="closeUserMenu(); handleLogout();">
@@ -2025,14 +2042,17 @@ function updateNavbarAuthUI(user, isOnline) {
       `;
     }
   } else {
-    // ยังไม่ได้ล็อกอิน: แสดงปุ่ม เข้าสู่ระบบ และ เริ่มใช้งานฟรี
+    // ยังไม่ได้ล็อกอิน: แสดงปุ่ม Firebase Status + เข้าสู่ระบบ และ เริ่มใช้งานฟรี
     container.innerHTML = `
-      <button type="button" class="btn-factorium-outline" onclick="openAuthModal()">
-        เข้าสู่ระบบ
-      </button>
-      <button type="button" class="btn-factorium-gradient" onclick="openAuthModal()">
-        เริ่มใช้งานฟรี
-      </button>
+      <div class="factorium-auth-group">
+        ${fbPillHtml}
+        <button type="button" class="btn-factorium-outline" onclick="openAuthModal()">
+          เข้าสู่ระบบ
+        </button>
+        <button type="button" class="btn-factorium-gradient" onclick="openAuthModal()">
+          เริ่มใช้งานฟรี
+        </button>
+      </div>
     `;
   }
 
@@ -2164,11 +2184,9 @@ function handleSaveAccountProfile(e) {
   });
 
   if (res.success) {
-    // ซิงก์ข้อมูลพนักงานไปยัง salaryProfile และการคำนวณ
+    // ซิงก์ข้อมูลพนักงานไปยัง salaryProfile และการคำนวณ พร้อมรีเฟรชหน้าจอทั้งหมด
     try {
-      syncSalaryProfileWithActiveUser();
-      recalculateSalary();
-      updateNavbarAuthUI(currentUser, isFirebaseOnline);
+      reloadUserDataAfterAuthChange();
     } catch (err) {
       console.error('Error syncing profile after save:', err);
     }
@@ -2404,19 +2422,56 @@ function escapeHtml(str) {
 }
 
 // ==========================================================================
-// 15. ระบบตั้งค่า Firebase Project Credentials Modal
+// 15. ระบบตั้งค่าและเพิ่มเซิร์ฟเวอร์ Firebase (Firebase Server Configuration)
 // ==========================================================================
 function openFirebaseConfigModal() {
   closeAuthModal();
   const modal = document.getElementById('firebaseConfigModal');
   if (!modal) return;
+
+  const alertBox = document.getElementById('fbConfigAlert');
+  if (alertBox) {
+    alertBox.style.display = 'none';
+    alertBox.textContent = '';
+  }
+
+  const rawPaste = document.getElementById('fbCfgRawPaste');
+  if (rawPaste) rawPaste.value = '';
+
   const cfg = typeof getActiveFirebaseConfig === 'function' ? getActiveFirebaseConfig() : DEFAULT_FIREBASE_CONFIG;
+  const isCustom = typeof isUsingCustomFirebaseServer === 'function' ? isUsingCustomFirebaseServer() : false;
+
   setInputValue('fbCfgApiKey', cfg.apiKey || '');
   setInputValue('fbCfgAuthDomain', cfg.authDomain || '');
   setInputValue('fbCfgProjectId', cfg.projectId || '');
   setInputValue('fbCfgStorageBucket', cfg.storageBucket || '');
   setInputValue('fbCfgMessagingSenderId', cfg.messagingSenderId || '');
   setInputValue('fbCfgAppId', cfg.appId || '');
+
+  // แสดงผลแถบสถานะเซิร์ฟเวอร์
+  const statusBanner = document.getElementById('fbServerStatusBanner');
+  if (statusBanner) {
+    if (isCustom) {
+      statusBanner.className = 'fb-server-status-banner banner-custom';
+      statusBanner.innerHTML = `
+        <div class="fb-status-icon">🟢</div>
+        <div class="fb-status-content">
+          <div class="fb-status-title">เซิร์ฟเวอร์ที่กำลังใช้งาน: <strong>${escapeHtml(cfg.projectId)}</strong></div>
+          <div class="fb-status-desc">ระบบเชื่อมต่อกับเซิร์ฟเวอร์คลาวด์ Firebase Firestore สำเร็จ ข้อมูลจะถูกซิงก์ออนไลน์</div>
+        </div>
+      `;
+    } else {
+      statusBanner.className = 'fb-server-status-banner banner-demo';
+      statusBanner.innerHTML = `
+        <div class="fb-status-icon">🟡</div>
+        <div class="fb-status-content">
+          <div class="fb-status-title">เซิร์ฟเวอร์ปัจจุบัน: <strong>โหมด Local Storage (ออฟไลน์)</strong></div>
+          <div class="fb-status-desc">ยังไม่ได้เชื่อมต่อเซิร์ฟเวอร์คลาวด์ ข้อมูลถูกจัดเก็บปลอดภัยภายในเบราว์เซอร์เครื่องนี้</div>
+        </div>
+      `;
+    }
+  }
+
   modal.style.display = 'flex';
 }
 
@@ -2425,31 +2480,218 @@ function closeFirebaseConfigModal() {
   if (modal) modal.style.display = 'none';
 }
 
-function saveFirebaseConfigFromModal() {
-  const newCfg = {
-    apiKey: document.getElementById('fbCfgApiKey')?.value.trim(),
-    authDomain: document.getElementById('fbCfgAuthDomain')?.value.trim(),
-    projectId: document.getElementById('fbCfgProjectId')?.value.trim(),
-    storageBucket: document.getElementById('fbCfgStorageBucket')?.value.trim(),
-    messagingSenderId: document.getElementById('fbCfgMessagingSenderId')?.value.trim(),
-    appId: document.getElementById('fbCfgAppId')?.value.trim()
-  };
-
-  if (typeof saveFirebaseConfig === 'function') {
-    saveFirebaseConfig(newCfg);
+function toggleFbApiKeyVisibility() {
+  const input = document.getElementById('fbCfgApiKey');
+  const icon = document.getElementById('fbApiKeyToggleIcon');
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    if (icon) icon.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    if (icon) icon.textContent = '👁️';
   }
-  closeFirebaseConfigModal();
-  alert('บันทึกคอนฟิก Firebase เรียบร้อยแล้ว! ระบบจะรีโหลดเพื่อเริ่มต้นการเชื่อมต่อใหม่');
-  location.reload();
 }
 
-function resetFirebaseConfigDefault() {
-  if (confirm('คุณต้องการรีเซ็ตค่า Firebase Config เป็นค่าเริ่มต้นหรือไม่?')) {
-    if (typeof saveFirebaseConfig === 'function') {
-      saveFirebaseConfig(DEFAULT_FIREBASE_CONFIG);
+/**
+ * แยกและเติมข้อมูลคอนฟิกอัตโนมัติจากโค้ด Firebase ที่ผู้ใช้วาง
+ */
+function parseRawFirebaseConfig() {
+  const textarea = document.getElementById('fbCfgRawPaste');
+  const alertBox = document.getElementById('fbConfigAlert');
+  if (!textarea) return;
+
+  const raw = textarea.value.trim();
+  if (!raw) {
+    if (alertBox) {
+      alertBox.className = 'alert alert-warning';
+      alertBox.textContent = 'กรุณาวางโค้ด Firebase Configuration ในช่องข้อความก่อนกดแยกข้อมูล';
+      alertBox.style.display = 'block';
+    }
+    return;
+  }
+
+  function extractVal(txt, key) {
+    const r = new RegExp(`(?:['"]?${key}['"]?\\s*:\\s*['"])([^'"]+)(?:['"])`, 'i');
+    const m = txt.match(r);
+    return m ? m[1].trim() : '';
+  }
+
+  const apiKey = extractVal(raw, 'apiKey');
+  const authDomain = extractVal(raw, 'authDomain');
+  const projectId = extractVal(raw, 'projectId');
+  const storageBucket = extractVal(raw, 'storageBucket');
+  const messagingSenderId = extractVal(raw, 'messagingSenderId');
+  const appId = extractVal(raw, 'appId');
+
+  let filledCount = 0;
+  if (apiKey) { setInputValue('fbCfgApiKey', apiKey); filledCount++; }
+  if (authDomain) { setInputValue('fbCfgAuthDomain', authDomain); filledCount++; }
+  if (projectId) { setInputValue('fbCfgProjectId', projectId); filledCount++; }
+  if (storageBucket) { setInputValue('fbCfgStorageBucket', storageBucket); filledCount++; }
+  if (messagingSenderId) { setInputValue('fbCfgMessagingSenderId', messagingSenderId); filledCount++; }
+  if (appId) { setInputValue('fbCfgAppId', appId); filledCount++; }
+
+  if (filledCount > 0) {
+    if (alertBox) {
+      alertBox.className = 'alert alert-success';
+      alertBox.textContent = `✅ แยกและกรอกข้อมูลสำเร็จ ${filledCount} รายการ! กรุณาตรวจสอบและกด "⚡ ทดสอบการเชื่อมต่อ" ก่อนบันทึก`;
+      alertBox.style.display = 'block';
+    }
+    showToastNotification(`✨ แยกข้อมูลคอนฟิกสำเร็จ ${filledCount} รายการ!`);
+  } else {
+    // ลองแปลงแบบ JSON โดยตรง
+    try {
+      const obj = JSON.parse(raw);
+      if (obj && typeof obj === 'object') {
+        if (obj.apiKey) { setInputValue('fbCfgApiKey', obj.apiKey); filledCount++; }
+        if (obj.authDomain) { setInputValue('fbCfgAuthDomain', obj.authDomain); filledCount++; }
+        if (obj.projectId) { setInputValue('fbCfgProjectId', obj.projectId); filledCount++; }
+        if (obj.storageBucket) { setInputValue('fbCfgStorageBucket', obj.storageBucket); filledCount++; }
+        if (obj.messagingSenderId) { setInputValue('fbCfgMessagingSenderId', String(obj.messagingSenderId)); filledCount++; }
+        if (obj.appId) { setInputValue('fbCfgAppId', obj.appId); filledCount++; }
+      }
+    } catch(e) {}
+
+    if (filledCount > 0) {
+      if (alertBox) {
+        alertBox.className = 'alert alert-success';
+        alertBox.textContent = `✅ แยกและกรอกข้อมูลสำเร็จ ${filledCount} รายการ!`;
+        alertBox.style.display = 'block';
+      }
+      showToastNotification(`✨ แยกข้อมูลคอนฟิกสำเร็จ ${filledCount} รายการ!`);
+    } else {
+      if (alertBox) {
+        alertBox.className = 'alert alert-danger';
+        alertBox.textContent = '❌ ไม่สามารถแยกข้อมูลจากข้อความที่วางได้ กรุณาตรวจสอบรูปแบบ หรือกรอกข้อมูลลงในช่องโดยตรง';
+        alertBox.style.display = 'block';
+      }
+    }
+  }
+}
+
+/**
+ * ทดสอบการเชื่อมต่อกับเซิร์ฟเวอร์ Firebase
+ */
+async function testFirebaseConfigFromModal() {
+  const alertBox = document.getElementById('fbConfigAlert');
+  const btnTest = document.getElementById('btnTestFbConn');
+
+  const apiKey = document.getElementById('fbCfgApiKey')?.value.trim();
+  const authDomain = document.getElementById('fbCfgAuthDomain')?.value.trim();
+  const projectId = document.getElementById('fbCfgProjectId')?.value.trim();
+  const storageBucket = document.getElementById('fbCfgStorageBucket')?.value.trim();
+  const messagingSenderId = document.getElementById('fbCfgMessagingSenderId')?.value.trim();
+  const appId = document.getElementById('fbCfgAppId')?.value.trim();
+
+  if (!projectId || !apiKey) {
+    if (alertBox) {
+      alertBox.className = 'alert alert-danger';
+      alertBox.textContent = '⚠️ กรุณาระบุ Project ID และ API Key ก่อนทดสอบการเชื่อมต่อ';
+      alertBox.style.display = 'block';
+    }
+    return;
+  }
+
+  const cfg = { apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId };
+
+  if (btnTest) {
+    btnTest.disabled = true;
+    btnTest.innerHTML = '⏳ กำลังทดสอบเชื่อมต่อ...';
+  }
+  if (alertBox) {
+    alertBox.className = 'alert alert-info';
+    alertBox.textContent = '⏳ กำลังเชื่อมต่อไปยังเซิร์ฟเวอร์ Firebase... กรุณารอสักครู่';
+    alertBox.style.display = 'block';
+  }
+
+  const res = (typeof testFirebaseConnection === 'function') 
+    ? await testFirebaseConnection(cfg) 
+    : { success: false, error: 'ฟังก์ชันทดสอบไม่พร้อมใช้งาน' };
+
+  if (btnTest) {
+    btnTest.disabled = false;
+    btnTest.innerHTML = '⚡ ทดสอบการเชื่อมต่อ';
+  }
+
+  if (res.success) {
+    if (alertBox) {
+      alertBox.className = 'alert alert-success';
+      alertBox.textContent = `🟢 ${res.message}`;
+      alertBox.style.display = 'block';
+    }
+    showToastNotification(`🟢 เชื่อมต่อเซิร์ฟเวอร์ "${projectId}" สำเร็จ!`);
+  } else {
+    if (alertBox) {
+      alertBox.className = 'alert alert-danger';
+      alertBox.textContent = `❌ ${res.error}`;
+      alertBox.style.display = 'block';
+    }
+    showToastNotification(`❌ การเชื่อมต่อล้มเหลว`);
+  }
+}
+
+/**
+ * บันทึกคอนฟิกเซิร์ฟเวอร์ Firebase และเริ่มเชื่อมต่อใช้งานทันที
+ */
+async function saveFirebaseConfigFromModal() {
+  const alertBox = document.getElementById('fbConfigAlert');
+  const btnSave = document.getElementById('btnSaveFbConfig');
+
+  const apiKey = document.getElementById('fbCfgApiKey')?.value.trim();
+  const authDomain = document.getElementById('fbCfgAuthDomain')?.value.trim();
+  const projectId = document.getElementById('fbCfgProjectId')?.value.trim();
+  const storageBucket = document.getElementById('fbCfgStorageBucket')?.value.trim();
+  const messagingSenderId = document.getElementById('fbCfgMessagingSenderId')?.value.trim();
+  const appId = document.getElementById('fbCfgAppId')?.value.trim();
+
+  if (!projectId || !apiKey) {
+    if (alertBox) {
+      alertBox.className = 'alert alert-danger';
+      alertBox.textContent = '⚠️ กรุณาระบุ Project ID และ API Key ให้ครบถ้วน';
+      alertBox.style.display = 'block';
+    }
+    return;
+  }
+
+  const newCfg = { apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId };
+
+  if (btnSave) {
+    btnSave.disabled = true;
+    btnSave.innerHTML = '⏳ กำลังเชื่อมต่อ...';
+  }
+
+  if (typeof reinitFirebaseWithNewConfig === 'function') {
+    await reinitFirebaseWithNewConfig(newCfg);
+  } else if (typeof saveFirebaseConfig === 'function') {
+    saveFirebaseConfig(newCfg);
+  }
+
+  if (btnSave) {
+    btnSave.disabled = false;
+    btnSave.innerHTML = '💾 บันทึกและเชื่อมต่อเซิร์ฟเวอร์';
+  }
+
+  closeFirebaseConfigModal();
+  updateNavbarAuthUI(currentUser, isFirebaseOnline);
+  showSuccessPopup('เชื่อมต่อสำเร็จ', `บันทึกและเชื่อมต่อเซิร์ฟเวอร์ Firebase (${projectId}) เรียบร้อยแล้ว`);
+  showToastNotification(`🔥 เชื่อมต่อเซิร์ฟเวอร์ Firebase (${projectId}) สำเร็จ!`);
+}
+
+/**
+ * คืนค่าการตั้งค่าเซิร์ฟเวอร์กลับเป็นโหมดเริ่มต้น (Local Storage ออฟไลน์)
+ */
+async function resetFirebaseConfigDefault() {
+  if (confirm('คุณต้องการรีเซ็ตเซิร์ฟเวอร์ Firebase กลับเป็นโหมดเริ่มต้น (Local Storage ออฟไลน์) หรือไม่?')) {
+    if (typeof resetFirebaseConfigToDefault === 'function') {
+      await resetFirebaseConfigToDefault();
+    } else {
+      localStorage.removeItem(STORAGE_KEY_FIREBASE_CFG);
     }
     closeFirebaseConfigModal();
-    location.reload();
+    updateNavbarAuthUI(currentUser, isFirebaseOnline);
+    showSuccessPopup('คืนค่าสำเร็จ', 'รีเซ็ตกลับเป็นโหมด Local Storage ออฟไลน์เรียบร้อยแล้ว');
+    showToastNotification('🔄 รีเซ็ตกลับเป็นโหมด Local เรียบร้อยแล้ว');
   }
 }
 
@@ -2534,7 +2776,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // ลงทะเบียนติดตามสถานะผู้ใช้จาก Firebase
   if (typeof addAuthStateListener === 'function') {
-    addAuthStateListener(updateNavbarAuthUI);
+    addAuthStateListener((user, isOnline) => {
+      syncSalaryProfileWithActiveUser();
+      recalculateSalary();
+      updateNavbarAuthUI(user, isOnline);
+    });
   }
 
   updateAdminScopeBanner();

@@ -4,6 +4,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CACULATION SALARY</title>
+  
+  <!-- Website Tab Favicon matching brand logo (Image 1) -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
+  <link rel="shortcut icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="favicon.png">
+  <script>
+    // Ensure tab favicon displays correctly in all scenarios including file:// protocol
+    (function() {
+      const isFile = window.location.protocol === 'file:';
+      if (isFile) {
+        const link = document.createElement('link');
+        link.type = 'image/svg+xml';
+        link.rel = 'icon';
+        link.href = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ibG9nb0dyYWQiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZDkyMzY1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iNjAlIiBzdG9wLWNvbG9yPSIjN2MzYWVkIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzI1NjNlYiIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTYiIGZpbGw9InVybCgjbG9nb0dyYWQpIi8+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTAsIDgpIHNjYWxlKDIpIj4KICAgIDxwYXRoIGQ9Ik0xMyAyTDMgMTRoOGwtMiA4IDEwLTEyaC04bDItOHoiIGZpbGw9IiNmZmZmZmYiLz4KICA8L2c+Cjwvc3ZnPgo=';
+        document.head.appendChild(link);
+      }
+    })();
+  </script>
+  
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,10 +66,6 @@
           <span class="nav-tab-icon">📅</span>
           <span>ปฏิทินวันทำงาน</span>
         </button>
-        <button type="button" class="nav-link-btn" id="navBtnSlip" onclick="prepareAndPrint()">
-          <span class="nav-tab-icon">🧾</span>
-          <span>สลิปเงินเดือน</span>
-        </button>
         <button type="button" class="nav-link-btn highlight" id="navBtnSettings" onclick="openSettingsSalaryModal()">
           <span class="nav-tab-icon">⚙️</span>
           <span>ปรับแต่งค่าเงิน</span>
@@ -84,7 +100,7 @@
       </h1>
       
       <p class="hero-subtitle">
-        บันทึกเวลาทำงาน คำนวณค่าล่วงเวลา OT เบี้ยเลี้ยง และพิมพ์สลิปเงินเดือนได้ทันที พร้อมปรับโครงสร้างฐานเงินเดือนได้ทุกรายการ
+        บันทึกเวลาทำงาน คำนวณค่าล่วงเวลา OT เบี้ยเลี้ยง พร้อมปรับโครงสร้างฐานเงินเดือนได้ทุกรายการ
       </p>
 
       <!-- Hero Action Buttons -->
@@ -97,9 +113,6 @@
         </button>
         <button type="button" class="btn btn-white-outline btn-lg" onclick="openSettingsSalaryModal()">
           ⚙️ ปรับแต่งค่าเงิน
-        </button>
-        <button type="button" class="btn btn-white-outline btn-lg" onclick="prepareAndPrint()">
-          🖨️ พิมพ์สลิปเงินเดือน
         </button>
       </div>
 
@@ -304,21 +317,21 @@
                     <tr>
                       <td>
                         <strong id="lblOT15Title">ค่าล่วงเวลา OT 1.5 เท่า (วันปกติ)</strong>
-                        <div class="text-muted small"><span id="calcOT15Hours">0.0</span> ชม. &times; <span id="lblOT15Mult">1.5</span> &times; (<span id="lblOT15Base">20,000</span>/<span id="lblOT15Divisor">240</span>)</div>
+                        <div class="text-muted small">(<span id="lblOT15Base">20,000</span>/<span id="lblOT15Days">30</span>/8) &times; (<span id="lblOT15Mult">1.5</span> &times; <span id="calcOT15Hours">0.0</span> ชม.)</div>
                       </td>
                       <td class="text-right font-weight-bold text-primary" id="calcOT15Total">0.00</td>
                     </tr>
                     <tr>
                       <td>
                         <strong id="lblOT1Title">ค่าล่วงเวลา OT 1.0 เท่า (วันหยุด 8 ชม.)</strong>
-                        <div class="text-muted small"><span id="calcOT1Hours">0.0</span> ชม. &times; <span id="lblOT1Mult">1.0</span> &times; (<span id="lblOT1Base">20,000</span>/<span id="lblOT1Divisor">240</span>)</div>
+                        <div class="text-muted small">(<span id="lblOT1Base">20,000</span>/<span id="lblOT1Days">30</span>/8) &times; (<span id="lblOT1Mult">1.0</span> &times; <span id="calcOT1Hours">0.0</span> ชม.)</div>
                       </td>
                       <td class="text-right font-weight-bold text-primary" id="calcOT1Total">0.00</td>
                     </tr>
                     <tr>
                       <td>
                         <strong id="lblOT3Title">ค่าล่วงเวลา OT 3.0 เท่า (วันหยุดหลัง 17:00)</strong>
-                        <div class="text-muted small"><span id="calcOT3Hours">0.0</span> ชม. &times; <span id="lblOT3Mult">3.0</span> &times; (<span id="lblOT3Base">20,000</span>/<span id="lblOT3Divisor">240</span>)</div>
+                        <div class="text-muted small">(<span id="lblOT3Base">20,000</span>/<span id="lblOT3Days">30</span>/8) &times; (<span id="lblOT3Mult">3.0</span> &times; <span id="calcOT3Hours">0.0</span> ชม.)</div>
                       </td>
                       <td class="text-right font-weight-bold text-primary" id="calcOT3Total">0.00</td>
                     </tr>
@@ -356,12 +369,6 @@
                   <div class="grand-net-label">💵 เงินได้สุทธิรับจริงประจำรอบนี้</div>
                   <div class="grand-net-amount text-success" id="calcGrandNetPay">0.00</div>
                   <div class="grand-net-unit">บาท</div>
-                </div>
-
-                <div class="slip-cta-box text-center">
-                  <button type="button" class="btn btn-primary btn-lg btn-block" onclick="prepareAndPrint()">
-                    📄 พิมพ์ใบแจ้งรายได้ (สลิปเงินเดือน)
-                  </button>
                 </div>
               </div>
             </div>
@@ -503,9 +510,6 @@
                 <button type="button" class="btn btn-primary" onclick="switchView('main')">
                   📊 ไปดูผลคำนวณเงินเดือน →
                 </button>
-                <button type="button" class="btn btn-outline-primary" onclick="prepareAndPrint()">
-                  🧾 พิมพ์สลิปเงินเดือน
-                </button>
               </div>
             </div>
           </div>
@@ -556,179 +560,6 @@
 
             <!-- 12-Month Calendar Grid -->
             <div class="orbray-cal-grid" id="orbrayCalendarGrid"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- PAYSLIP VIEW (PRINT & PREVIEW) -->
-    <section id="view-slip" class="view-panel" style="display:none;">
-      <div class="slip-view-controls no-print">
-        <div class="container">
-          <div class="slip-ctrl-flex">
-            <div>
-              <button type="button" class="btn btn-secondary" onclick="closeSlipView()">← กลับหน้าหลัก</button>
-            </div>
-            <div class="slip-ctrl-title">ใบแจ้งรายได้ (PAYSLIP)</div>
-            <div>
-              <button type="button" class="btn btn-primary btn-print-big" onclick="window.print()">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                  <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
-                </svg>
-                พิมพ์ / บันทึก PDF
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="payslip-wrapper">
-        <div class="payslip-window-frame">
-          <div class="slip-app-bar">
-            <div class="slip-app-bar-left">
-              <button type="button" class="btn-app-print" onclick="window.print()">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                  <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
-                </svg>
-                พิมพ์
-              </button>
-            </div>
-            <div class="slip-app-bar-right">
-              <span class="app-icon">🪗</span>
-              <span class="app-icon">❓</span>
-              <span class="app-icon">💬</span>
-            </div>
-          </div>
-
-          <div class="payslip-sheet">
-            <div class="watermark-overlay" aria-hidden="true">
-              <div class="watermark-text" style="top:14%;left:52%;">Confidential</div>
-              <div class="watermark-text" style="top:24%;left:16%;">Confidential</div>
-              <div class="watermark-text" style="top:44%;left:45%;">Confidential</div>
-              <div class="watermark-text" style="top:62%;left:15%;">Confidential</div>
-              <div class="watermark-text" style="top:76%;left:40%;">Confidential</div>
-              <div class="watermark-text" style="top:90%;left:18%;">Confidential</div>
-            </div>
-
-            <div class="slip-title-container">
-              <h2 class="slip-main-title">ใบแจ้งรายได้</h2>
-            </div>
-
-            <div class="slip-header-info">
-              <div class="slip-header-left">
-                <div class="slip-logo-area">
-                  <svg class="company-logo" viewBox="0 0 90 75" width="70" height="55">
-                    <defs>
-                      <linearGradient id="logoBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#00a0e9"/>
-                        <stop offset="100%" stop-color="#004494"/>
-                      </linearGradient>
-                      <linearGradient id="logoOrangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#f58220"/>
-                        <stop offset="100%" stop-color="#e60012"/>
-                      </linearGradient>
-                    </defs>
-                    <path d="M18,10 C45,5 68,14 65,36 C62,54 40,58 30,58 L24,70 L14,70 L22,18 C22,18 24,14 34,12 C44,10 54,16 52,28 C50,38 40,43 32,43" fill="none" stroke="url(#logoBlueGrad)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M38,24 C48,22 56,28 54,36 C52,42 45,45 38,45" fill="none" stroke="url(#logoOrangeGrad)" stroke-width="5" stroke-linecap="round"/>
-                    <text x="14" y="66" font-family="'Segoe UI',Arial,sans-serif" font-weight="900" font-size="8" fill="#004494">POWER</text>
-                    <text x="15" y="73" font-family="'Segoe UI',Arial,sans-serif" font-weight="bold" font-size="6" fill="#777">VISION</text>
-                  </svg>
-                </div>
-                <div class="slip-company-details">
-                  <div class="slip-text-blue slip-company-title" id="slipCompanyName">CACULATION SALARY</div>
-                  <div class="slip-text-blue slip-emp-line">
-                    <span>รหัสพนักงาน: <strong id="slipEmpCode">20523</strong></span> | 
-                    <span>ชื่อ: <strong id="slipEmpName">ADMIN</strong></span>
-                  </div>
-                  <div class="slip-text-blue slip-emp-line">
-                    <span>แผนก: <span id="slipDepartment">ผู้ดูแลระบบสูงสุด</span></span> | 
-                    <span>ประเภท: <span id="slipEmpType">รายเดือน</span></span>
-                  </div>
-                </div>
-              </div>
-              <div class="slip-header-right">
-                <table class="slip-info-table">
-                  <tr><td class="info-label">ประจำเดือน</td><td class="info-val slip-text-blue" id="slipPeriodMonth">กันยายน</td></tr>
-                  <tr><td class="info-label">งวดที่</td><td class="info-val slip-text-blue" id="slipPeriodRound">งวดจ่ายเงินเดือน</td></tr>
-                  <tr><td class="info-label">วันที่จ่าย</td><td class="info-val slip-text-blue" id="slipPayDate">30/09/2569</td></tr>
-                </table>
-              </div>
-            </div>
-
-            <div class="slip-table-container">
-              <table class="slip-main-table">
-                <colgroup>
-                  <col style="width:32%;">
-                  <col style="width:33%;">
-                  <col style="width:35%;">
-                </colgroup>
-                <thead>
-                  <tr>
-                    <th class="slip-col-th col-income">รายการเงินได้</th>
-                    <th class="slip-col-th col-deduct">รายการเงินหัก</th>
-                    <th class="slip-col-th col-tax">ค่าลดหย่อน</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td class="slip-cell-top col-border-right">
-                      <table class="slip-sub-table"><tbody id="slipIncomeRows"></tbody></table>
-                    </td>
-                    <td class="slip-cell-top col-border-right">
-                      <table class="slip-sub-table"><tbody id="slipDeductRows"></tbody></table>
-                    </td>
-                    <td class="slip-cell-top">
-                      <table class="slip-sub-table">
-                        <tbody>
-                          <tr><td>ลดหย่อนผู้มีเงินได้</td><td class="text-right" id="slipTaxDedPerson">60,000.00</td></tr>
-                          <tr><td>ค่าใช้จ่าย</td><td class="text-right" id="slipTaxDedExpense">100,000.00</td></tr>
-                          <tr><td>ประกันสังคม</td><td class="text-right" id="slipTaxDedSSO">8,908.00</td></tr>
-                          <tr class="sub-total-row"><td>ยอดรวม</td><td class="text-right" id="slipTotalTaxDed">168,908.00</td></tr>
-                        </tbody>
-                      </table>
-                      <div class="slip-sub-section-title">รายการเงินสะสม</div>
-                      <table class="slip-sub-table">
-                        <tbody>
-                          <tr><td>รายได้สะสม</td><td class="text-right" id="slipAccIncome">174,389.00</td></tr>
-                          <tr><td>ภาษีสะสม-พนง.</td><td class="text-right" id="slipAccTaxEmp">0.00</td></tr>
-                          <tr><td>ภาษีสะสม-บริษัท</td><td class="text-right" id="slipAccTaxComp">0.00</td></tr>
-                          <tr><td>ป.ก.ส. สะสม</td><td class="text-right" id="slipAccSSO">5,408.00</td></tr>
-                          <tr><td>กองทุนเงินสะสม</td><td class="text-right" id="slipAccFundEmp">0.00</td></tr>
-                          <tr><td>กองทุนเงินสมทบ</td><td class="text-right" id="slipAccFundComp">0.00</td></tr>
-                        </tbody>
-                      </table>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <div class="slip-summary-bar">
-                <div class="slip-sum-col col-1 text-center">
-                  <div class="sum-label">ยอดรวมเงินได้</div>
-                  <div class="sum-value underlined" id="slipTotalIncome">0.00</div>
-                </div>
-                <div class="slip-sum-col col-2 text-center">
-                  <div class="sum-label">ยอดรวมเงินหัก</div>
-                  <div class="sum-value underlined" id="slipTotalDeduct">875.00</div>
-                </div>
-                <div class="slip-sum-col col-3 text-right">
-                  <div class="net-wrapper">
-                    <span class="sum-label net-label">เงินได้สุทธิ</span>
-                    <span class="sum-value net-value" id="slipNetPay">0.00</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="slip-footer">
-                <div class="slip-footer-inner">
-                  <span class="footer-user-label">ผู้ใช้</span>
-                  <span class="footer-user-name" id="slipUserName">-</span>
-                  <span class="footer-user-date" id="slipPrintDate">13/09/2569</span>
-                </div>
-              </div>
-              <div class="slip-bottom-decor"></div>
-              <div class="slip-bottom-space"></div>
-            </div>
           </div>
         </div>
       </div>
@@ -867,29 +698,32 @@
           <!-- หมวด 3: อัตราคิดค่าล่วงเวลา (OT) -->
           <div class="settings-card">
             <h4 class="settings-card-title">⏱️ สูตรการคิดค่าล่วงเวลา (OT)</h4>
-            <div class="form-group">
-              <label for="cfgOtDivisorHours">ตัวหารชั่วโมงทำงานต่อเดือน (ชม.):</label>
-              <div class="input-unit-group">
-                <input type="number" id="cfgOtDivisorHours" class="form-control" min="1" step="1" oninput="updateLiveOTPreview()">
-                <span class="unit-tag">ชม. (เช่น 240)</span>
-              </div>
+            <div class="ot-formula-banner">
+              <span>สูตรฐานค่าจ้าง:</span>
+              <strong>(เงินเดือน &divide; 30 &divide; 8)</strong>
             </div>
             <div class="form-row-3">
               <div class="form-group">
-                <label for="cfgOt15Multiplier">วันปกติ (1.5x):</label>
+                <label for="cfgOt15Multiplier">วันปกติ:</label>
                 <input type="number" id="cfgOt15Multiplier" class="form-control" min="0" step="0.1">
               </div>
               <div class="form-group">
-                <label for="cfgOt1Multiplier">วันหยุด 8 ชม. (1.0x):</label>
+                <label for="cfgOt1Multiplier">วันหยุด 8 ชม.:</label>
                 <input type="number" id="cfgOt1Multiplier" class="form-control" min="0" step="0.1">
               </div>
               <div class="form-group">
-                <label for="cfgOt3Multiplier">วันหยุด &gt;17:00 (3.0x):</label>
+                <label for="cfgOt3Multiplier">วันหยุด &gt;17:00:</label>
                 <input type="number" id="cfgOt3Multiplier" class="form-control" min="0" step="0.1">
               </div>
             </div>
             <div class="live-ot-preview-box">
-              💡 อัตราค่าจ้างต่อชั่วโมงปกติ: <strong id="cfgLiveOTRate">83.33</strong> บาท/ชม.
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
+                <span>💡 อัตราค่าจ้างต่อชั่วโมงปกติ:</span>
+                <strong style="font-size: 1rem; color: #0284c7;"><span id="cfgLiveOTRate">83.33</span> บาท/ชม.</strong>
+              </div>
+              <div style="font-size: 0.74rem; color: #0369a1; margin-top: 3px; opacity: 0.85;">
+                (คำนวณจาก: เงินเดือน <span id="cfgLiveOTSalary">20,000</span> &divide; 30 วัน &divide; 8 ชม.)
+              </div>
             </div>
           </div>
 
@@ -904,14 +738,6 @@
               </div>
               <small class="text-muted">คำนวณตามจริงหรือระบุยอดคงที่ (เช่น 875 บาท)</small>
             </div>
-            <div class="form-group">
-              <label for="cfgSsoMaxBase">เพดานฐานเงินเดือนประกันสังคม:</label>
-              <div class="input-unit-group">
-                <input type="number" id="cfgSsoMaxBase" class="form-control" min="0" step="500">
-                <span class="unit-tag">บาท</span>
-              </div>
-              <small class="text-muted">เพดานสูงสุด 17,500 บาท (หักสูงสุด 875 บาท)</small>
-            </div>
           </div>
         </div>
       </div>
@@ -925,6 +751,9 @@
           </button>
           <button type="button" class="btn btn-outline-secondary" id="btnResetPeriodSalaryConfig" onclick="resetPeriodSalaryConfigToDefault()" style="display: none;" title="ลบการตั้งค่าเฉพาะงวดนี้ แล้วกลับไปใช้ค่ามาตรฐาน">
             ↩️ ล้างค่าเฉพาะงวดนี้ (ใช้ค่ามาตรฐาน)
+          </button>
+          <button type="button" class="btn btn-outline-primary" onclick="closeSettingsSalaryModal(); openFirebaseConfigModal();" title="ตั้งค่าและเชื่อมต่อเซิร์ฟเวอร์ Firebase Cloud Database">
+            🔥 เซิร์ฟเวอร์ Firebase
           </button>
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -1202,49 +1031,95 @@
   </div>
 
   <!-- MODAL: FIREBASE CONFIG KEYS -->
-  <div class="modal-backdrop" id="firebaseConfigModal" style="display:none;">
-    <div class="modal-dialog">
+  <div class="modal-backdrop" id="firebaseConfigModal" style="display:none; z-index: 1070;">
+    <div class="modal-dialog fb-config-dialog" style="max-width: 620px;">
       <div class="modal-header">
-        <h3>🔥 ตั้งค่า FIREBASE PROJECT CREDENTIALS</h3>
+        <h3 style="display: flex; align-items: center; gap: 8px;">
+          <span>🔥</span> ตั้งค่าเซิร์ฟเวอร์ Firebase (Cloud Database)
+        </h3>
         <button type="button" class="modal-close" onclick="closeFirebaseConfigModal()">&times;</button>
       </div>
-      <div class="modal-body">
-        <p class="subtitle text-muted small">
-          คุณสามารถนำค่าคอนฟิกจาก FIREBASE CONSOLE (PROJECT SETTINGS &gt; GENERAL &gt; YOUR APPS &gt; SDK SETUP AND CONFIGURATION) มาวางเพื่อเชื่อมต่อไปยัง FIREBASE ของคุณเองได้
-        </p>
-        <div class="form-group">
-          <label>API KEY:</label>
-          <input type="text" id="fbCfgApiKey" class="form-control font-mono">
+      <div class="modal-body" style="max-height: 80vh; overflow-y: auto;">
+        <!-- Live Status Banner -->
+        <div id="fbServerStatusBanner" class="fb-server-status-banner"></div>
+
+        <!-- Alert Notification Box -->
+        <div id="fbConfigAlert" class="alert" style="display: none; margin-bottom: 14px;"></div>
+
+        <!-- Auto-Paste & Auto-Detect Card -->
+        <div class="fb-autopaste-card">
+          <div class="fb-card-title">
+            <span>📋</span> วางโค้ด Firebase Configuration จาก Firebase Console (แยกลงช่องอัตโนมัติ)
+          </div>
+          <p class="text-muted small" style="margin-bottom: 8px;">
+            จาก Firebase Console ไปที่ <strong>Project Settings &gt; General &gt; Your apps &gt; SDK setup and configuration (Config)</strong> แล้วคัดลอกโค้ดมาวางที่นี่:
+          </p>
+          <textarea id="fbCfgRawPaste" class="form-control font-mono" rows="3" placeholder="const firebaseConfig = {&#10;  apiKey: &quot;AIzaSy...&quot;,&#10;  projectId: &quot;my-salary-app&quot;,&#10;  ...&#10;};"></textarea>
+          <div style="margin-top: 8px; display: flex; justify-content: flex-end;">
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="parseRawFirebaseConfig()">
+              ✨ แยกและเติมข้อมูลลงช่องอัตโนมัติ (Auto Fill)
+            </button>
+          </div>
         </div>
-        <div class="form-group">
-          <label>AUTH DOMAIN:</label>
-          <input type="text" id="fbCfgAuthDomain" class="form-control font-mono">
+
+        <div style="margin: 18px 0 12px 0; border-top: 1px solid #e2e8f0; position: relative; text-align: center;">
+          <span style="position: relative; top: -10px; background: #fff; padding: 0 10px; font-size: 0.78rem; color: #64748b; font-weight: 600;">
+            หรือกรอกข้อมูลพารามิเตอร์เซิร์ฟเวอร์ด้วยตนเอง
+          </span>
         </div>
-        <div class="form-group">
-          <label>PROJECT ID:</label>
-          <input type="text" id="fbCfgProjectId" class="form-control font-mono">
-        </div>
-        <div class="form-group">
-          <label>STORAGE BUCKET:</label>
-          <input type="text" id="fbCfgStorageBucket" class="form-control font-mono">
-        </div>
-        <div class="form-group">
-          <label>MESSAGING SENDER ID:</label>
-          <input type="text" id="fbCfgMessagingSenderId" class="form-control font-mono">
-        </div>
-        <div class="form-group">
-          <label>APP ID:</label>
-          <input type="text" id="fbCfgAppId" class="form-control font-mono">
+
+        <!-- Form Fields Grid -->
+        <div class="fb-form-grid">
+          <div class="form-group">
+            <label for="fbCfgProjectId">รหัสโครงการ (Project ID) <span class="text-danger">*</span>:</label>
+            <input type="text" id="fbCfgProjectId" class="form-control font-mono" placeholder="เช่น my-company-payroll">
+          </div>
+
+          <div class="form-group">
+            <label for="fbCfgApiKey">API Key <span class="text-danger">*</span>:</label>
+            <div class="input-unit-group">
+              <input type="password" id="fbCfgApiKey" class="form-control font-mono" placeholder="AIzaSy...">
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleFbApiKeyVisibility()" style="border:none; background:transparent; padding: 0 8px;" title="แสดง/ซ่อน API Key">
+                <span id="fbApiKeyToggleIcon">👁️</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="fbCfgAuthDomain">Auth Domain:</label>
+            <input type="text" id="fbCfgAuthDomain" class="form-control font-mono" placeholder="เช่น my-company-payroll.firebaseapp.com">
+          </div>
+
+          <div class="form-group">
+            <label for="fbCfgStorageBucket">Storage Bucket:</label>
+            <input type="text" id="fbCfgStorageBucket" class="form-control font-mono" placeholder="เช่น my-company-payroll.appspot.com">
+          </div>
+
+          <div class="form-group">
+            <label for="fbCfgMessagingSenderId">Messaging Sender ID:</label>
+            <input type="text" id="fbCfgMessagingSenderId" class="form-control font-mono" placeholder="เช่น 123456789012">
+          </div>
+
+          <div class="form-group">
+            <label for="fbCfgAppId">App ID:</label>
+            <input type="text" id="fbCfgAppId" class="form-control font-mono" placeholder="เช่น 1:123456789012:web:abcdef">
+          </div>
         </div>
       </div>
+
       <div class="modal-footer modal-footer-between">
-        <button type="button" class="btn btn-outline-secondary" onclick="resetFirebaseConfigDefault()">
-          ใช้ค่าเริ่มต้น
-        </button>
-        <div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-outline-info" id="btnTestFbConn" onclick="testFirebaseConfigFromModal()" title="ทดสอบการเชื่อมต่อกับเซิร์ฟเวอร์ Firebase">
+            ⚡ ทดสอบการเชื่อมต่อ
+          </button>
+          <button type="button" class="btn btn-outline-secondary" onclick="resetFirebaseConfigDefault()" title="คืนค่าเป็นโหมด Local Storage ออฟไลน์">
+            🔄 คืนค่าเริ่มต้น (โหมด Local)
+          </button>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
           <button type="button" class="btn btn-secondary" onclick="closeFirebaseConfigModal()">ปิด</button>
-          <button type="button" class="btn btn-primary" onclick="saveFirebaseConfigFromModal()">
-            💾 บันทึกคอนฟิก
+          <button type="button" class="btn btn-primary" id="btnSaveFbConfig" onclick="saveFirebaseConfigFromModal()">
+            💾 บันทึกและเชื่อมต่อเซิร์ฟเวอร์
           </button>
         </div>
       </div>
