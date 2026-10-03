@@ -1887,44 +1887,30 @@ function getFirebaseStatusPillHtml(isOnline) {
   const isOnlineBool = Boolean(isOnline);
 
   let statusClass = 'status-local';
-  let dotColor = '#000000';
-  let labelText = 'LOCAL';
-  let tooltip = 'FIREBASE SERVER: LOCAL STORAGE (OFFLINE) — CLICK TO CONFIGURE';
+  let dotColor = '#f59e0b';
+  let labelText = '🔥 เซิร์ฟเวอร์: Local';
+  let tooltip = 'เซิร์ฟเวอร์ Firebase: โหมด Local Storage (ออฟไลน์) - คลิกเพื่อเพิ่ม/ตั้งค่าเซิร์ฟเวอร์';
 
   if (isOnlineBool) {
     statusClass = 'status-online';
-    dotColor = '#16a34a';
-    const pId = (cfg?.projectId || 'CLOUD').toUpperCase();
+    dotColor = '#22c55e';
+    const pId = cfg?.projectId || 'Cloud';
     const shortId = pId.length > 14 ? pId.substring(0, 12) + '..' : pId;
-    labelText = `${shortId}`;
-    tooltip = `FIREBASE SERVER: CLOUD CONNECTED (${pId}) — CLICK TO MANAGE`;
+    labelText = `🔥 ${shortId}`;
+    tooltip = `เซิร์ฟเวอร์ Firebase: เชื่อมต่อ Cloud สำเร็จ (${pId}) - คลิกเพื่อจัดการ`;
   } else if (isCustom) {
     statusClass = 'status-offline';
-    dotColor = '#dc2626';
-    const pId = (cfg?.projectId || 'OFFLINE').toUpperCase();
+    dotColor = '#ef4444';
+    const pId = cfg?.projectId || 'Offline';
     const shortId = pId.length > 14 ? pId.substring(0, 12) + '..' : pId;
-    tooltip = `FIREBASE SERVER: OFFLINE (${pId}) — CLICK TO CHECK CONFIG`;
+    labelText = `🔥 ${shortId}`;
+    tooltip = `เซิร์ฟเวอร์ Firebase: ออฟไลน์ (${pId}) - คลิกเพื่อตรวจสอบการตั้งค่า`;
   }
-  return `
-    <button type="button" class="btn-firebase-pill ${statusClass}" onclick="openFirebaseConfigModal()" title="${tooltip}" aria-label="เซิร์ฟเวอร์ FIREBASE">
-      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
-      </svg>
-      <span class="status-indicator-dot" style="background-color: ${dotColor};"></span>
-    </button>
-  `;
-}
 
-function getSimulatorTriggerBtnHtml() {
-  if (window.self !== window.top || window.location.search.includes('mode=mobile_sim')) {
-    return '';
-  }
   return `
-    <button type="button" class="btn-simulator-trigger" id="btnPhoneSimulator" onclick="openPhoneSimulator()" title="จำลองหน้าจอแอปบนมือถือ (PHONE SIMULATOR)">
-      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="5" y="2" width="14" height="20" rx="3" ry="3"/>
-        <line x1="12" y1="18" x2="12.01" y2="18"/>
-      </svg>
+    <button type="button" class="btn-firebase-pill ${statusClass}" onclick="openFirebaseConfigModal()" title="${tooltip}">
+      <span class="status-indicator-dot" style="background-color: ${dotColor};"></span>
+      <span class="fb-pill-name">${escapeHtml(labelText)}</span>
     </button>
   `;
 }
@@ -1934,7 +1920,6 @@ function updateNavbarAuthUI(user, isOnline) {
   if (!container) return;
 
   const fbPillHtml = getFirebaseStatusPillHtml(isOnline);
-  const simBtnHtml = getSimulatorTriggerBtnHtml();
 
   if (user) {
     const activeUserId = getActiveEditingUserId();
@@ -1945,18 +1930,17 @@ function updateNavbarAuthUI(user, isOnline) {
       const allUsers = getAllSystemUsers();
       const optionsHtml = allUsers.map(u => {
         const selected = (u.id === activeUserId) ? 'selected' : '';
-        return `<option value="${u.id}" ${selected}>${escapeHtml(u.name.toUpperCase())}</option>`;
+        return `<option value="${u.id}" ${selected}>${escapeHtml(u.name)}</option>`;
       }).join('');
 
       container.innerHTML = `
         <div class="factorium-auth-group">
-          ${simBtnHtml}
           ${fbPillHtml}
 
           <div class="user-menu-container">
             <button type="button" class="btn-user-profile-trigger" id="userProfileTriggerBtn" onclick="toggleUserMenu(event)" title="คลิกเพื่อจัดการบัญชีและข้อมูลผู้ใช้">
-              <span class="user-role-badge">ADMIN</span>
-              <span class="user-name-text">${escapeHtml(activeUser.name.toUpperCase())}</span>
+              <span class="user-role-badge">👑 ADMIN</span>
+              <span class="user-name-text">${escapeHtml(activeUser.name)}</span>
               <span class="user-caret-icon">▾</span>
             </button>
 
@@ -1965,30 +1949,31 @@ function updateNavbarAuthUI(user, isOnline) {
               <div class="user-dropdown-header">
                 <div class="user-dropdown-avatar">${escapeHtml(user.name.charAt(0).toUpperCase())}</div>
                 <div class="user-dropdown-info">
-                  <div class="user-dropdown-name">${escapeHtml(user.name.toUpperCase())}</div>
-                  <div class="user-dropdown-role">ผู้ดูแลระบบ (ADMIN)</div>
+                  <div class="user-dropdown-name">${escapeHtml(user.name)}</div>
+                  <div class="user-dropdown-role">👑 ผู้ดูแลระบบ (Admin)</div>
                 </div>
               </div>
               <div class="user-dropdown-divider"></div>
 
+              <!-- รวมคำว่า บัญชีของฉัน, จัดการผู้ใช้ และ เซิร์ฟเวอร์ Firebase ในเมนูนี้ -->
               <button type="button" class="user-dropdown-item" onclick="closeUserMenu(); openAccountModal();" title="ดูและจัดการข้อมูลบัญชีโปรไฟล์ของฉัน">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                <span>บัญชีของฉัน (MY ACCOUNT)</span>
+                <span class="user-dropdown-icon">👤</span>
+                <span>บัญชีของฉัน</span>
               </button>
 
               <button type="button" class="user-dropdown-item" onclick="closeUserMenu(); openManageUsersModal();" title="จัดการรายชื่อและรหัส PIN พนักงาน">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <span>จัดการผู้ใช้ (MANAGE USERS)</span>
+                <span class="user-dropdown-icon">👥</span>
+                <span>จัดการผู้ใช้</span>
               </button>
 
               <button type="button" class="user-dropdown-item" onclick="closeUserMenu(); openFirebaseConfigModal();" title="เพิ่มและตั้งค่าเซิร์ฟเวอร์ Firebase Cloud Database">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
-                <span>เซิร์ฟเวอร์ FIREBASE</span>
+                <span class="user-dropdown-icon">🔥</span>
+                <span>เซิร์ฟเวอร์ Firebase</span>
               </button>
 
               <!-- สลับดูข้อมูลพนักงานสำหรับ Admin -->
               <div class="user-dropdown-section">
-                <label class="user-dropdown-label">สลับดูข้อมูลพนักงาน (SWITCH USER):</label>
+                <label class="user-dropdown-label">🔄 สลับดูข้อมูลพนักงาน:</label>
                 <select id="adminUserNavSelect" class="user-dropdown-select" onchange="switchEditingUser(this.value); closeUserMenu();">
                   ${optionsHtml}
                 </select>
@@ -1997,24 +1982,27 @@ function updateNavbarAuthUI(user, isOnline) {
               <div class="user-dropdown-divider"></div>
 
               <button type="button" class="user-dropdown-item text-danger" onclick="closeUserMenu(); handleLogout();" title="ออกจากระบบ">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                <span>ออกจากระบบ (LOGOUT)</span>
+                <span class="user-dropdown-icon">🚪</span>
+                <span>ออกจากระบบ</span>
               </button>
             </div>
           </div>
+
+          <button type="button" class="btn-factorium-gradient" onclick="handleLogout()" title="ออกจากระบบ">
+            ออกจากระบบ
+          </button>
         </div>
       `;
     } else {
       // พนักงานทั่วไป: แสดงชื่อ + กดเพื่อเปิดเมนู บัญชีของฉัน + เซิร์ฟเวอร์ Firebase + ออกจากระบบ
       container.innerHTML = `
         <div class="factorium-auth-group">
-          ${simBtnHtml}
           ${fbPillHtml}
 
           <div class="user-menu-container">
             <button type="button" class="btn-user-profile-trigger" id="userProfileTriggerBtn" onclick="toggleUserMenu(event)" title="คลิกเพื่อจัดการบัญชี">
-              <span class="user-role-badge badge-user">USER</span>
-              <span class="user-name-text">${escapeHtml(user.name.toUpperCase())}</span>
+              <span class="user-role-badge badge-user">👤 ทั่วไป</span>
+              <span class="user-name-text">${escapeHtml(user.name)}</span>
               <span class="user-caret-icon">▾</span>
             </button>
 
@@ -2022,30 +2010,34 @@ function updateNavbarAuthUI(user, isOnline) {
               <div class="user-dropdown-header">
                 <div class="user-dropdown-avatar">${escapeHtml(user.name.charAt(0).toUpperCase())}</div>
                 <div class="user-dropdown-info">
-                  <div class="user-dropdown-name">${escapeHtml(user.name.toUpperCase())}</div>
-                  <div class="user-dropdown-role">พนักงาน (USER)</div>
+                  <div class="user-dropdown-name">${escapeHtml(user.name)}</div>
+                  <div class="user-dropdown-role">👤 พนักงาน</div>
                 </div>
               </div>
               <div class="user-dropdown-divider"></div>
 
               <button type="button" class="user-dropdown-item" onclick="closeUserMenu(); openAccountModal();">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                <span>บัญชีของฉัน (MY ACCOUNT)</span>
+                <span class="user-dropdown-icon">👤</span>
+                <span>บัญชีของฉัน</span>
               </button>
 
               <button type="button" class="user-dropdown-item" onclick="closeUserMenu(); openFirebaseConfigModal();">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
-                <span>เซิร์ฟเวอร์ FIREBASE</span>
+                <span class="user-dropdown-icon">🔥</span>
+                <span>เซิร์ฟเวอร์ Firebase</span>
               </button>
 
               <div class="user-dropdown-divider"></div>
 
               <button type="button" class="user-dropdown-item text-danger" onclick="closeUserMenu(); handleLogout();">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                <span>ออกจากระบบ (LOGOUT)</span>
+                <span class="user-dropdown-icon">🚪</span>
+                <span>ออกจากระบบ</span>
               </button>
             </div>
           </div>
+
+          <button type="button" class="btn-factorium-gradient" onclick="handleLogout()" title="ออกจากระบบ">
+            ออกจากระบบ
+          </button>
         </div>
       `;
     }
@@ -2053,13 +2045,12 @@ function updateNavbarAuthUI(user, isOnline) {
     // ยังไม่ได้ล็อกอิน: แสดงปุ่ม Firebase Status + เข้าสู่ระบบ และ เริ่มใช้งานฟรี
     container.innerHTML = `
       <div class="factorium-auth-group">
-        ${simBtnHtml}
         ${fbPillHtml}
         <button type="button" class="btn-factorium-outline" onclick="openAuthModal()">
-          เข้าสู่ระบบ (LOGIN)
+          เข้าสู่ระบบ
         </button>
         <button type="button" class="btn-factorium-gradient" onclick="openAuthModal()">
-          เริ่มใช้งาน (START)
+          เริ่มใช้งานฟรี
         </button>
       </div>
     `;
@@ -2092,7 +2083,7 @@ function openAccountModal() {
 
   // เติมข้อมูลลงในการ์ดสรุปโปรไฟล์
   const avatarLarge = document.getElementById('accAvatarLarge');
-  if (avatarLarge) avatarLarge.textContent = user.role === 'admin' ? 'A' : (user.avatar || 'U');
+  if (avatarLarge) avatarLarge.textContent = user.role === 'admin' ? '👑' : (user.avatar || '👤');
 
   const summaryName = document.getElementById('accSummaryName');
   if (summaryName) summaryName.textContent = user.name;
@@ -2100,7 +2091,7 @@ function openAccountModal() {
   const summaryRole = document.getElementById('accSummaryRole');
   if (summaryRole) {
     summaryRole.className = user.role === 'admin' ? 'badge-account-role' : 'badge-account-role-user';
-    summaryRole.textContent = user.role === 'admin' ? 'ผู้ดูแลระบบ (ADMIN)' : 'พนักงาน (USER)';
+    summaryRole.textContent = user.role === 'admin' ? '👑 ผู้ดูแลระบบ (ADMIN)' : '👤 พนักงานทั่วไป';
   }
 
   const summaryCode = document.getElementById('accSummaryCode');
@@ -2242,18 +2233,18 @@ function renderManageUsersTable() {
   tbody.innerHTML = users.map(u => {
     const isMasterAdmin = (u.id === 'user_admin');
     const badge = isMasterAdmin 
-      ? '<span class="user-role-badge">ADMIN</span>' 
-      : '<span class="user-role-badge badge-user">USER</span>';
+      ? '<span class="user-role-badge-admin">👑 ADMIN</span>' 
+      : '<span class="user-role-badge-user">👤 พนักงาน</span>';
 
     const actionHtml = isMasterAdmin 
-      ? '<span class="badge-pill-locked" title="MASTER ADMIN">MASTER</span>' 
+      ? '<span class="badge-pill-locked" title="บัญชีผู้ดูแลระบบหลัก (ไม่สามารถลบหรือแก้ไขสิทธิ์ได้)">🔒 บัญชีหลัก</span>' 
       : `
         <div class="user-action-group">
-          <button type="button" class="btn btn-outline-primary btn-action-pill" onclick="openEditUserModal('${u.id}')" title="EDIT USER">
-            EDIT
+          <button type="button" class="btn btn-outline-primary btn-action-pill" onclick="openEditUserModal('${u.id}')" title="แก้ไขข้อมูลพนักงาน">
+            ✏️ แก้ไข
           </button>
-          <button type="button" class="btn btn-outline-danger btn-action-pill" onclick="confirmDeleteUser('${u.id}')" title="DELETE USER">
-            DELETE
+          <button type="button" class="btn btn-outline-danger btn-action-pill" onclick="confirmDeleteUser('${u.id}')" title="ลบพนักงานคนนี้">
+            🗑️ ลบ
           </button>
         </div>
       `;
@@ -2261,9 +2252,9 @@ function renderManageUsersTable() {
     return `
       <tr>
         <td style="text-align: center;">${badge}</td>
-        <td><strong>${escapeHtml(u.name.toUpperCase())}</strong></td>
+        <td><strong style="color: #0c4a6e;">${escapeHtml(u.name)}</strong></td>
         <td style="text-align: center;"><span class="badge-account-code">${escapeHtml(u.empCode || '-')}</span></td>
-        <td><span>${escapeHtml(u.department || '-')}</span></td>
+        <td><span style="color: #475569;">${escapeHtml(u.department || '-')}</span></td>
         <td style="text-align: center;"><span class="pin-code-badge">${escapeHtml(u.pin)}</span></td>
         <td style="text-align: center;">${actionHtml}</td>
       </tr>
@@ -2776,13 +2767,6 @@ function showToastNotification(message) {
 // 16. เริ่มต้นระบบ (DOM Ready Initialization)
 // ==========================================================================
 window.addEventListener('DOMContentLoaded', () => {
-  // ตรวจสอบว่ากำลังทำงานอยู่ภายใน Phone Simulator หรือไม่
-  if (window.self !== window.top || window.location.search.includes('mode=mobile_sim')) {
-    document.body.classList.add('is-in-simulator');
-    const simModal = document.getElementById('phoneSimulatorModal');
-    if (simModal) simModal.remove();
-  }
-
   loadStorageData();
   updateYearSelectDropdown();
   refreshPeriodSelector();
@@ -2800,274 +2784,4 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   updateAdminScopeBanner();
-});
-
-// ==========================================================================
-// 17. ระบบ Phone Simulator (แบบจำลองหน้าจอมือถือ iPhone 11 ขึ้นไป)
-// ==========================================================================
-const SIMULATOR_DEVICES = {
-  // iPhone 16 / 15 Series (Dynamic Island)
-  'iphone16promax': {
-    name: 'iPhone 16 Pro Max',
-    width: 440,
-    height: 956,
-    island: true,
-    islandWidth: 126,
-    islandHeight: 35,
-    borderRadius: 54,
-    screenRadius: 44,
-    bezel: 11
-  },
-  'iphone15pro': {
-    name: 'iPhone 15 Pro / 16',
-    width: 393,
-    height: 852,
-    island: true,
-    islandWidth: 120,
-    islandHeight: 33,
-    borderRadius: 50,
-    screenRadius: 40,
-    bezel: 11
-  },
-  'iphone15promax': {
-    name: 'iPhone 15 Pro Max / 14 Pro Max',
-    width: 430,
-    height: 932,
-    island: true,
-    islandWidth: 124,
-    islandHeight: 34,
-    borderRadius: 52,
-    screenRadius: 42,
-    bezel: 11
-  },
-  // iPhone 14 / 13 / 12 Series (Slim Notch)
-  'iphone14': {
-    name: 'iPhone 14 / 13 / 12',
-    width: 390,
-    height: 844,
-    island: false,
-    notchWidth: 154,
-    notchHeight: 30,
-    borderRadius: 48,
-    screenRadius: 38,
-    bezel: 11
-  },
-  'iphone14plus': {
-    name: 'iPhone 14 Plus / 13 Pro Max',
-    width: 428,
-    height: 926,
-    island: false,
-    notchWidth: 154,
-    notchHeight: 30,
-    borderRadius: 48,
-    screenRadius: 38,
-    bezel: 11
-  },
-  'iphone13mini': {
-    name: 'iPhone 13 mini / 12 mini',
-    width: 375,
-    height: 812,
-    island: false,
-    notchWidth: 148,
-    notchHeight: 28,
-    borderRadius: 44,
-    screenRadius: 34,
-    bezel: 11
-  },
-  // iPhone 11 Series (Classic Notch)
-  'iphone11': {
-    name: 'iPhone 11 / XR',
-    width: 414,
-    height: 896,
-    island: false,
-    notchWidth: 210,
-    notchHeight: 30,
-    borderRadius: 46,
-    screenRadius: 36,
-    bezel: 14
-  },
-  'iphone11pro': {
-    name: 'iPhone 11 Pro / X',
-    width: 375,
-    height: 812,
-    island: false,
-    notchWidth: 205,
-    notchHeight: 30,
-    borderRadius: 44,
-    screenRadius: 34,
-    bezel: 13
-  }
-};
-
-let currentSimDeviceKey = 'iphone15pro';
-let currentSimScale = 'fit';
-let simIsLandscape = false;
-let simClockTimer = null;
-
-function openPhoneSimulator() {
-  const modal = document.getElementById('phoneSimulatorModal');
-  if (!modal) return;
-
-  modal.style.display = 'flex';
-
-  const iframe = document.getElementById('simIframe');
-  if (iframe) {
-    const currentSrc = iframe.getAttribute('src');
-    if (!currentSrc || currentSrc === 'about:blank') {
-      iframe.src = 'index.html?mode=mobile_sim';
-    }
-  }
-
-  updateSimulatorClock();
-  if (simClockTimer) clearInterval(simClockTimer);
-  simClockTimer = setInterval(updateSimulatorClock, 1000);
-
-  setTimeout(() => {
-    applySimulatorDeviceAndScale();
-  }, 20);
-}
-
-function closePhoneSimulator() {
-  const modal = document.getElementById('phoneSimulatorModal');
-  if (modal) modal.style.display = 'none';
-
-  if (simClockTimer) {
-    clearInterval(simClockTimer);
-    simClockTimer = null;
-  }
-}
-
-function changeSimulatorDevice(deviceId) {
-  if (SIMULATOR_DEVICES[deviceId]) {
-    currentSimDeviceKey = deviceId;
-    applySimulatorDeviceAndScale();
-  }
-}
-
-function toggleSimulatorOrientation() {
-  simIsLandscape = !simIsLandscape;
-  const textEl = document.getElementById('simOrientationText');
-  if (textEl) {
-    textEl.textContent = simIsLandscape ? 'แนวนอน' : 'แนวตั้ง';
-  }
-  applySimulatorDeviceAndScale();
-}
-
-function changeSimulatorScale(scaleVal) {
-  currentSimScale = scaleVal;
-  applySimulatorDeviceAndScale();
-}
-
-function reloadSimulatorFrame() {
-  const iframe = document.getElementById('simIframe');
-  if (iframe) {
-    try {
-      iframe.contentWindow.location.reload();
-    } catch (e) {
-      iframe.src = 'index.html?mode=mobile_sim&t=' + Date.now();
-    }
-  }
-}
-
-function handleSimulatorBackdropClick(event) {
-  if (event && event.target && (event.target.id === 'phoneSimulatorModal' || event.target.classList.contains('sim-stage-container'))) {
-    closePhoneSimulator();
-  }
-}
-
-function updateSimulatorClock() {
-  const timeEl = document.getElementById('simStatusTime');
-  if (!timeEl) return;
-  const now = new Date();
-  const hours = String(now.getHours()).padStart(2, '0');
-  const mins = String(now.getMinutes()).padStart(2, '0');
-  timeEl.textContent = `${hours}:${mins}`;
-}
-
-function applySimulatorDeviceAndScale() {
-  const dev = SIMULATOR_DEVICES[currentSimDeviceKey] || SIMULATOR_DEVICES['iphone15pro'];
-  const phoneFrame = document.getElementById('simPhoneFrame');
-  const screenBezel = document.getElementById('simScreenBezel');
-  const dynamicIsland = document.getElementById('simDynamicIsland');
-  const notch = document.getElementById('simNotch');
-  const scaler = document.getElementById('simDeviceScaler');
-  if (!phoneFrame || !screenBezel || !scaler) return;
-
-  const w = simIsLandscape ? dev.height : dev.width;
-  const h = simIsLandscape ? dev.width : dev.height;
-
-  // ปรับขนาด Chassis ให้ตรงกับขนาดหน้าจอ + Bezel
-  phoneFrame.style.width = `${w}px`;
-  phoneFrame.style.height = `${h}px`;
-  phoneFrame.style.borderRadius = `${dev.borderRadius}px`;
-  phoneFrame.style.padding = `${dev.bezel}px`;
-  screenBezel.style.borderRadius = `${dev.screenRadius}px`;
-
-  // Hardware buttons ในโหมดแนวนอน vs แนวตั้ง
-  const silentBtn = phoneFrame.querySelector('.sim-btn-silent');
-  const volUpBtn = phoneFrame.querySelector('.sim-btn-vol-up');
-  const volDownBtn = phoneFrame.querySelector('.sim-btn-vol-down');
-  const powerBtn = phoneFrame.querySelector('.sim-btn-power');
-  if (simIsLandscape) {
-    if (silentBtn) silentBtn.style.display = 'none';
-    if (volUpBtn) volUpBtn.style.display = 'none';
-    if (volDownBtn) volDownBtn.style.display = 'none';
-    if (powerBtn) powerBtn.style.display = 'none';
-  } else {
-    if (silentBtn) silentBtn.style.display = 'block';
-    if (volUpBtn) volUpBtn.style.display = 'block';
-    if (volDownBtn) volDownBtn.style.display = 'block';
-    if (powerBtn) powerBtn.style.display = 'block';
-  }
-
-  // ปรับการแสดงผล Dynamic Island vs Notch
-  if (dev.island) {
-    if (dynamicIsland) {
-      dynamicIsland.style.display = 'flex';
-      dynamicIsland.style.width = `${dev.islandWidth}px`;
-      dynamicIsland.style.height = `${dev.islandHeight}px`;
-    }
-    if (notch) notch.style.display = 'none';
-  } else {
-    if (dynamicIsland) dynamicIsland.style.display = 'none';
-    if (notch) {
-      notch.style.display = 'flex';
-      notch.style.width = `${dev.notchWidth}px`;
-      notch.style.height = `${dev.notchHeight}px`;
-    }
-  }
-
-  // คำนวณ Scale
-  let scale = 1.0;
-  if (currentSimScale === 'fit') {
-    const stage = document.querySelector('.sim-stage-container');
-    const availableW = Math.max(300, (stage ? stage.clientWidth : window.innerWidth) - 40);
-    const availableH = Math.max(300, (stage ? stage.clientHeight : (window.innerHeight - 90)) - 40);
-    const totalW = w + (dev.bezel * 2) + 16;
-    const totalH = h + (dev.bezel * 2) + 16;
-    const scaleW = availableW / totalW;
-    const scaleH = availableH / totalH;
-    scale = Math.min(1.0, Math.min(scaleW, scaleH));
-  } else {
-    scale = parseFloat(currentSimScale) || 1.0;
-  }
-
-  scaler.style.transform = `scale(${scale.toFixed(3)})`;
-}
-
-// Window resize & ESC key
-window.addEventListener('resize', () => {
-  const modal = document.getElementById('phoneSimulatorModal');
-  if (modal && modal.style.display !== 'none' && currentSimScale === 'fit') {
-    applySimulatorDeviceAndScale();
-  }
-});
-
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    const modal = document.getElementById('phoneSimulatorModal');
-    if (modal && modal.style.display !== 'none') {
-      closePhoneSimulator();
-    }
-  }
 });

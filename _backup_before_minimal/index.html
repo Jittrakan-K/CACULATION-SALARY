@@ -3,20 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CACULATION SALARY — BY JITTRAKAN K.</title>
+  <title>CACULATION SALARY - BY JITTRAKAN K.</title>
   
-  <!-- Website Favicon matching brand logo -->
+  <!-- Website Tab Favicon matching brand logo (Image 1) -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="icon" type="image/png" sizes="64x64" href="favicon.png">
   <link rel="shortcut icon" href="favicon.ico">
   <link rel="apple-touch-icon" href="favicon.png">
   <script>
+    // Ensure tab favicon displays correctly in all scenarios including file:// protocol
     (function() {
-      if (window.location.protocol === 'file:') {
+      const isFile = window.location.protocol === 'file:';
+      if (isFile) {
         const link = document.createElement('link');
         link.type = 'image/svg+xml';
         link.rel = 'icon';
-        link.href = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KICA8cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxNCIgZmlsbD0iIzAwMDAwMCIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDgsIDgpIHNjYWxlKDIpIj4KICAgIDxwYXRoIGQ9Ik0xMyAyTDMgMTRoOGwtMiA4IDEwLTEyaC04bDItOHoiIGZpbGw9IiNmZmZmZmYiLz4KICA8L2c+Cjwvc3ZnPg==';
+        link.href = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ibG9nb0dyYWQiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZDkyMzY1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iNjAlIiBzdG9wLWNvbG9yPSIjN2MzYWVkIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzI1NjNlYiIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTYiIGZpbGw9InVybCgjbG9nb0dyYWQpIi8+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTAsIDgpIHNjYWxlKDIpIj4KICAgIDxwYXRoIGQ9Ik0xMyAyTDMgMTRoOGwtMiA4IDEwLTEyaC04bDItOHoiIGZpbGw9IiNmZmZmZmYiLz4KICA8L2c+Cjwvc3ZnPgo=';
         document.head.appendChild(link);
       }
     })();
@@ -25,7 +27,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Prompt:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   
   <!-- Firebase SDK Compat via CDN -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -33,117 +35,125 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
 </head>
-<body class="theme-monochrome">
-  <!-- Minimalist Top Navigation Bar (Strictly Single Row, Black & White) -->
+<body class="theme-blue-white">
+  <!-- Top Navigation Bar (Single-Row Modern SaaS Style) -->
   <header class="app-nav no-print">
     <div class="nav-container">
-      <!-- Left: Clean Brand Cluster -->
+      <!-- Left: Brand Logo (Factorium Modern Style) -->
       <div class="app-branding" onclick="switchView('main')">
         <div class="brand-logo-mark">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
             <path d="M13 2L3 14h8l-2 8 10-12h-8l2-8z"/>
           </svg>
         </div>
         <div class="brand-text">
           <div class="brand-name">CACULATION SALARY</div>
-          <div class="brand-tag">PAYROLL SYSTEM <span class="brand-by-sep">•</span> <span class="brand-author">BY JITTRAKAN K.</span></div>
+          <div class="brand-tag">SMART PAYROLL SYSTEM <span class="brand-by-sep">•</span> <span class="brand-author">BY JITTRAKAN K.</span></div>
         </div>
       </div>
 
-      <!-- Center: Segmented Navigation Tabs -->
+      <!-- Center: Main Navigation Menu (5 Tabs) -->
       <nav class="nav-menu">
         <button type="button" class="nav-link-btn active" id="navBtnMain" onclick="switchView('main')">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></svg>
+          <span class="nav-tab-icon">📊</span>
           <span>คำนวณเงินเดือน</span>
         </button>
         <button type="button" class="nav-link-btn" id="navBtnAttendance" onclick="switchView('attendance')">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span class="nav-tab-icon">⏱️</span>
           <span>บันทึกเวลาออกงาน</span>
         </button>
         <button type="button" class="nav-link-btn" id="navBtnCalendar" onclick="toggleCalendarView()">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span class="nav-tab-icon">📅</span>
           <span>ปฏิทินวันทำงาน</span>
         </button>
-        <button type="button" class="nav-link-btn" id="navBtnSettings" onclick="openSettingsSalaryModal()">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
-          <span>โครงสร้างค่าเงิน</span>
+        <button type="button" class="nav-link-btn highlight" id="navBtnSettings" onclick="openSettingsSalaryModal()">
+          <span class="nav-tab-icon">⚙️</span>
+          <span>ปรับแต่งค่าเงิน</span>
         </button>
       </nav>
 
       <!-- Right: User Menu & Auth Actions -->
       <div class="nav-actions">
         <div id="navAuthArea" class="nav-auth-area">
-          <button type="button" class="btn-simulator-trigger" id="btnPhoneSimulator" onclick="openPhoneSimulator()" title="จำลองหน้าจอแอปบนมือถือ (PHONE SIMULATOR)">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="5" y="2" width="14" height="20" rx="3" ry="3"/>
-              <line x1="12" y1="18" x2="12.01" y2="18"/>
-            </svg>
-          </button>
           <button type="button" class="btn-factorium-outline" onclick="openAuthModal()">
-            เข้าสู่ระบบ (LOGIN)
+            เข้าสู่ระบบ
           </button>
           <button type="button" class="btn-factorium-gradient" onclick="openAuthModal()">
-            เริ่มใช้งาน (START)
+            เริ่มใช้งานฟรี
           </button>
         </div>
       </div>
     </div>
   </header>
 
-  <!-- Executive Context Ribbon (Clean B&W Financial Ribbon) -->
-  <section class="hero-showcase minimal-metric-ribbon no-print">
-    <div class="container ribbon-container">
-      <div class="ribbon-brand-summary">
-        <span class="ribbon-eyebrow">EXECUTIVE LEDGER</span>
-        <span class="ribbon-tag">ORBRAY 2569 / 2026</span>
+  <!-- Hero Header Showcase Section (Factorium inspired in Blue & White) -->
+  <section class="hero-showcase no-print">
+    <div class="container hero-container">
+      <div class="hero-badge">
+        <span class="hero-badge-icon">🛡️</span>
+        <span>ระบบบริหารเวลาทำงาน & คิดเงินเดือนอัจฉริยะ</span>
+      </div>
+      
+      <h1 class="hero-title">
+        คำนวณเงินเดือน & ค่าล่วงเวลาแม่นยำ <br class="d-none d-md-block">
+        <span class="text-gradient">ทุกงวดจ่าย</span> ออกแบบเพื่อความยืดหยุ่นสูงสุด
+      </h1>
+      
+      <p class="hero-subtitle">
+        บันทึกเวลาทำงาน คำนวณค่าล่วงเวลา OT เบี้ยเลี้ยง พร้อมปรับโครงสร้างฐานเงินเดือนได้ทุกรายการ
+      </p>
+
+      <!-- Hero Action Buttons -->
+      <div class="hero-actions">
+        <button type="button" class="btn btn-primary btn-lg shadow-btn" onclick="switchView('attendance')">
+          ⏱️ บันทึกเวลาออกงาน
+        </button>
+        <button type="button" class="btn btn-white-outline btn-lg" onclick="switchView('main')">
+          📊 คำนวณเงินเดือน
+        </button>
+        <button type="button" class="btn btn-white-outline btn-lg" onclick="openSettingsSalaryModal()">
+          ⚙️ ปรับแต่งค่าเงิน
+        </button>
       </div>
 
-      <div class="ribbon-metrics-row">
-        <div class="ribbon-metric-item">
-          <span class="ribbon-metric-label">วันทำงานเป้าหมาย</span>
-          <div class="ribbon-metric-value"><strong id="heroTargetDays">22</strong> <span class="ribbon-unit">วัน</span></div>
+      <!-- Hero KPI Metrics Row -->
+      <div class="hero-stats-grid">
+        <div class="hero-stat-card">
+          <div class="stat-num" id="heroTargetDays">22</div>
+          <div class="stat-title">วันทำงานเป้าหมาย</div>
+          <div class="stat-desc">ตามปฏิทินงวดปัจจุบัน</div>
         </div>
-
-        <div class="ribbon-metric-divider"></div>
-
-        <div class="ribbon-metric-item">
-          <span class="ribbon-metric-label">ชั่วโมง OT รวม</span>
-          <div class="ribbon-metric-value"><strong id="heroTotalOTHours">0.0</strong> <span class="ribbon-unit">ชม.</span></div>
+        <div class="hero-stat-card">
+          <div class="stat-num text-primary" id="heroNetPay">0.00</div>
+          <div class="stat-title">ยอดเงินได้สุทธิ (บาท)</div>
+          <div class="stat-desc">คำนวณอัตโนมัติหัก ปกส.</div>
         </div>
-
-        <div class="ribbon-metric-divider"></div>
-
-        <div class="ribbon-metric-item highlight-net">
-          <span class="ribbon-metric-label">ยอดเงินได้สุทธิ (NET PAYABLE)</span>
-          <div class="ribbon-metric-value">฿<strong id="heroNetPay">0.00</strong></div>
+        <div class="hero-stat-card">
+          <div class="stat-num" id="heroTotalOTHours">0.0</div>
+          <div class="stat-title">ชั่วโมง OT รวม</div>
+          <div class="stat-desc">สะสมในงวด 21-20</div>
         </div>
-      </div>
-
-      <div class="ribbon-actions">
-        <button type="button" class="btn-ribbon-action" onclick="switchView('attendance')">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <span>บันทึกเวลาออกงาน</span>
-        </button>
-        <button type="button" class="btn-ribbon-action outline" onclick="openSettingsSalaryModal()">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
-          <span>โครงสร้างค่าเงิน</span>
-        </button>
+        <div class="hero-stat-card">
+          <div class="stat-num text-success">100%</div>
+          <div class="stat-title">ความแม่นยำตามสูตร</div>
+          <div class="stat-desc">ตรงตามเอกสารบัญชี</div>
+        </div>
       </div>
     </div>
   </section>
 
   <main class="main-content">
-    <!-- MAIN WORKSPACE: TIMESHEET & SALARY CALCULATOR -->
+    <!-- MAIN WORKSPACE: TIMESHEET & SALARY CALCULATOR (MONTH-BY-MONTH) -->
     <section id="view-main" class="view-panel active-panel no-print">
       <div class="container">
         
-        <!-- Admin Context Banner -->
+        <!-- Admin Context Banner (Active when Admin edits staff data) -->
         <div id="adminScopeBanner" class="admin-scope-banner" style="display:none;"></div>
 
         <!-- Period Navigation Toolbar -->
         <div class="period-navigator card">
           <div class="period-nav-left">
-            <span class="period-nav-label">รอบเดือน:</span>
+            <span class="period-nav-label">📅 รอบเดือน:</span>
             <button type="button" class="btn btn-outline-primary btn-nav-arrow" onclick="navPrevPeriod()" title="งวดก่อนหน้า">
               ◀ ก่อนหน้า
             </button>
@@ -156,56 +166,42 @@
           </div>
 
           <div class="period-nav-right">
+            <!-- ย้ายฟังก์ชั่นรูปที่ 1 (เลือกปี) มาอยู่ข้างๆ ปุ่มบันทึกเวลาออกงาน -->
             <div class="factorium-year-box" title="เลือกปีปฏิทินคำนวณเงินเดือน">
-              <span class="factorium-globe-icon">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-              </span>
+              <span class="factorium-globe-icon">🌐</span>
               <select id="appYearSelect" class="factorium-year-select" onchange="onAppYearChange()"></select>
               <button type="button" class="factorium-btn-plus" onclick="openAddYearModal()" title="เพิ่มปีปฏิทินใหม่">+</button>
             </div>
             <button type="button" class="btn btn-primary btn-nav-cta" onclick="switchView('attendance')">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              <span>บันทึกเวลาออกงาน →</span>
+              ⏱️ บันทึกเวลาออกงาน (เข้า-ออก) →
             </button>
           </div>
         </div>
 
-        <!-- Net Salary Summary Banner (Financial Statement Cards in Single Row) -->
+        <!-- Net Salary Summary Banner (ยอดรับจริงเดือนนี้) -->
         <div class="summary-cards-grid">
           <div class="sum-card income-card">
+            <div class="card-icon">💰</div>
             <div class="card-content">
-              <div class="card-meta">
-                <span class="card-title">ยอดรวมเงินได้</span>
-                <span class="card-tag-sub">TOTAL GROSS</span>
-              </div>
-              <div class="card-val-row">
-                <span class="currency-symbol">฿</span>
-                <span class="card-amount" id="dashTotalIncome">0.00</span>
-              </div>
+              <span class="card-title">ยอดรวมเงินได้</span>
+              <span class="card-amount" id="dashTotalIncome">0.00</span>
+              <span class="card-unit">บาท</span>
             </div>
           </div>
           <div class="sum-card deduct-card">
+            <div class="card-icon">📉</div>
             <div class="card-content">
-              <div class="card-meta">
-                <span class="card-title">เงินหักประกันสังคม</span>
-                <span class="card-tag-sub">DEDUCTIONS (SSO)</span>
-              </div>
-              <div class="card-val-row">
-                <span class="currency-symbol">-฿</span>
-                <span class="card-amount" id="dashTotalDeduct">875.00</span>
-              </div>
+              <span class="card-title">เงินหัก (ประกันสังคม)</span>
+              <span class="card-amount text-danger" id="dashTotalDeduct">875.00</span>
+              <span class="card-unit">บาท</span>
             </div>
           </div>
           <div class="sum-card net-card">
+            <div class="card-icon">💵</div>
             <div class="card-content">
-              <div class="card-meta">
-                <span class="card-title">เงินได้สุทธิรับจริง</span>
-                <span class="card-tag-sub">NET PAYABLE</span>
-              </div>
-              <div class="card-val-row">
-                <span class="currency-symbol">฿</span>
-                <span class="card-amount" id="dashNetPay">0.00</span>
-              </div>
+              <span class="card-title">เงินได้สุทธิ (รับจริง)</span>
+              <span class="card-amount text-success" id="dashNetPay">0.00</span>
+              <span class="card-unit">บาท</span>
             </div>
           </div>
         </div>
@@ -215,56 +211,55 @@
           <div class="card-body">
             <div class="attendance-quick-grid">
               <div class="att-quick-info">
-                <div class="att-quick-header">
-                  <span class="att-quick-eyebrow">ATTENDANCE SNAPSHOT</span>
-                  <h3 class="att-quick-title">บันทึกเวลาเข้า-ออกงาน & ชั่วโมง OT</h3>
+                <div class="att-quick-badge">
+                  <span>⏱️ บันทึกเวลาทำงาน</span>
                 </div>
+                <h3 class="att-quick-title">บันทึกเวลาเข้า-ออกงาน & ชั่วโมง OT</h3>
                 <p class="att-quick-desc">
-                  ลงเวลาทำงานรายวัน เลือกเวลาออกงานเพื่อคำนวณ OT 1.5 เท่า, วันหยุด 1.0 เท่า และ 3.0 เท่าอัตโนมัติ
+                  ลงเวลาทำงานรายวัน เลือกเวลาออกงาน (Drop Down) เพื่อคำนวณ OT 1.5 เท่า, วันหยุด 1.0 เท่า และ 3.0 เท่าอัตโนมัติ
                 </p>
                 <div class="att-quick-metrics">
                   <div class="att-metric-pill">
-                    <span class="pill-label">มาทำงานจริง:</span>
-                    <strong class="pill-val" id="quickCameDays">0</strong>
+                    <span class="pill-label">มาทำงาน:</span>
+                    <strong class="pill-val text-success" id="quickCameDays">0</strong>
                     <span class="pill-total">/ <span id="quickTargetDays">0</span> วัน</span>
                   </div>
                   <div class="att-metric-pill">
                     <span class="pill-label">ชั่วโมง OT สะสม:</span>
-                    <strong class="pill-val" id="quickTotalOTHours">0.0</strong>
+                    <strong class="pill-val text-primary" id="quickTotalOTHours">0.0</strong>
                     <span class="pill-unit">ชม.</span>
                   </div>
                   <div class="att-metric-pill">
                     <span class="pill-label">วันทำ OT:</span>
-                    <strong class="pill-val" id="quickTotalOTDays">0</strong>
+                    <strong class="pill-val text-primary" id="quickTotalOTDays">0</strong>
                     <span class="pill-unit">วัน</span>
                   </div>
                 </div>
               </div>
               <div class="att-quick-action">
-                <button type="button" class="btn btn-primary btn-enter-att" onclick="switchView('attendance')">
-                  <span class="btn-main-label">บันทึกเวลาออกงาน</span>
-                  <span class="btn-sub-label">เปิดหน้าลงเวลาทำงาน (IN-OUT) →</span>
+                <button type="button" class="btn btn-primary btn-lg shadow-btn btn-enter-att" onclick="switchView('attendance')">
+                  <span class="btn-main-label">⏱️ บันทึกเวลาออกงาน</span>
+                  <span class="btn-sub-label">เปิดหน้าบันทึกเวลาเข้า-ออกงาน →</span>
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- สรุปรายการคำนวณเงินเดือนในรอบนี้ (Salary Breakdown Summary) -->
+        <!-- สรุปรายการคำนวณเงินเดือนในรอบนี้ (Salary Breakdown Summary - Image 2) -->
         <div class="card salary-breakdown-card">
           <div class="card-header-flex">
             <div>
               <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <h2 class="card-header-title" style="margin-bottom: 0;">สรุปรายการเงินได้และเงินหักประจำรอบ</h2>
-                <span class="card-paydate-badge" id="cardPeriodBadge">งวด: -</span>
-                <span class="card-paydate-badge" id="cardPeriodConfigStatusBadge">ค่ามาตรฐาน</span>
+                <h2 class="card-header-title" style="margin-bottom: 0;">📋 สรุปรายการคำนวณเงินเดือนประจำรอบ</h2>
+                <span class="card-paydate-badge" id="cardPeriodBadge" style="padding: 4px 10px; font-size: 0.82rem; background: #e0f2fe; color: #0369a1; border-color: #bae6fd;">งวด: -</span>
+                <span class="card-paydate-badge" id="cardPeriodConfigStatusBadge" style="padding: 4px 10px; font-size: 0.82rem; background: #f8fafc; color: #475569; border-color: #cbd5e1;">🌐 ค่ามาตรฐาน</span>
               </div>
               <p class="subtitle text-muted small" id="cardPeriodSubtitle" style="margin-top: 4px;">คำนวณจากยอดลงเวลาตามสูตรโครงสร้างเงินได้</p>
             </div>
             <div class="card-header-actions">
-              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="openSettingsSalaryModal()" title="แก้ไขค่าเงินเดือน เบี้ยเลี้ยง และอัตรา OT เฉพาะงวดนี้">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
-                <span>ปรับโครงสร้างค่าเงิน</span>
+              <button type="button" class="btn btn-sm btn-primary" onclick="openSettingsSalaryModal()" title="แก้ไขค่าเงินเดือน เบี้ยเลี้ยง และอัตรา OT เฉพาะงวดนี้">
+                ⚙️ แก้ไขค่าเงินและเบี้ยเลี้ยง
               </button>
               <div class="card-paydate-badge">
                 <span>วันที่จ่าย: </span>
@@ -277,44 +272,44 @@
               <!-- Left Column: รายการเงินได้ (Earnings) -->
               <div class="calc-col">
                 <div class="calc-col-header-flex">
-                  <h3 class="calc-col-title">รายการเงินได้ (EARNINGS)</h3>
+                  <h3 class="calc-col-title text-primary">รายการเงินได้ (Earnings)</h3>
                   <button type="button" class="btn-text-link" onclick="openSettingsSalaryModal()">
-                    แก้ไขอัตรา
+                    ✏️ ปรับอัตรา
                   </button>
                 </div>
                 <table class="calc-mini-table">
                   <tbody>
                     <tr>
                       <td>
-                        <strong>เงินเดือนพื้นฐาน (BASE SALARY)</strong>
+                        <strong>เงินเดือนพื้นฐาน</strong>
                         <div class="text-muted small">มาทำงาน <span id="calcCameDays">0</span>/<span id="calcTargetDays">0</span> วัน (สถานะ: <span id="calcDiligenceStatus">ครบวันทำงาน</span>)</div>
                       </td>
                       <td class="text-right font-weight-bold" id="calcActualSalary">0.00</td>
                     </tr>
                     <tr>
                       <td>
-                        <strong>เบี้ยขยัน (DILIGENCE)</strong>
+                        <strong>เบี้ยขยัน</strong>
                         <div class="text-muted small">มาครบวันทำงานตามปฏิทิน (อัตรา <span id="lblRateDiligence">650</span> บ.)</div>
                       </td>
-                      <td class="text-right font-weight-bold" id="calcDiligenceTotal">0.00</td>
+                      <td class="text-right font-weight-bold text-success" id="calcDiligenceTotal">0.00</td>
                     </tr>
                     <tr>
                       <td>
-                        <strong>เงินช่วยเหลือค่าเดินทาง (TRAVEL)</strong>
+                        <strong>เงินช่วยเหลือค่าเดินทาง</strong>
                         <div class="text-muted small">คงที่ประจำเดือน</div>
                       </td>
                       <td class="text-right font-weight-bold" id="calcTravelTotal">1,230.00</td>
                     </tr>
                     <tr>
                       <td>
-                        <strong id="lblFoodTitle">ค่าอาหารกลางวัน (FOOD)</strong>
+                        <strong id="lblFoodTitle">ค่าอาหาร (20 บ./วัน)</strong>
                         <div class="text-muted small"><span id="lblFoodPerDay">20</span> บาท &times; <span id="calcFoodDays">0</span> วันที่มา</div>
                       </td>
                       <td class="text-right font-weight-bold" id="calcFoodTotal">0.00</td>
                     </tr>
                     <tr>
                       <td>
-                        <strong id="lblOTMealTitle">อาหารโอที (OT MEAL)</strong>
+                        <strong id="lblOTMealTitle">อาหารโอที (15 บ./วัน)</strong>
                         <div class="text-muted small"><span id="lblOTMealPerDay">15</span> บาท &times; <span id="calcOTMealDays">0</span> วันที่ทำ OT &ge; 1 ชม.</div>
                       </td>
                       <td class="text-right font-weight-bold" id="calcOTMealTotal">0.00</td>
@@ -324,25 +319,25 @@
                         <strong id="lblOT15Title">ค่าล่วงเวลา OT 1.5 เท่า (วันปกติ)</strong>
                         <div class="text-muted small">(<span id="lblOT15Base">20,000</span>/<span id="lblOT15Days">30</span>/8) &times; (<span id="lblOT15Mult">1.5</span> &times; <span id="calcOT15Hours">0.0</span> ชม.)</div>
                       </td>
-                      <td class="text-right font-weight-bold" id="calcOT15Total">0.00</td>
+                      <td class="text-right font-weight-bold text-primary" id="calcOT15Total">0.00</td>
                     </tr>
                     <tr>
                       <td>
                         <strong id="lblOT1Title">ค่าล่วงเวลา OT 1.0 เท่า (วันหยุด 8 ชม.)</strong>
                         <div class="text-muted small">(<span id="lblOT1Base">20,000</span>/<span id="lblOT1Days">30</span>/8) &times; (<span id="lblOT1Mult">1.0</span> &times; <span id="calcOT1Hours">0.0</span> ชม.)</div>
                       </td>
-                      <td class="text-right font-weight-bold" id="calcOT1Total">0.00</td>
+                      <td class="text-right font-weight-bold text-primary" id="calcOT1Total">0.00</td>
                     </tr>
                     <tr>
                       <td>
                         <strong id="lblOT3Title">ค่าล่วงเวลา OT 3.0 เท่า (วันหยุดหลัง 17:00)</strong>
                         <div class="text-muted small">(<span id="lblOT3Base">20,000</span>/<span id="lblOT3Days">30</span>/8) &times; (<span id="lblOT3Mult">3.0</span> &times; <span id="calcOT3Hours">0.0</span> ชม.)</div>
                       </td>
-                      <td class="text-right font-weight-bold" id="calcOT3Total">0.00</td>
+                      <td class="text-right font-weight-bold text-primary" id="calcOT3Total">0.00</td>
                     </tr>
                     <tr class="calc-total-row">
-                      <td><strong>รวมเงินได้ทั้งสิ้น (TOTAL GROSS)</strong></td>
-                      <td class="text-right font-weight-bold" id="calcSumIncome">0.00</td>
+                      <td><strong>รวมเงินได้ทั้งสิ้น</strong></td>
+                      <td class="text-right font-weight-bold text-primary" id="calcSumIncome">0.00</td>
                     </tr>
                   </tbody>
                 </table>
@@ -351,7 +346,7 @@
               <!-- Right Column: รายการเงินหัก & เงินได้สุทธิ -->
               <div class="calc-col">
                 <div class="calc-col-header-flex">
-                  <h3 class="calc-col-title">รายการเงินหัก (DEDUCTIONS)</h3>
+                  <h3 class="calc-col-title text-danger">รายการเงินหัก (Deductions)</h3>
                 </div>
                 <table class="calc-mini-table">
                   <tbody>
@@ -360,20 +355,20 @@
                         <strong id="lblSSOTitle">ประกันสังคม (SSO 5%)</strong>
                         <div class="text-muted small">เพดานฐานเงินเดือน <span id="lblSSOMaxBase">17,500</span> บาท</div>
                       </td>
-                      <td class="text-right font-weight-bold" id="calcSSOTotal">-875.00</td>
+                      <td class="text-right font-weight-bold text-danger" id="calcSSOTotal">-875.00</td>
                     </tr>
                     <tr class="calc-total-row">
-                      <td><strong>รวมเงินหักทั้งสิ้น (TOTAL DEDUCTIONS)</strong></td>
-                      <td class="text-right font-weight-bold" id="calcSumDeduct">-875.00</td>
+                      <td><strong>รวมเงินหักทั้งสิ้น</strong></td>
+                      <td class="text-right font-weight-bold text-danger" id="calcSumDeduct">-875.00</td>
                     </tr>
                   </tbody>
                 </table>
 
                 <!-- Grand Net Box -->
                 <div class="grand-net-box">
-                  <div class="grand-net-label">เงินได้สุทธิรับจริงประจำรอบ (NET PAYABLE)</div>
-                  <div class="grand-net-amount" id="calcGrandNetPay">0.00</div>
-                  <div class="grand-net-unit">THB / บาท</div>
+                  <div class="grand-net-label">💵 เงินได้สุทธิรับจริงประจำรอบนี้</div>
+                  <div class="grand-net-amount text-success" id="calcGrandNetPay">0.00</div>
+                  <div class="grand-net-unit">บาท</div>
                 </div>
               </div>
             </div>
@@ -393,7 +388,7 @@
         <!-- Period Navigation Toolbar for Attendance -->
         <div class="period-navigator card">
           <div class="period-nav-left">
-            <span class="period-nav-label">รอบเดือน:</span>
+            <span class="period-nav-label">📅 รอบเดือน:</span>
             <button type="button" class="btn btn-outline-primary btn-nav-arrow" onclick="navPrevPeriod()" title="งวดก่อนหน้า">
               ◀ ก่อนหน้า
             </button>
@@ -407,13 +402,13 @@
 
           <div class="period-nav-right">
             <button type="button" class="btn btn-outline-success" onclick="autoFillNormalWorkdays()">
-              เติมวันปกติ (08:00–17:00)
+              ✅ เติมวันปกติ (08:00–17:00)
             </button>
             <button type="button" class="btn btn-outline-danger" onclick="clearAttendanceTable()">
-              ล้างเวลา
+              🗑️ ล้างเวลา
             </button>
             <button type="button" class="btn btn-primary" onclick="switchView('main')">
-              ไปที่คำนวณเงินเดือน →
+              📊 ไปที่คำนวณเงินเดือน →
             </button>
           </div>
         </div>
@@ -421,27 +416,31 @@
         <!-- Attendance Quick KPI Metrics Bar -->
         <div class="attendance-kpi-bar mb-3">
           <div class="kpi-mini-card">
+            <span class="kpi-icon">🎯</span>
             <div class="kpi-info">
               <span class="kpi-label">วันทำงานเป้าหมาย</span>
               <strong class="kpi-val" id="attCardTargetDays">0 วัน</strong>
             </div>
           </div>
           <div class="kpi-mini-card">
+            <span class="kpi-icon">🚶</span>
             <div class="kpi-info">
               <span class="kpi-label">มาทำงานจริง</span>
-              <strong class="kpi-val" id="attCardCameDays">0 วัน</strong>
+              <strong class="kpi-val text-success" id="attCardCameDays">0 วัน</strong>
             </div>
           </div>
           <div class="kpi-mini-card">
+            <span class="kpi-icon">⚡</span>
             <div class="kpi-info">
               <span class="kpi-label">ชั่วโมง OT รวม</span>
-              <strong class="kpi-val" id="attCardOTHours">0.0 ชม.</strong>
+              <strong class="kpi-val text-primary" id="attCardOTHours">0.0 ชม.</strong>
             </div>
           </div>
           <div class="kpi-mini-card">
+            <span class="kpi-icon">💵</span>
             <div class="kpi-info">
               <span class="kpi-label">เงินได้สุทธิประมาณการ</span>
-              <strong class="kpi-val" id="attCardNetPay">0.00 บาท</strong>
+              <strong class="kpi-val text-success" id="attCardNetPay">0.00 บาท</strong>
             </div>
           </div>
         </div>
@@ -450,22 +449,22 @@
         <div class="card">
           <div class="card-header-flex">
             <div>
-              <h2 class="card-header-title">บันทึกเวลาเข้า-ออกงาน (IN-OUT)</h2>
+              <h2 class="card-header-title">⏱️ บันทึกเวลาเข้า-ออกงาน (IN-OUT)</h2>
               <p class="subtitle" id="timesheetPeriodSubtitle">รอบการลงเวลาทำงาน</p>
             </div>
             <div class="ot-quick-badges">
               <span class="badge-rule">เข้า: ติ๊กวันที่มาทำงาน = 08:00</span>
-              <span class="badge-rule">ออก: เลือกจาก DROP DOWN</span>
-              <span class="badge-rule">OT: คำนวณและปัดเศษอัตโนมัติ</span>
+              <span class="badge-rule">ออก: เลือกจาก Drop Down</span>
+              <span class="badge-rule">OT: คำนวณและปัดเศษเต็มบาทอัตโนมัติ</span>
             </div>
           </div>
 
           <div class="card-body">
             <div class="ot-hint-banner">
-              <strong>กฎเวลาออก & OT:</strong>
+              <strong>💡 กฎเวลาออก & OT:</strong>
               <span>วันปกติ: 17:00=0 ชม. | 17:30/17:50=0.5 ชม. | 18:20=1.0 ชม. | 18:50=1.5 ชม. | 19:20=2.0 ชม. | 19:50=2.5 ชม.</span>
               <br>
-              <em>* วันอาทิตย์/วันหยุด: มีตัวเลือกเวลาออกตั้งแต่ 08:30 คิดเป็น HOLIDAY OT 1.0 และหลัง 17:00 คิดเป็น OT HOLIDAY 3.0</em>
+              <em>* วันอาทิตย์/วันหยุด: มีตัวเลือกเวลาออกตั้งแต่ 08:30 (เพิ่มทีละ 30 นาที) คิดเป็น Holiday OT 1.0 และเวลาหลัง 17:00 คิดเป็น OT Holiday 3.0</em>
             </div>
 
             <div class="table-responsive">
@@ -478,8 +477,8 @@
                     <th style="width:85px;">เวลาเข้า</th>
                     <th style="width:110px;">เวลาออก</th>
                     <th style="width:85px;">OT (1.5)</th>
-                    <th style="width:85px;">HOLIDAY (1)</th>
-                    <th style="width:85px;">OT HOL (3)</th>
+                    <th style="width:85px;">Holiday (1)</th>
+                    <th style="width:85px;">OT Hol (3)</th>
                     <th style="width:85px;">วันที่มาทำงาน</th>
                     <th style="width:65px;">วันที่มา</th>
                     <th style="width:70px;">วันทำ OT</th>
@@ -489,12 +488,12 @@
                 <tfoot>
                   <tr class="timesheet-sum-row">
                     <td colspan="5" class="text-right font-weight-bold">รวมยอดทั้งหมดในรอบนี้:</td>
-                    <td class="text-right font-weight-bold" id="attTotalOT15">0.0</td>
-                    <td class="text-right font-weight-bold" id="attTotalHol">0.0</td>
-                    <td class="text-right font-weight-bold" id="attTotalOTHol">0.0</td>
+                    <td class="text-right font-weight-bold text-primary" id="attTotalOT15">0.0</td>
+                    <td class="text-right font-weight-bold text-primary" id="attTotalHol">0.0</td>
+                    <td class="text-right font-weight-bold text-primary" id="attTotalOTHol">0.0</td>
                     <td class="text-center font-weight-bold" id="attTotalTargetDays">0</td>
-                    <td class="text-center font-weight-bold" id="attTotalCameDays">0</td>
-                    <td class="text-center font-weight-bold" id="attTotalOTDays">0</td>
+                    <td class="text-center font-weight-bold text-success" id="attTotalCameDays">0</td>
+                    <td class="text-center font-weight-bold text-primary" id="attTotalOTDays">0</td>
                   </tr>
                 </tfoot>
               </table>
@@ -509,7 +508,7 @@
               </div>
               <div class="att-footer-right">
                 <button type="button" class="btn btn-primary" onclick="switchView('main')">
-                  ไปดูผลคำนวณเงินเดือน →
+                  📊 ไปดูผลคำนวณเงินเดือน →
                 </button>
               </div>
             </div>
@@ -526,37 +525,37 @@
           <div class="card-header-flex">
             <div>
               <h2 class="card-header-title">
-                ปฏิทินวันทำงาน – <span id="calHeaderYear">2569 / 2026</span>
+                📅 ปฏิทินวันทำงาน – <span id="calHeaderYear">2569 / 2026</span>
               </h2>
               <p class="subtitle">สามารถคลิกที่วันในปฏิทินเพื่อเปลี่ยนสถานะวันทำงาน/วันหยุดได้โดยตรง</p>
             </div>
             <div class="calendar-header-actions">
               <button type="button" class="btn btn-primary btn-sm" onclick="openAddYearModal()">
-                เพิ่มปีปฏิทินใหม่
+                ➕ เพิ่มปีปฏิทินใหม่
               </button>
               <button type="button" class="btn btn-outline-danger btn-sm" id="btnDeleteCurrentYear" onclick="deleteCurrentYear()">
-                ลบปีนี้
+                🗑️ ลบปีนี้
               </button>
               <button type="button" class="btn btn-secondary btn-sm" onclick="toggleCalendarView()">
-                ปิดปฏิทิน
+                ✖ ปิดปฏิทิน
               </button>
             </div>
           </div>
           <div class="card-body">
             <!-- Calendar Legend -->
             <div class="calendar-legend-box">
-              <div class="legend-item"><span class="legend-badge badge-national">xx</span><span><strong>NATIONAL HOLIDAY</strong> (วันหยุดนักขัตฤกษ์)</span></div>
-              <div class="legend-item"><span class="legend-badge badge-memorial">xx</span><span><strong>MEMORIAL DAY WITH PAY</strong> (วันหยุดประเพณีจ่ายเงิน)</span></div>
-              <div class="legend-item"><span class="legend-badge badge-orbray">xx</span><span><strong>SPECIAL WORKDAY</strong> (วันทำงานพิเศษ)</span></div>
-              <div class="legend-item"><span class="legend-badge badge-sat-holiday">xx</span><span><strong>SATURDAY HOLIDAY</strong> (วันเสาร์หยุด)</span></div>
-              <div class="legend-item"><span class="legend-badge badge-sunday">xx</span><span><strong>SUNDAY HOLIDAY</strong> (วันอาทิตย์หยุด)</span></div>
-              <div class="legend-item"><span class="legend-badge badge-work-sat">xx</span><span><strong>WORKING SATURDAY</strong> (วันเสาร์ทำงานปกติ)</span></div>
-              <div class="legend-item"><span class="legend-badge badge-bridge">xx</span><span><strong>BRIDGE HOLIDAY</strong> (วันหยุดพิเศษ)</span></div>
-              <div class="legend-item"><span class="legend-badge badge-workday">xx</span><span><strong>NORMAL WORKDAY</strong> (วันทำงานปกติ)</span></div>
+              <div class="legend-item"><span class="legend-badge badge-national">xx</span><span><strong>National Holiday</strong> (วันหยุดนักขัตฤกษ์)</span></div>
+              <div class="legend-item"><span class="legend-badge badge-memorial">xx</span><span><strong>Memorial day with pay</strong> (วันหยุดประเพณีจ่ายเงิน)</span></div>
+              <div class="legend-item"><span class="legend-badge badge-orbray">xx</span><span><strong>Special Workday</strong> (วันทำงานพิเศษ)</span></div>
+              <div class="legend-item"><span class="legend-badge badge-sat-holiday">xx</span><span><strong>Saturday Holiday</strong> (วันเสาร์หยุด)</span></div>
+              <div class="legend-item"><span class="legend-badge badge-sunday">xx</span><span><strong>Sunday Holiday</strong> (วันอาทิตย์หยุด)</span></div>
+              <div class="legend-item"><span class="legend-badge badge-work-sat">xx</span><span><strong>Working Saturday</strong> (วันเสาร์ทำงานปกติ)</span></div>
+              <div class="legend-item"><span class="legend-badge badge-bridge">xx</span><span><strong>Bridge Holiday</strong> (วันหยุดพิเศษ)</span></div>
+              <div class="legend-item"><span class="legend-badge badge-workday">xx</span><span><strong>Normal Workday</strong> (วันทำงานปกติ)</span></div>
             </div>
 
             <div class="cal-instruction-box">
-              <em>คลิกที่วันที่ใดก็ได้ในตารางเพื่อเปลี่ยนสถานะ (เช่น เปลี่ยนเสาร์หยุดเป็นเสาร์ทำงาน หรือระบุวันหยุดนักขัตฤกษ์)</em>
+              💡 <em>คลิกที่วันที่ใดก็ได้ในตารางเพื่อเปลี่ยนสถานะ (เช่น เปลี่ยนเสาร์หยุดเป็นเสาร์ทำงาน หรือระบุวันหยุดนักขัตฤกษ์)</em>
             </div>
 
             <!-- 12-Month Calendar Grid -->
@@ -571,7 +570,7 @@
   <div class="modal-backdrop" id="addYearModal" style="display:none;">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3>เพิ่มปีปฏิทินใหม่</h3>
+        <h3>➕ เพิ่มปีปฏิทินใหม่</h3>
         <button type="button" class="modal-close" onclick="closeAddYearModal()">&times;</button>
       </div>
       <div class="modal-body">
@@ -583,9 +582,9 @@
         <div class="form-group">
           <label for="selSatPreset">การตั้งค่าวันเสาร์เริ่มต้น:</label>
           <select id="selSatPreset" class="form-control form-select">
-            <option value="ALL_OFF">วันเสาร์หยุดทั้งหมด (SATURDAY HOLIDAY)</option>
-            <option value="ALT_WORK">ทำงานเสาร์เว้นเสาร์ (ALT WORK)</option>
-            <option value="ALL_WORK">วันเสาร์ทำงานทั้งหมด (WORKING SATURDAY)</option>
+            <option value="ALL_OFF">วันเสาร์หยุดทั้งหมด (Saturday Holiday)</option>
+            <option value="ALT_WORK">ทำงานเสาร์เว้นเสาร์ (เสาร์เว้นเสาร์)</option>
+            <option value="ALL_WORK">วันเสาร์ทำงานทั้งหมด (Working Saturday)</option>
           </select>
         </div>
         <p class="modal-hint">
@@ -594,7 +593,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="closeAddYearModal()">ยกเลิก</button>
-        <button type="button" class="btn btn-primary" onclick="confirmAddNewYear()">สร้างปีปฏิทินนี้</button>
+        <button type="button" class="btn btn-success" onclick="confirmAddNewYear()">สร้างปีปฏิทินนี้</button>
       </div>
     </div>
   </div>
@@ -603,7 +602,7 @@
   <div class="modal-backdrop" id="editDayModal" style="display:none;">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3>กำหนดสถานะวัน: <span id="modalDayDateDisplay"></span></h3>
+        <h3>✏️ กำหนดสถานะวัน: <span id="modalDayDateDisplay"></span></h3>
         <button type="button" class="modal-close" onclick="closeEditDayModal()">&times;</button>
       </div>
       <div class="modal-body">
@@ -611,14 +610,14 @@
         <div class="form-group">
           <label>เลือกประเภทของวันนี้:</label>
           <select id="modalDayTypeSelect" class="form-control form-select" onchange="onModalDayTypeSelectChange()">
-            <option value="NORMAL_WORKDAY">วันทำงานปกติ (NORMAL WORKDAY)</option>
-            <option value="NATIONAL_HOLIDAY">วันหยุดนักขัตฤกษ์ (NATIONAL HOLIDAY)</option>
-            <option value="MEMORIAL_HOLIDAY">วันหยุดประเพณีจ่ายเงิน (MEMORIAL DAY WITH PAY)</option>
-            <option value="ORBRAY_WORKDAY">วันทำงานพิเศษ (SPECIAL WORKDAY)</option>
-            <option value="SATURDAY_HOLIDAY">วันเสาร์หยุด (SATURDAY HOLIDAY)</option>
-            <option value="WORKING_SATURDAY">วันเสาร์ทำงานปกติ (WORKING SATURDAY)</option>
-            <option value="SUNDAY">วันอาทิตย์หยุด (SUNDAY HOLIDAY)</option>
-            <option value="BRIDGE_HOLIDAY">วันหยุดพิเศษ / เชื่อมวันหยุด (BRIDGE HOLIDAY)</option>
+            <option value="NORMAL_WORKDAY">วันทำงานปกติ (Normal Workday)</option>
+            <option value="NATIONAL_HOLIDAY">วันหยุดนักขัตฤกษ์ (National Holiday)</option>
+            <option value="MEMORIAL_HOLIDAY">วันหยุดประเพณีจ่ายเงิน (Memorial day with pay)</option>
+            <option value="ORBRAY_WORKDAY">วันทำงานพิเศษ (Special Workday)</option>
+            <option value="SATURDAY_HOLIDAY">วันเสาร์หยุด (Saturday Holiday)</option>
+            <option value="WORKING_SATURDAY">วันเสาร์ทำงานปกติ (Working Saturday)</option>
+            <option value="SUNDAY">วันอาทิตย์หยุด (Sunday Holiday)</option>
+            <option value="BRIDGE_HOLIDAY">วันหยุดพิเศษ / เชื่อมวันหยุด (Bridge Holiday)</option>
           </select>
         </div>
         <div class="form-group" id="modalHolidayNameGroup">
@@ -633,15 +632,15 @@
     </div>
   </div>
 
-  <!-- MODAL: SETTINGS SALARY & RATES -->
+  <!-- MODAL: SETTINGS SALARY & RATES (EDIT IMAGE 2 VALUES) -->
   <div class="modal-backdrop" id="settingsSalaryModal" style="display:none;">
     <div class="modal-dialog modal-dialog-lg">
       <div class="modal-header">
         <div>
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <h3>ตั้งค่าโครงสร้างเงินเดือนและเบี้ยเลี้ยง</h3>
-            <span class="card-paydate-badge" id="modalSalaryPeriodBadge">งวด: -</span>
-            <span class="card-paydate-badge" id="modalSalaryConfigStatusBadge">ค่ามาตรฐาน</span>
+            <h3>⚙️ ตั้งค่าโครงสร้างเงินเดือนและเบี้ยเลี้ยง</h3>
+            <span class="card-paydate-badge" id="modalSalaryPeriodBadge" style="padding: 3px 10px; font-size: 0.82rem; background: #e0f2fe; color: #0369a1; border-color: #bae6fd;">งวด: -</span>
+            <span class="card-paydate-badge" id="modalSalaryConfigStatusBadge" style="padding: 3px 10px; font-size: 0.82rem; background: #f8fafc; color: #475569; border-color: #cbd5e1;">🌐 ค่ามาตรฐาน</span>
           </div>
           <p class="subtitle text-muted small" id="modalSalaryPeriodSubtitle" style="margin:4px 0 0 0;">ปรับเปลี่ยนอัตราเงินเดือน เบี้ยเลี้ยง และสูตร OT สำหรับคำนวณเงินได้สุทธิ</p>
         </div>
@@ -651,7 +650,7 @@
         <div class="settings-grid">
           <!-- หมวด 1: เงินเดือน & เบี้ยเลี้ยงประจำ -->
           <div class="settings-card">
-            <h4 class="settings-card-title">เงินเดือนและสวัสดิการประจำเดือน</h4>
+            <h4 class="settings-card-title">💵 เงินเดือนและสวัสดิการประจำเดือน</h4>
             <div class="form-group">
               <label for="cfgBaseSalary">เงินเดือนพื้นฐาน (บาท):</label>
               <div class="input-unit-group">
@@ -677,14 +676,14 @@
 
           <!-- หมวด 2: เบี้ยเลี้ยงรายวัน -->
           <div class="settings-card">
-            <h4 class="settings-card-title">เบี้ยเลี้ยงรายวัน</h4>
+            <h4 class="settings-card-title">🍱 เบี้ยเลี้ยงรายวัน</h4>
             <div class="form-group">
               <label for="cfgFoodPerDay">ค่าอาหารประจำวันทำงาน:</label>
               <div class="input-unit-group">
                 <input type="number" id="cfgFoodPerDay" class="form-control" min="0" step="1">
                 <span class="unit-tag">บาท/วัน</span>
               </div>
-              <small class="text-muted">คูณด้วยจำนวนวันที่มาทำงานจริง (COME)</small>
+              <small class="text-muted">คูณด้วยจำนวนวันที่มาทำงานจริง (Come)</small>
             </div>
             <div class="form-group">
               <label for="cfgOtMealPerDay">ค่าอาหารโอที (เมื่อทำ OT &ge; 1 ชม.):</label>
@@ -692,13 +691,13 @@
                 <input type="number" id="cfgOtMealPerDay" class="form-control" min="0" step="1">
                 <span class="unit-tag">บาท/วัน</span>
               </div>
-              <small class="text-muted">คูณด้วยจำนวนวันที่มีการทำ OT (OT DAY)</small>
+              <small class="text-muted">คูณด้วยจำนวนวันที่มีการทำ OT (OT Day)</small>
             </div>
           </div>
 
           <!-- หมวด 3: อัตราคิดค่าล่วงเวลา (OT) -->
           <div class="settings-card">
-            <h4 class="settings-card-title">สูตรการคิดค่าล่วงเวลา (OT)</h4>
+            <h4 class="settings-card-title">⏱️ สูตรการคิดค่าล่วงเวลา (OT)</h4>
             <div class="ot-formula-banner">
               <span>สูตรฐานค่าจ้าง:</span>
               <strong>(เงินเดือน &divide; 30 &divide; 8)</strong>
@@ -719,10 +718,10 @@
             </div>
             <div class="live-ot-preview-box">
               <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
-                <span>อัตราค่าจ้างต่อชั่วโมงปกติ:</span>
-                <strong style="font-size: 1rem;"><span id="cfgLiveOTRate">83.33</span> บาท/ชม.</strong>
+                <span>💡 อัตราค่าจ้างต่อชั่วโมงปกติ:</span>
+                <strong style="font-size: 1rem; color: #0284c7;"><span id="cfgLiveOTRate">83.33</span> บาท/ชม.</strong>
               </div>
-              <div style="font-size: 0.74rem; color: #71717a; margin-top: 3px;">
+              <div style="font-size: 0.74rem; color: #0369a1; margin-top: 3px; opacity: 0.85;">
                 (คำนวณจาก: เงินเดือน <span id="cfgLiveOTSalary">20,000</span> &divide; 30 วัน &divide; 8 ชม.)
               </div>
             </div>
@@ -730,7 +729,7 @@
 
           <!-- หมวด 4: เงินหักประกันสังคม -->
           <div class="settings-card">
-            <h4 class="settings-card-title">การหักเงินสมทบประกันสังคม</h4>
+            <h4 class="settings-card-title">🛡️ การหักเงินสมทบประกันสังคม</h4>
             <div class="form-group">
               <label for="cfgSsoDeduction">ยอดหักประกันสังคมคงที่ (บาท):</label>
               <div class="input-unit-group">
@@ -744,37 +743,38 @@
       </div>
       <div class="modal-footer modal-footer-between">
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button type="button" class="btn btn-outline-danger" onclick="resetSalaryConfigToDefault()" title="รีเซ็ตค่าในฟอร์มเป็นค่ามาตรฐานเริ่มต้น">
-            รีเซ็ตเป็นค่าเริ่มต้น
+          <button type="button" class="btn btn-outline-danger" onclick="resetSalaryConfigToDefault()" title="รีเซ็ตค่าในฟอร์มเป็นค่ามาตรฐานเริ่มต้นตามรูปที่ 2">
+            🔄 รีเซ็ตเป็นค่าเริ่มต้น
           </button>
-          <button type="button" class="btn btn-outline-secondary" onclick="clearSalaryConfigToZero()" title="ปรับยอดเงินเดือน เบี้ยเลี้ยง และเงินหักเป็น 0 ทั้งหมด">
-            เคลียร์เป็น 0 (ยังไม่เริ่มงาน)
+          <button type="button" class="btn btn-outline-warning" onclick="clearSalaryConfigToZero()" style="color: #b45309; border-color: #f59e0b; background: #fffbeb;" title="ปรับยอดเงินเดือน เบี้ยเลี้ยง และเงินหักเป็น 0 ทั้งหมด (สำหรับเดือนที่ยังไม่เริ่มทำงาน/ไม่มีรายได้)">
+            🧹 เคลียร์เป็น 0 (ยังไม่เริ่มงาน)
           </button>
           <button type="button" class="btn btn-outline-secondary" id="btnResetPeriodSalaryConfig" onclick="resetPeriodSalaryConfigToDefault()" style="display: none;" title="ลบการตั้งค่าเฉพาะงวดนี้ แล้วกลับไปใช้ค่ามาตรฐาน">
-            ล้างค่าเฉพาะงวดนี้
+            ↩️ ล้างค่าเฉพาะงวดนี้ (ใช้ค่ามาตรฐาน)
           </button>
-          <button type="button" class="btn btn-outline-primary" onclick="closeSettingsSalaryModal(); openFirebaseConfigModal();" title="ตั้งค่าและเชื่อมต่อเซิร์ฟเวอร์ FIREBASE CLOUD DATABASE">
-            เซิร์ฟเวอร์ FIREBASE
+          <button type="button" class="btn btn-outline-primary" onclick="closeSettingsSalaryModal(); openFirebaseConfigModal();" title="ตั้งค่าและเชื่อมต่อเซิร์ฟเวอร์ Firebase Cloud Database">
+            🔥 เซิร์ฟเวอร์ Firebase
           </button>
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
           <button type="button" class="btn btn-secondary" onclick="closeSettingsSalaryModal()">ยกเลิก</button>
           <button type="button" class="btn btn-outline-primary" id="btnSaveSalaryForAllPeriods" onclick="saveSalaryConfigFromModal('all')" title="บันทึกใช้เป็นค่ามาตรฐานเริ่มต้นสำหรับทุกงวด">
-            บันทึกใช้กับทุกงวด
+            🌐 บันทึกใช้กับทุกงวด
           </button>
           <button type="button" class="btn btn-primary" id="btnSaveSalaryForPeriod" onclick="saveSalaryConfigFromModal('period')" title="บันทึกการตั้งค่าเฉพาะของงวดเดือนนี้เท่านั้น">
-            บันทึกเฉพาะงวดนี้
+            💾 บันทึกเฉพาะงวดนี้
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: PIN AUTH & LOGIN -->
+  <!-- MODAL: PIN AUTH & LOGIN (PIN 4-8 DIGITS, ADMIN PIN: 20523) -->
   <div class="modal-backdrop" id="authModal" style="display:none;">
     <div class="modal-dialog modal-dialog-sm">
       <div class="modal-header">
         <div class="auth-header-title">
+          <div class="auth-logo-badge">🔐</div>
           <div>
             <h3 id="authModalTitle">เข้าสู่ระบบด้วยรหัส PIN</h3>
             <p class="subtitle text-muted small" style="margin:2px 0 0 0;">กรอกรหัส PIN 4–8 หลักเพื่อเข้าสู่ระบบ</p>
@@ -795,7 +795,7 @@
             </button>
           </div>
 
-          <!-- Numeric Keypad -->
+          <!-- Numeric Keypad (0-9, Clear, Backspace) -->
           <div class="pin-keypad">
             <button type="button" class="pin-key-btn" onclick="pressPinDigit('1')">1</button>
             <button type="button" class="pin-key-btn" onclick="pressPinDigit('2')">2</button>
@@ -806,35 +806,38 @@
             <button type="button" class="pin-key-btn" onclick="pressPinDigit('7')">7</button>
             <button type="button" class="pin-key-btn" onclick="pressPinDigit('8')">8</button>
             <button type="button" class="pin-key-btn" onclick="pressPinDigit('9')">9</button>
-            <button type="button" class="pin-key-btn pin-key-action" onclick="clearPinInput()" title="ล้างค่าทั้งหมด">C</button>
+            <button type="button" class="pin-key-btn pin-key-action" onclick="clearPinInput()" title="ล้างค่าทั้งหมด">C ล้าง</button>
             <button type="button" class="pin-key-btn" onclick="pressPinDigit('0')">0</button>
-            <button type="button" class="pin-key-btn pin-key-action" onclick="backspacePinDigit()" title="ลบตัวเลขล่าสุด">⌫</button>
+            <button type="button" class="pin-key-btn pin-key-action" onclick="backspacePinDigit()" title="ลบตัวเลขล่าสุด">⌫ ลบ</button>
           </div>
 
           <button type="button" class="btn btn-primary btn-block btn-lg" id="btnAuthSubmit" onclick="submitPinLogin()" style="max-width: 290px;">
-            เข้าสู่ระบบ (LOGIN)
+            🔓 เข้าสู่ระบบ
           </button>
         </div>
 
         <div class="auth-footer-help">
           <p class="text-muted small" style="margin: 0;">
-            กรุณาระบุรหัส PIN 4–8 หลักประจำตัวของคุณเพื่อเข้าสู่ระบบ
+            🔒 กรุณาระบุรหัส PIN 4–8 หลักประจำตัวของคุณเพื่อเข้าสู่ระบบ
           </p>
           <div style="margin-top: 10px;">
-            <a href="javascript:void(0)" onclick="openFirebaseConfigModal()">ตั้งค่า FIREBASE PROJECT KEY</a>
+            <a href="javascript:void(0)" onclick="openFirebaseConfigModal()">⚙️ ตั้งค่า Firebase Project Key</a>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: MY ACCOUNT PROFILE -->
+  <!-- MODAL: MY ACCOUNT PROFILE (VIEW & EDIT) -->
   <div class="modal-backdrop" id="accountModal" style="display:none;">
     <div class="modal-dialog">
       <div class="modal-header">
-        <div>
-          <h3 style="margin:0;">จัดการข้อมูลบัญชีของฉัน (MY ACCOUNT)</h3>
-          <p class="subtitle text-muted small" style="margin:2px 0 0 0;">ดูและแก้ไขข้อมูลโปรไฟล์ สังกัด รหัสพนักงาน และรหัส PIN</p>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="background: #e0f2fe; color: #0284c7; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">👤</div>
+          <div>
+            <h3 style="font-family:'Prompt',sans-serif; margin:0; color:#0c4a6e;">จัดการข้อมูลบัญชีของฉัน</h3>
+            <p class="subtitle text-muted small" style="margin:2px 0 0 0;">ดูและแก้ไขข้อมูลโปรไฟล์ สังกัด รหัสพนักงาน และรหัส PIN</p>
+          </div>
         </div>
         <button type="button" class="modal-close" onclick="closeAccountModal()">&times;</button>
       </div>
@@ -843,13 +846,13 @@
 
         <!-- Account Profile Overview Card -->
         <div class="account-profile-card">
-          <div class="account-avatar-large" id="accAvatarLarge">👤</div>
+          <div class="account-avatar-large" id="accAvatarLarge">👑</div>
           <div class="account-profile-summary">
             <div class="account-summary-name" id="accSummaryName">ADMIN</div>
             <div class="account-summary-tags">
-              <span class="badge-account-role" id="accSummaryRole">ADMIN</span>
+              <span class="badge-account-role" id="accSummaryRole">👑 ADMIN</span>
               <span class="badge-account-code" id="accSummaryCode">ID: 20523</span>
-              <span class="badge-account-dept" id="accSummaryDept">ผู้ดูแลระบบ</span>
+              <span class="badge-account-dept" id="accSummaryDept">ผู้ดูแลระบบสูงสุด</span>
             </div>
           </div>
         </div>
@@ -889,10 +892,10 @@
             </div>
           </div>
 
-          <div class="modal-footer modal-footer-custom" style="padding: 14px 0 0 0; margin-top: 18px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 10px;">
+          <div class="modal-footer modal-footer-custom" style="padding: 14px 0 0 0; margin-top: 18px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px;">
             <button type="button" class="btn btn-secondary" onclick="closeAccountModal()">ปิด / ยกเลิก</button>
-            <button type="submit" class="btn btn-primary" id="btnSubmitAccountProfile" onclick="handleSaveAccountProfile(event)">
-              บันทึกข้อมูลบัญชี
+            <button type="submit" class="btn btn-primary shadow-btn" id="btnSubmitAccountProfile" onclick="handleSaveAccountProfile(event)">
+              💾 บันทึกข้อมูลบัญชี
             </button>
           </div>
         </form>
@@ -905,7 +908,7 @@
     <div class="modal-dialog modal-dialog-lg">
       <div class="modal-header">
         <div>
-          <h3>จัดการรายชื่อพนักงานและรหัส PIN (MANAGE USERS)</h3>
+          <h3>👥 จัดการรายชื่อพนักงานและรหัส PIN</h3>
           <p class="subtitle text-muted small" style="margin:2px 0 0 0;">เฉพาะผู้ดูแลระบบ (ADMIN) จัดการสิทธิ์ เพิ่ม หรือเปลี่ยนรหัส PIN ของพนักงาน</p>
         </div>
         <button type="button" class="modal-close" onclick="closeManageUsersModal()">&times;</button>
@@ -913,9 +916,10 @@
       <div class="modal-body">
         <div id="manageUsersAlert" class="alert alert-info" style="display:none;"></div>
 
-        <!-- Add New User Card -->
+        <!-- Add New User Card (Balanced & Well-Proportioned) -->
         <div class="user-mgmt-card">
           <div class="user-mgmt-card-header">
+            <span class="user-mgmt-card-icon">➕</span>
             <h4 class="user-mgmt-card-title">เพิ่มพนักงานใหม่เข้าสู่ระบบ</h4>
           </div>
           <form id="addNewUserForm" onsubmit="handleAddNewUserSubmit(event)">
@@ -938,7 +942,7 @@
               </div>
               <div>
                 <button type="submit" class="btn btn-primary btn-save-user">
-                  บันทึกเพิ่ม
+                  <span>➕</span> บันทึกเพิ่ม
                 </button>
               </div>
             </div>
@@ -947,12 +951,12 @@
 
         <!-- System Users Table -->
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-          <h4 style="color:var(--text-primary); font-size:0.95rem; margin:0;">
-            รายชื่อผู้ใช้ทั้งหมดในระบบ (SYSTEM USERS)
+          <h4 style="font-family:'Prompt',sans-serif; color:#0c4a6e; font-size:1rem; margin:0; display:flex; align-items:center; gap:6px;">
+            <span>📋</span> รายชื่อผู้ใช้ทั้งหมดในระบบ
           </h4>
           <div style="display: flex; align-items: center; gap: 10px;">
             <button type="button" class="btn btn-outline-danger btn-xs" onclick="confirmClearAllStaffUsers()" title="ลบรายชื่อพนักงานทั้งหมด เหลือเฉพาะบัญชี ADMIN">
-              ลบพนักงานทั้งหมด
+              🗑️ ลบพนักงานทั้งหมด
             </button>
             <span class="text-muted small">คลิกปุ่มเพื่อแก้ไขหรือลบพนักงาน</span>
           </div>
@@ -986,9 +990,12 @@
   <div class="modal-backdrop" id="editUserModal" style="display:none; z-index: 1060;">
     <div class="modal-dialog modal-dialog-sm">
       <div class="modal-header">
-        <div>
-          <h3 style="margin:0; font-size: 1.1rem;">แก้ไขข้อมูลพนักงาน</h3>
-          <p class="subtitle text-muted small" style="margin:2px 0 0 0;">ปรับปรุงชื่อ, รหัสพนักงาน, แผนก หรือรหัส PIN</p>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="background: #e0f2fe; color: #0284c7; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem;">✏️</div>
+          <div>
+            <h3 style="font-family:'Prompt',sans-serif; margin:0; color:#0c4a6e; font-size: 1.1rem;">แก้ไขข้อมูลพนักงาน</h3>
+            <p class="subtitle text-muted small" style="margin:2px 0 0 0;">ปรับปรุงชื่อ, รหัสพนักงาน, แผนก หรือรหัส PIN</p>
+          </div>
         </div>
         <button type="button" class="modal-close" onclick="closeEditUserModal()">&times;</button>
       </div>
@@ -1012,10 +1019,10 @@
             <label for="editUserPin" class="user-form-label">รหัส PIN เข้าสู่ระบบ (4–8 หลัก): <span class="text-danger">*</span></label>
             <input type="text" id="editUserPin" class="form-control font-mono user-form-input text-center" pattern="\d{4,8}" maxlength="8" required placeholder="1234">
           </div>
-          <div class="modal-footer modal-footer-custom" style="padding: 14px 0 0 0; margin-top: 16px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 8px;">
+          <div class="modal-footer modal-footer-custom" style="padding: 14px 0 0 0; margin-top: 16px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 8px;">
             <button type="button" class="btn btn-secondary" onclick="closeEditUserModal()">ยกเลิก</button>
-            <button type="submit" class="btn btn-primary">
-              บันทึกการแก้ไข
+            <button type="submit" class="btn btn-primary shadow-btn">
+              💾 บันทึกการแก้ไข
             </button>
           </div>
         </form>
@@ -1028,7 +1035,7 @@
     <div class="modal-dialog fb-config-dialog" style="max-width: 620px;">
       <div class="modal-header">
         <h3 style="display: flex; align-items: center; gap: 8px;">
-          <span>ตั้งค่าเซิร์ฟเวอร์ FIREBASE (CLOUD DATABASE)</span>
+          <span>🔥</span> ตั้งค่าเซิร์ฟเวอร์ Firebase (Cloud Database)
         </h3>
         <button type="button" class="modal-close" onclick="closeFirebaseConfigModal()">&times;</button>
       </div>
@@ -1042,21 +1049,21 @@
         <!-- Auto-Paste & Auto-Detect Card -->
         <div class="fb-autopaste-card">
           <div class="fb-card-title">
-            วางโค้ด FIREBASE CONFIGURATION จาก FIREBASE CONSOLE (แยกลงช่องอัตโนมัติ)
+            <span>📋</span> วางโค้ด Firebase Configuration จาก Firebase Console (แยกลงช่องอัตโนมัติ)
           </div>
           <p class="text-muted small" style="margin-bottom: 8px;">
-            จาก FIREBASE CONSOLE ไปที่ <strong>PROJECT SETTINGS &gt; GENERAL &gt; YOUR APPS &gt; SDK SETUP AND CONFIGURATION (CONFIG)</strong> แล้วคัดลอกโค้ดมาวางที่นี่:
+            จาก Firebase Console ไปที่ <strong>Project Settings &gt; General &gt; Your apps &gt; SDK setup and configuration (Config)</strong> แล้วคัดลอกโค้ดมาวางที่นี่:
           </p>
           <textarea id="fbCfgRawPaste" class="form-control font-mono" rows="3" placeholder="const firebaseConfig = {&#10;  apiKey: &quot;AIzaSy...&quot;,&#10;  projectId: &quot;my-salary-app&quot;,&#10;  ...&#10;};"></textarea>
           <div style="margin-top: 8px; display: flex; justify-content: flex-end;">
             <button type="button" class="btn btn-outline-primary btn-sm" onclick="parseRawFirebaseConfig()">
-              แยกและเติมข้อมูลอัตโนมัติ (AUTO FILL)
+              ✨ แยกและเติมข้อมูลลงช่องอัตโนมัติ (Auto Fill)
             </button>
           </div>
         </div>
 
-        <div style="margin: 18px 0 12px 0; border-top: 1px solid var(--border-color); position: relative; text-align: center;">
-          <span style="position: relative; top: -10px; background: #fff; padding: 0 10px; font-size: 0.78rem; color: #71717a; font-weight: 700;">
+        <div style="margin: 18px 0 12px 0; border-top: 1px solid #e2e8f0; position: relative; text-align: center;">
+          <span style="position: relative; top: -10px; background: #fff; padding: 0 10px; font-size: 0.78rem; color: #64748b; font-weight: 600;">
             หรือกรอกข้อมูลพารามิเตอร์เซิร์ฟเวอร์ด้วยตนเอง
           </span>
         </div>
@@ -1064,12 +1071,12 @@
         <!-- Form Fields Grid -->
         <div class="fb-form-grid">
           <div class="form-group">
-            <label for="fbCfgProjectId">รหัสโครงการ (PROJECT ID) <span class="text-danger">*</span>:</label>
-            <input type="text" id="fbCfgProjectId" class="form-control font-mono" placeholder="เช่น MY-COMPANY-PAYROLL">
+            <label for="fbCfgProjectId">รหัสโครงการ (Project ID) <span class="text-danger">*</span>:</label>
+            <input type="text" id="fbCfgProjectId" class="form-control font-mono" placeholder="เช่น my-company-payroll">
           </div>
 
           <div class="form-group">
-            <label for="fbCfgApiKey">API KEY <span class="text-danger">*</span>:</label>
+            <label for="fbCfgApiKey">API Key <span class="text-danger">*</span>:</label>
             <div class="input-unit-group">
               <input type="password" id="fbCfgApiKey" class="form-control font-mono" placeholder="AIzaSy...">
               <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleFbApiKeyVisibility()" style="border:none; background:transparent; padding: 0 8px;" title="แสดง/ซ่อน API Key">
@@ -1079,49 +1086,49 @@
           </div>
 
           <div class="form-group">
-            <label for="fbCfgAuthDomain">AUTH DOMAIN:</label>
-            <input type="text" id="fbCfgAuthDomain" class="form-control font-mono" placeholder="เช่น MY-COMPANY-PAYROLL.FIREBASEAPP.COM">
+            <label for="fbCfgAuthDomain">Auth Domain:</label>
+            <input type="text" id="fbCfgAuthDomain" class="form-control font-mono" placeholder="เช่น my-company-payroll.firebaseapp.com">
           </div>
 
           <div class="form-group">
-            <label for="fbCfgStorageBucket">STORAGE BUCKET:</label>
-            <input type="text" id="fbCfgStorageBucket" class="form-control font-mono" placeholder="เช่น MY-COMPANY-PAYROLL.APPSPOT.COM">
+            <label for="fbCfgStorageBucket">Storage Bucket:</label>
+            <input type="text" id="fbCfgStorageBucket" class="form-control font-mono" placeholder="เช่น my-company-payroll.appspot.com">
           </div>
 
           <div class="form-group">
-            <label for="fbCfgMessagingSenderId">MESSAGING SENDER ID:</label>
+            <label for="fbCfgMessagingSenderId">Messaging Sender ID:</label>
             <input type="text" id="fbCfgMessagingSenderId" class="form-control font-mono" placeholder="เช่น 123456789012">
           </div>
 
           <div class="form-group">
-            <label for="fbCfgAppId">APP ID:</label>
-            <input type="text" id="fbCfgAppId" class="form-control font-mono" placeholder="เช่น 1:123456789012:WEB:ABCDEF">
+            <label for="fbCfgAppId">App ID:</label>
+            <input type="text" id="fbCfgAppId" class="form-control font-mono" placeholder="เช่น 1:123456789012:web:abcdef">
           </div>
         </div>
       </div>
 
       <div class="modal-footer modal-footer-between">
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button type="button" class="btn btn-outline-info" id="btnTestFbConn" onclick="testFirebaseConfigFromModal()" title="ทดสอบการเชื่อมต่อกับเซิร์ฟเวอร์ FIREBASE">
-            ทดสอบการเชื่อมต่อ
+          <button type="button" class="btn btn-outline-info" id="btnTestFbConn" onclick="testFirebaseConfigFromModal()" title="ทดสอบการเชื่อมต่อกับเซิร์ฟเวอร์ Firebase">
+            ⚡ ทดสอบการเชื่อมต่อ
           </button>
-          <button type="button" class="btn btn-outline-secondary" onclick="resetFirebaseConfigDefault()" title="คืนค่าเป็นโหมด LOCAL STORAGE ออฟไลน์">
-            คืนค่าเริ่มต้น (โหมด LOCAL)
+          <button type="button" class="btn btn-outline-secondary" onclick="resetFirebaseConfigDefault()" title="คืนค่าเป็นโหมด Local Storage ออฟไลน์">
+            🔄 คืนค่าเริ่มต้น (โหมด Local)
           </button>
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
           <button type="button" class="btn btn-secondary" onclick="closeFirebaseConfigModal()">ปิด</button>
           <button type="button" class="btn btn-primary" id="btnSaveFbConfig" onclick="saveFirebaseConfigFromModal()">
-            บันทึกและเชื่อมต่อเซิร์ฟเวอร์
+            💾 บันทึกและเชื่อมต่อเซิร์ฟเวอร์
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Success Confirmation Modal -->
+  <!-- Success Confirmation Modal (หน้าต่างเด้งแจ้งเตือนบันทึกสำเร็จ) -->
   <div class="modal-backdrop" id="successConfirmModal" style="display:none; z-index: 99999;" onclick="handleSuccessBackdropClick(event)">
-    <div class="modal-dialog success-popup-dialog" style="max-width: 360px; text-align: center; border-radius: 8px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+    <div class="modal-dialog success-popup-dialog" style="max-width: 360px; text-align: center; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
       <div class="modal-body" style="padding: 28px 24px 24px 24px;">
         <div class="success-popup-icon-wrap">
           <div class="success-popup-check">✓</div>
@@ -1129,7 +1136,7 @@
         <h3 id="successPopupTitle" class="success-popup-title">บันทึกสำเร็จ</h3>
         <p id="successPopupMessage" class="success-popup-message">บันทึกข้อมูลเรียบร้อยแล้ว</p>
         <div style="margin-top: 22px;">
-          <button type="button" class="btn btn-primary btn-lg" id="successPopupOkBtn" onclick="closeSuccessPopup()" style="min-width: 140px; border-radius: 5px; font-weight: 700; padding: 7px 28px; font-size: 0.9rem;">
+          <button type="button" class="btn btn-primary btn-lg shadow-btn" id="successPopupOkBtn" onclick="closeSuccessPopup()" style="min-width: 140px; border-radius: 9999px; font-weight: 700; padding: 7px 28px; font-size: 0.95rem;">
             ตกลง
           </button>
         </div>
@@ -1137,138 +1144,9 @@
     </div>
   </div>
 
-  <!-- Phone Simulator Modal (Overlay) -->
-  <div class="simulator-backdrop" id="phoneSimulatorModal" style="display: none;" onclick="handleSimulatorBackdropClick(event)">
-    <!-- Floating Top Control Bar -->
-    <div class="sim-floating-toolbar" onclick="event.stopPropagation()">
-      <div class="sim-toolbar-left">
-        <div class="sim-brand-badge">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="5" y="2" width="14" height="20" rx="3" ry="3"/>
-            <line x1="12" y1="18" x2="12.01" y2="18"/>
-          </svg>
-          <span>IPHONE SIMULATOR</span>
-        </div>
-
-        <div class="sim-control-group">
-          <label for="simDeviceSelect" class="sim-control-label">รุ่นมือถือ:</label>
-          <select id="simDeviceSelect" class="sim-select" onchange="changeSimulatorDevice(this.value)">
-            <optgroup label="Dynamic Island Series">
-              <option value="iphone16promax">iPhone 16 Pro Max (440 × 956)</option>
-              <option value="iphone15pro" selected>iPhone 15 Pro / 16 (393 × 852)</option>
-              <option value="iphone15promax">iPhone 15 Pro Max / 14 Pro Max (430 × 932)</option>
-            </optgroup>
-            <optgroup label="Slim Notch Series">
-              <option value="iphone14">iPhone 14 / 13 / 12 (390 × 844)</option>
-              <option value="iphone14plus">iPhone 14 Plus / 13 Pro Max (428 × 926)</option>
-              <option value="iphone13mini">iPhone 13 mini / 12 mini (375 × 812)</option>
-            </optgroup>
-            <optgroup label="Classic Notch Series">
-              <option value="iphone11">iPhone 11 / XR (414 × 896)</option>
-              <option value="iphone11pro">iPhone 11 Pro / X (375 × 812)</option>
-            </optgroup>
-          </select>
-        </div>
-      </div>
-
-      <div class="sim-toolbar-right">
-        <div class="sim-control-group">
-          <label for="simScaleSelect" class="sim-control-label">ซูม/ขนาด:</label>
-          <select id="simScaleSelect" class="sim-select" onchange="changeSimulatorScale(this.value)">
-            <option value="fit" selected>พอดีหน้าจอ (AUTO FIT)</option>
-            <option value="1.0">100%</option>
-            <option value="0.85">85%</option>
-            <option value="0.75">75%</option>
-            <option value="0.65">65%</option>
-            <option value="0.5">50%</option>
-          </select>
-        </div>
-
-        <button type="button" class="sim-toolbar-btn" id="btnSimOrientation" onclick="toggleSimulatorOrientation()" title="สลับแนวตั้ง / แนวนอน (Rotate)">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="23 4 23 10 17 10"/>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-          </svg>
-          <span id="simOrientationText">แนวตั้ง</span>
-        </button>
-
-        <button type="button" class="sim-toolbar-btn" onclick="reloadSimulatorFrame()" title="รีเฟรชหน้าจำลอง (Reload)">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-          </svg>
-        </button>
-
-        <button type="button" class="sim-toolbar-btn sim-btn-close" onclick="closePhoneSimulator()" title="ปิดแบบจำลอง (ESC)">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- Stage Container (Center phone) -->
-    <div class="sim-stage-container" onclick="handleSimulatorBackdropClick(event)">
-      <div class="sim-device-scaler" id="simDeviceScaler">
-        <!-- Hardware Phone Chassis -->
-        <div class="sim-phone-frame" id="simPhoneFrame">
-          <!-- Hardware buttons -->
-          <div class="sim-hw-button sim-btn-silent"></div>
-          <div class="sim-hw-button sim-btn-vol-up"></div>
-          <div class="sim-hw-button sim-btn-vol-down"></div>
-          <div class="sim-hw-button sim-btn-power"></div>
-
-          <!-- Phone Screen Bezel -->
-          <div class="sim-screen-bezel" id="simScreenBezel">
-            <!-- Virtual iOS Status Bar -->
-            <div class="sim-status-bar" id="simStatusBar">
-              <div class="sim-status-time" id="simStatusTime">09:41</div>
-              
-              <!-- Cutout: Dynamic Island or Notch -->
-              <div class="sim-cutout-container" id="simCutoutContainer">
-                <div class="sim-dynamic-island" id="simDynamicIsland">
-                  <div class="sim-lens-dot"></div>
-                  <div class="sim-sensor-dot"></div>
-                </div>
-                <div class="sim-notch" id="simNotch" style="display: none;">
-                  <div class="sim-notch-speaker"></div>
-                  <div class="sim-notch-camera"></div>
-                </div>
-              </div>
-
-              <div class="sim-status-icons">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
-                  <rect x="2" y="16" width="3" height="6" rx="1"/>
-                  <rect x="7" y="12" width="3" height="10" rx="1"/>
-                  <rect x="12" y="8" width="3" height="14" rx="1"/>
-                  <rect x="17" y="4" width="3" height="18" rx="1"/>
-                </svg>
-                <span class="sim-5g-text">5G</span>
-                <div class="sim-battery-icon">
-                  <div class="sim-battery-body">
-                    <div class="sim-battery-level"></div>
-                  </div>
-                  <div class="sim-battery-tip"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Embedded Web View iframe -->
-            <iframe id="simIframe" class="sim-iframe" src="about:blank" title="Mobile App Simulator"></iframe>
-
-            <!-- Virtual iOS Home Indicator Bar -->
-            <div class="sim-home-bar-area">
-              <div class="sim-home-indicator"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <footer class="app-footer no-print">
     <div class="container text-center">
-      <p>ระบบคิดเงินเดือน & บันทึกเวลาเข้า-ออกงาน (21–20) • CACULATION SALARY BY JITTRAKAN K.</p>
+      <p>ระบบคิดเงินเดือน & บันทึกเวลาเข้า-ออกงาน (21–20 เดือนหน้า) | CACULATION SALARY BY JITTRAKAN K.</p>
     </div>
   </footer>
 

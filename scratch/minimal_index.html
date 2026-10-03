@@ -16,7 +16,7 @@
         const link = document.createElement('link');
         link.type = 'image/svg+xml';
         link.rel = 'icon';
-        link.href = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KICA8cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxNCIgZmlsbD0iIzAwMDAwMCIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDgsIDgpIHNjYWxlKDIpIj4KICAgIDxwYXRoIGQ9Ik0xMyAyTDMgMTRoOGwtMiA4IDEwLTEyaC04bDItOHoiIGZpbGw9IiNmZmZmZmYiLz4KICA8L2c+Cjwvc3ZnPg==';
+        link.href = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ibG9nb0dyYWQiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZDkyMzY1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iNjAlIiBzdG9wLWNvbG9yPSIjN2MzYWVkIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzI1NjNlYiIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KICAgIDxwYXRoIGQ9Ik0xMyAyTDMgMTRoOGwtMiA4IDEwLTEyaC04bDItOHoiIGZpbGw9IiNmZmZmZmYiLz4KICA8L2c+Cjwvc3ZnPgo=';
         document.head.appendChild(link);
       }
     })();
@@ -25,7 +25,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Prompt:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
   <!-- Firebase SDK Compat via CDN -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -33,8 +33,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
 </head>
-<body class="theme-monochrome">
-  <!-- Minimalist Top Navigation Bar (Strictly Single Row, Black & White) -->
+<body class="theme-minimal">
+  <!-- Minimalist Top Navigation Bar (Strictly Single Row) -->
   <header class="app-nav no-print">
     <div class="nav-container">
       <!-- Left: Clean Brand Cluster -->
@@ -73,24 +73,18 @@
       <!-- Right: User Menu & Auth Actions -->
       <div class="nav-actions">
         <div id="navAuthArea" class="nav-auth-area">
-          <button type="button" class="btn-simulator-trigger" id="btnPhoneSimulator" onclick="openPhoneSimulator()" title="จำลองหน้าจอแอปบนมือถือ (PHONE SIMULATOR)">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="5" y="2" width="14" height="20" rx="3" ry="3"/>
-              <line x1="12" y1="18" x2="12.01" y2="18"/>
-            </svg>
-          </button>
           <button type="button" class="btn-factorium-outline" onclick="openAuthModal()">
-            เข้าสู่ระบบ (LOGIN)
+            เข้าสู่ระบบ
           </button>
           <button type="button" class="btn-factorium-gradient" onclick="openAuthModal()">
-            เริ่มใช้งาน (START)
+            เริ่มใช้งานฟรี
           </button>
         </div>
       </div>
     </div>
   </header>
 
-  <!-- Executive Context Ribbon (Clean B&W Financial Ribbon) -->
+  <!-- Executive Context Ribbon (Replaces cheesy AI hero section with a clean, low-profile financial ribbon) -->
   <section class="hero-showcase minimal-metric-ribbon no-print">
     <div class="container ribbon-container">
       <div class="ribbon-brand-summary">
@@ -114,7 +108,7 @@
         <div class="ribbon-metric-divider"></div>
 
         <div class="ribbon-metric-item highlight-net">
-          <span class="ribbon-metric-label">ยอดเงินได้สุทธิ (NET PAYABLE)</span>
+          <span class="ribbon-metric-label">ยอดเงินได้สุทธิ</span>
           <div class="ribbon-metric-value">฿<strong id="heroNetPay">0.00</strong></div>
         </div>
       </div>
@@ -170,7 +164,7 @@
           </div>
         </div>
 
-        <!-- Net Salary Summary Banner (Financial Statement Cards in Single Row) -->
+        <!-- Net Salary Summary Banner (Financial Statement Cards) -->
         <div class="summary-cards-grid">
           <div class="sum-card income-card">
             <div class="card-content">
@@ -191,8 +185,8 @@
                 <span class="card-tag-sub">DEDUCTIONS (SSO)</span>
               </div>
               <div class="card-val-row">
-                <span class="currency-symbol">-฿</span>
-                <span class="card-amount" id="dashTotalDeduct">875.00</span>
+                <span class="currency-symbol text-danger">-฿</span>
+                <span class="card-amount text-danger" id="dashTotalDeduct">875.00</span>
               </div>
             </div>
           </div>
@@ -203,8 +197,8 @@
                 <span class="card-tag-sub">NET PAYABLE</span>
               </div>
               <div class="card-val-row">
-                <span class="currency-symbol">฿</span>
-                <span class="card-amount" id="dashNetPay">0.00</span>
+                <span class="currency-symbol text-success">฿</span>
+                <span class="card-amount text-success" id="dashNetPay">0.00</span>
               </div>
             </div>
           </div>
@@ -296,7 +290,7 @@
                         <strong>เบี้ยขยัน (DILIGENCE)</strong>
                         <div class="text-muted small">มาครบวันทำงานตามปฏิทิน (อัตรา <span id="lblRateDiligence">650</span> บ.)</div>
                       </td>
-                      <td class="text-right font-weight-bold" id="calcDiligenceTotal">0.00</td>
+                      <td class="text-right font-weight-bold text-success" id="calcDiligenceTotal">0.00</td>
                     </tr>
                     <tr>
                       <td>
@@ -351,7 +345,7 @@
               <!-- Right Column: รายการเงินหัก & เงินได้สุทธิ -->
               <div class="calc-col">
                 <div class="calc-col-header-flex">
-                  <h3 class="calc-col-title">รายการเงินหัก (DEDUCTIONS)</h3>
+                  <h3 class="calc-col-title text-danger">รายการเงินหัก (DEDUCTIONS)</h3>
                 </div>
                 <table class="calc-mini-table">
                   <tbody>
@@ -360,11 +354,11 @@
                         <strong id="lblSSOTitle">ประกันสังคม (SSO 5%)</strong>
                         <div class="text-muted small">เพดานฐานเงินเดือน <span id="lblSSOMaxBase">17,500</span> บาท</div>
                       </td>
-                      <td class="text-right font-weight-bold" id="calcSSOTotal">-875.00</td>
+                      <td class="text-right font-weight-bold text-danger" id="calcSSOTotal">-875.00</td>
                     </tr>
                     <tr class="calc-total-row">
                       <td><strong>รวมเงินหักทั้งสิ้น (TOTAL DEDUCTIONS)</strong></td>
-                      <td class="text-right font-weight-bold" id="calcSumDeduct">-875.00</td>
+                      <td class="text-right font-weight-bold text-danger" id="calcSumDeduct">-875.00</td>
                     </tr>
                   </tbody>
                 </table>
@@ -429,7 +423,7 @@
           <div class="kpi-mini-card">
             <div class="kpi-info">
               <span class="kpi-label">มาทำงานจริง</span>
-              <strong class="kpi-val" id="attCardCameDays">0 วัน</strong>
+              <strong class="kpi-val text-success" id="attCardCameDays">0 วัน</strong>
             </div>
           </div>
           <div class="kpi-mini-card">
@@ -441,7 +435,7 @@
           <div class="kpi-mini-card">
             <div class="kpi-info">
               <span class="kpi-label">เงินได้สุทธิประมาณการ</span>
-              <strong class="kpi-val" id="attCardNetPay">0.00 บาท</strong>
+              <strong class="kpi-val text-success" id="attCardNetPay">0.00 บาท</strong>
             </div>
           </div>
         </div>
@@ -455,7 +449,7 @@
             </div>
             <div class="ot-quick-badges">
               <span class="badge-rule">เข้า: ติ๊กวันที่มาทำงาน = 08:00</span>
-              <span class="badge-rule">ออก: เลือกจาก DROP DOWN</span>
+              <span class="badge-rule">ออก: เลือกจาก Drop Down</span>
               <span class="badge-rule">OT: คำนวณและปัดเศษอัตโนมัติ</span>
             </div>
           </div>
@@ -465,7 +459,7 @@
               <strong>กฎเวลาออก & OT:</strong>
               <span>วันปกติ: 17:00=0 ชม. | 17:30/17:50=0.5 ชม. | 18:20=1.0 ชม. | 18:50=1.5 ชม. | 19:20=2.0 ชม. | 19:50=2.5 ชม.</span>
               <br>
-              <em>* วันอาทิตย์/วันหยุด: มีตัวเลือกเวลาออกตั้งแต่ 08:30 คิดเป็น HOLIDAY OT 1.0 และหลัง 17:00 คิดเป็น OT HOLIDAY 3.0</em>
+              <em>* วันอาทิตย์/วันหยุด: มีตัวเลือกเวลาออกตั้งแต่ 08:30 คิดเป็น Holiday OT 1.0 และหลัง 17:00 คิดเป็น OT Holiday 3.0</em>
             </div>
 
             <div class="table-responsive">
@@ -478,8 +472,8 @@
                     <th style="width:85px;">เวลาเข้า</th>
                     <th style="width:110px;">เวลาออก</th>
                     <th style="width:85px;">OT (1.5)</th>
-                    <th style="width:85px;">HOLIDAY (1)</th>
-                    <th style="width:85px;">OT HOL (3)</th>
+                    <th style="width:85px;">Holiday (1)</th>
+                    <th style="width:85px;">OT Hol (3)</th>
                     <th style="width:85px;">วันที่มาทำงาน</th>
                     <th style="width:65px;">วันที่มา</th>
                     <th style="width:70px;">วันทำ OT</th>
@@ -493,7 +487,7 @@
                     <td class="text-right font-weight-bold" id="attTotalHol">0.0</td>
                     <td class="text-right font-weight-bold" id="attTotalOTHol">0.0</td>
                     <td class="text-center font-weight-bold" id="attTotalTargetDays">0</td>
-                    <td class="text-center font-weight-bold" id="attTotalCameDays">0</td>
+                    <td class="text-center font-weight-bold text-success" id="attTotalCameDays">0</td>
                     <td class="text-center font-weight-bold" id="attTotalOTDays">0</td>
                   </tr>
                 </tfoot>
@@ -545,14 +539,14 @@
           <div class="card-body">
             <!-- Calendar Legend -->
             <div class="calendar-legend-box">
-              <div class="legend-item"><span class="legend-badge badge-national">xx</span><span><strong>NATIONAL HOLIDAY</strong> (วันหยุดนักขัตฤกษ์)</span></div>
-              <div class="legend-item"><span class="legend-badge badge-memorial">xx</span><span><strong>MEMORIAL DAY WITH PAY</strong> (วันหยุดประเพณีจ่ายเงิน)</span></div>
-              <div class="legend-item"><span class="legend-badge badge-orbray">xx</span><span><strong>SPECIAL WORKDAY</strong> (วันทำงานพิเศษ)</span></div>
-              <div class="legend-item"><span class="legend-badge badge-sat-holiday">xx</span><span><strong>SATURDAY HOLIDAY</strong> (วันเสาร์หยุด)</span></div>
-              <div class="legend-item"><span class="legend-badge badge-sunday">xx</span><span><strong>SUNDAY HOLIDAY</strong> (วันอาทิตย์หยุด)</span></div>
-              <div class="legend-item"><span class="legend-badge badge-work-sat">xx</span><span><strong>WORKING SATURDAY</strong> (วันเสาร์ทำงานปกติ)</span></div>
-              <div class="legend-item"><span class="legend-badge badge-bridge">xx</span><span><strong>BRIDGE HOLIDAY</strong> (วันหยุดพิเศษ)</span></div>
-              <div class="legend-item"><span class="legend-badge badge-workday">xx</span><span><strong>NORMAL WORKDAY</strong> (วันทำงานปกติ)</span></div>
+              <div class="legend-item"><span class="legend-badge badge-national">xx</span><span><strong>National Holiday</strong> (วันหยุดนักขัตฤกษ์)</span></div>
+              <div class="legend-item"><span class="legend-badge badge-memorial">xx</span><span><strong>Memorial day with pay</strong> (วันหยุดประเพณีจ่ายเงิน)</span></div>
+              <div class="legend-item"><span class="legend-badge badge-orbray">xx</span><span><strong>Special Workday</strong> (วันทำงานพิเศษ)</span></div>
+              <div class="legend-item"><span class="legend-badge badge-sat-holiday">xx</span><span><strong>Saturday Holiday</strong> (วันเสาร์หยุด)</span></div>
+              <div class="legend-item"><span class="legend-badge badge-sunday">xx</span><span><strong>Sunday Holiday</strong> (วันอาทิตย์หยุด)</span></div>
+              <div class="legend-item"><span class="legend-badge badge-work-sat">xx</span><span><strong>Working Saturday</strong> (วันเสาร์ทำงานปกติ)</span></div>
+              <div class="legend-item"><span class="legend-badge badge-bridge">xx</span><span><strong>Bridge Holiday</strong> (วันหยุดพิเศษ)</span></div>
+              <div class="legend-item"><span class="legend-badge badge-workday">xx</span><span><strong>Normal Workday</strong> (วันทำงานปกติ)</span></div>
             </div>
 
             <div class="cal-instruction-box">
@@ -583,9 +577,9 @@
         <div class="form-group">
           <label for="selSatPreset">การตั้งค่าวันเสาร์เริ่มต้น:</label>
           <select id="selSatPreset" class="form-control form-select">
-            <option value="ALL_OFF">วันเสาร์หยุดทั้งหมด (SATURDAY HOLIDAY)</option>
-            <option value="ALT_WORK">ทำงานเสาร์เว้นเสาร์ (ALT WORK)</option>
-            <option value="ALL_WORK">วันเสาร์ทำงานทั้งหมด (WORKING SATURDAY)</option>
+            <option value="ALL_OFF">วันเสาร์หยุดทั้งหมด (Saturday Holiday)</option>
+            <option value="ALT_WORK">ทำงานเสาร์เว้นเสาร์ (เสาร์เว้นเสาร์)</option>
+            <option value="ALL_WORK">วันเสาร์ทำงานทั้งหมด (Working Saturday)</option>
           </select>
         </div>
         <p class="modal-hint">
@@ -611,14 +605,14 @@
         <div class="form-group">
           <label>เลือกประเภทของวันนี้:</label>
           <select id="modalDayTypeSelect" class="form-control form-select" onchange="onModalDayTypeSelectChange()">
-            <option value="NORMAL_WORKDAY">วันทำงานปกติ (NORMAL WORKDAY)</option>
-            <option value="NATIONAL_HOLIDAY">วันหยุดนักขัตฤกษ์ (NATIONAL HOLIDAY)</option>
-            <option value="MEMORIAL_HOLIDAY">วันหยุดประเพณีจ่ายเงิน (MEMORIAL DAY WITH PAY)</option>
-            <option value="ORBRAY_WORKDAY">วันทำงานพิเศษ (SPECIAL WORKDAY)</option>
-            <option value="SATURDAY_HOLIDAY">วันเสาร์หยุด (SATURDAY HOLIDAY)</option>
-            <option value="WORKING_SATURDAY">วันเสาร์ทำงานปกติ (WORKING SATURDAY)</option>
-            <option value="SUNDAY">วันอาทิตย์หยุด (SUNDAY HOLIDAY)</option>
-            <option value="BRIDGE_HOLIDAY">วันหยุดพิเศษ / เชื่อมวันหยุด (BRIDGE HOLIDAY)</option>
+            <option value="NORMAL_WORKDAY">วันทำงานปกติ (Normal Workday)</option>
+            <option value="NATIONAL_HOLIDAY">วันหยุดนักขัตฤกษ์ (National Holiday)</option>
+            <option value="MEMORIAL_HOLIDAY">วันหยุดประเพณีจ่ายเงิน (Memorial day with pay)</option>
+            <option value="ORBRAY_WORKDAY">วันทำงานพิเศษ (Special Workday)</option>
+            <option value="SATURDAY_HOLIDAY">วันเสาร์หยุด (Saturday Holiday)</option>
+            <option value="WORKING_SATURDAY">วันเสาร์ทำงานปกติ (Working Saturday)</option>
+            <option value="SUNDAY">วันอาทิตย์หยุด (Sunday Holiday)</option>
+            <option value="BRIDGE_HOLIDAY">วันหยุดพิเศษ / เชื่อมวันหยุด (Bridge Holiday)</option>
           </select>
         </div>
         <div class="form-group" id="modalHolidayNameGroup">
@@ -684,7 +678,7 @@
                 <input type="number" id="cfgFoodPerDay" class="form-control" min="0" step="1">
                 <span class="unit-tag">บาท/วัน</span>
               </div>
-              <small class="text-muted">คูณด้วยจำนวนวันที่มาทำงานจริง (COME)</small>
+              <small class="text-muted">คูณด้วยจำนวนวันที่มาทำงานจริง (Come)</small>
             </div>
             <div class="form-group">
               <label for="cfgOtMealPerDay">ค่าอาหารโอที (เมื่อทำ OT &ge; 1 ชม.):</label>
@@ -692,7 +686,7 @@
                 <input type="number" id="cfgOtMealPerDay" class="form-control" min="0" step="1">
                 <span class="unit-tag">บาท/วัน</span>
               </div>
-              <small class="text-muted">คูณด้วยจำนวนวันที่มีการทำ OT (OT DAY)</small>
+              <small class="text-muted">คูณด้วยจำนวนวันที่มีการทำ OT (OT Day)</small>
             </div>
           </div>
 
@@ -753,8 +747,8 @@
           <button type="button" class="btn btn-outline-secondary" id="btnResetPeriodSalaryConfig" onclick="resetPeriodSalaryConfigToDefault()" style="display: none;" title="ลบการตั้งค่าเฉพาะงวดนี้ แล้วกลับไปใช้ค่ามาตรฐาน">
             ล้างค่าเฉพาะงวดนี้
           </button>
-          <button type="button" class="btn btn-outline-primary" onclick="closeSettingsSalaryModal(); openFirebaseConfigModal();" title="ตั้งค่าและเชื่อมต่อเซิร์ฟเวอร์ FIREBASE CLOUD DATABASE">
-            เซิร์ฟเวอร์ FIREBASE
+          <button type="button" class="btn btn-outline-primary" onclick="closeSettingsSalaryModal(); openFirebaseConfigModal();" title="ตั้งค่าและเชื่อมต่อเซิร์ฟเวอร์ Firebase Cloud Database">
+            เซิร์ฟเวอร์ Firebase
           </button>
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -812,7 +806,7 @@
           </div>
 
           <button type="button" class="btn btn-primary btn-block btn-lg" id="btnAuthSubmit" onclick="submitPinLogin()" style="max-width: 290px;">
-            เข้าสู่ระบบ (LOGIN)
+            เข้าสู่ระบบ
           </button>
         </div>
 
@@ -821,7 +815,7 @@
             กรุณาระบุรหัส PIN 4–8 หลักประจำตัวของคุณเพื่อเข้าสู่ระบบ
           </p>
           <div style="margin-top: 10px;">
-            <a href="javascript:void(0)" onclick="openFirebaseConfigModal()">ตั้งค่า FIREBASE PROJECT KEY</a>
+            <a href="javascript:void(0)" onclick="openFirebaseConfigModal()">ตั้งค่า Firebase Project Key</a>
           </div>
         </div>
       </div>
@@ -833,7 +827,7 @@
     <div class="modal-dialog">
       <div class="modal-header">
         <div>
-          <h3 style="margin:0;">จัดการข้อมูลบัญชีของฉัน (MY ACCOUNT)</h3>
+          <h3 style="margin:0;">จัดการข้อมูลบัญชีของฉัน</h3>
           <p class="subtitle text-muted small" style="margin:2px 0 0 0;">ดูและแก้ไขข้อมูลโปรไฟล์ สังกัด รหัสพนักงาน และรหัส PIN</p>
         </div>
         <button type="button" class="modal-close" onclick="closeAccountModal()">&times;</button>
@@ -905,7 +899,7 @@
     <div class="modal-dialog modal-dialog-lg">
       <div class="modal-header">
         <div>
-          <h3>จัดการรายชื่อพนักงานและรหัส PIN (MANAGE USERS)</h3>
+          <h3>จัดการรายชื่อพนักงานและรหัส PIN</h3>
           <p class="subtitle text-muted small" style="margin:2px 0 0 0;">เฉพาะผู้ดูแลระบบ (ADMIN) จัดการสิทธิ์ เพิ่ม หรือเปลี่ยนรหัส PIN ของพนักงาน</p>
         </div>
         <button type="button" class="modal-close" onclick="closeManageUsersModal()">&times;</button>
@@ -948,7 +942,7 @@
         <!-- System Users Table -->
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
           <h4 style="color:var(--text-primary); font-size:0.95rem; margin:0;">
-            รายชื่อผู้ใช้ทั้งหมดในระบบ (SYSTEM USERS)
+            รายชื่อผู้ใช้ทั้งหมดในระบบ
           </h4>
           <div style="display: flex; align-items: center; gap: 10px;">
             <button type="button" class="btn btn-outline-danger btn-xs" onclick="confirmClearAllStaffUsers()" title="ลบรายชื่อพนักงานทั้งหมด เหลือเฉพาะบัญชี ADMIN">
@@ -1028,7 +1022,7 @@
     <div class="modal-dialog fb-config-dialog" style="max-width: 620px;">
       <div class="modal-header">
         <h3 style="display: flex; align-items: center; gap: 8px;">
-          <span>ตั้งค่าเซิร์ฟเวอร์ FIREBASE (CLOUD DATABASE)</span>
+          <span>ตั้งค่าเซิร์ฟเวอร์ Firebase (Cloud Database)</span>
         </h3>
         <button type="button" class="modal-close" onclick="closeFirebaseConfigModal()">&times;</button>
       </div>
@@ -1042,21 +1036,21 @@
         <!-- Auto-Paste & Auto-Detect Card -->
         <div class="fb-autopaste-card">
           <div class="fb-card-title">
-            วางโค้ด FIREBASE CONFIGURATION จาก FIREBASE CONSOLE (แยกลงช่องอัตโนมัติ)
+            วางโค้ด Firebase Configuration จาก Firebase Console (แยกลงช่องอัตโนมัติ)
           </div>
           <p class="text-muted small" style="margin-bottom: 8px;">
-            จาก FIREBASE CONSOLE ไปที่ <strong>PROJECT SETTINGS &gt; GENERAL &gt; YOUR APPS &gt; SDK SETUP AND CONFIGURATION (CONFIG)</strong> แล้วคัดลอกโค้ดมาวางที่นี่:
+            จาก Firebase Console ไปที่ <strong>Project Settings &gt; General &gt; Your apps &gt; SDK setup and configuration (Config)</strong> แล้วคัดลอกโค้ดมาวางที่นี่:
           </p>
           <textarea id="fbCfgRawPaste" class="form-control font-mono" rows="3" placeholder="const firebaseConfig = {&#10;  apiKey: &quot;AIzaSy...&quot;,&#10;  projectId: &quot;my-salary-app&quot;,&#10;  ...&#10;};"></textarea>
           <div style="margin-top: 8px; display: flex; justify-content: flex-end;">
             <button type="button" class="btn btn-outline-primary btn-sm" onclick="parseRawFirebaseConfig()">
-              แยกและเติมข้อมูลอัตโนมัติ (AUTO FILL)
+              แยกและเติมข้อมูลอัตโนมัติ (Auto Fill)
             </button>
           </div>
         </div>
 
         <div style="margin: 18px 0 12px 0; border-top: 1px solid var(--border-color); position: relative; text-align: center;">
-          <span style="position: relative; top: -10px; background: #fff; padding: 0 10px; font-size: 0.78rem; color: #71717a; font-weight: 700;">
+          <span style="position: relative; top: -10px; background: #fff; padding: 0 10px; font-size: 0.78rem; color: #71717a; font-weight: 600;">
             หรือกรอกข้อมูลพารามิเตอร์เซิร์ฟเวอร์ด้วยตนเอง
           </span>
         </div>
@@ -1064,12 +1058,12 @@
         <!-- Form Fields Grid -->
         <div class="fb-form-grid">
           <div class="form-group">
-            <label for="fbCfgProjectId">รหัสโครงการ (PROJECT ID) <span class="text-danger">*</span>:</label>
-            <input type="text" id="fbCfgProjectId" class="form-control font-mono" placeholder="เช่น MY-COMPANY-PAYROLL">
+            <label for="fbCfgProjectId">รหัสโครงการ (Project ID) <span class="text-danger">*</span>:</label>
+            <input type="text" id="fbCfgProjectId" class="form-control font-mono" placeholder="เช่น my-company-payroll">
           </div>
 
           <div class="form-group">
-            <label for="fbCfgApiKey">API KEY <span class="text-danger">*</span>:</label>
+            <label for="fbCfgApiKey">API Key <span class="text-danger">*</span>:</label>
             <div class="input-unit-group">
               <input type="password" id="fbCfgApiKey" class="form-control font-mono" placeholder="AIzaSy...">
               <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleFbApiKeyVisibility()" style="border:none; background:transparent; padding: 0 8px;" title="แสดง/ซ่อน API Key">
@@ -1079,34 +1073,34 @@
           </div>
 
           <div class="form-group">
-            <label for="fbCfgAuthDomain">AUTH DOMAIN:</label>
-            <input type="text" id="fbCfgAuthDomain" class="form-control font-mono" placeholder="เช่น MY-COMPANY-PAYROLL.FIREBASEAPP.COM">
+            <label for="fbCfgAuthDomain">Auth Domain:</label>
+            <input type="text" id="fbCfgAuthDomain" class="form-control font-mono" placeholder="เช่น my-company-payroll.firebaseapp.com">
           </div>
 
           <div class="form-group">
-            <label for="fbCfgStorageBucket">STORAGE BUCKET:</label>
-            <input type="text" id="fbCfgStorageBucket" class="form-control font-mono" placeholder="เช่น MY-COMPANY-PAYROLL.APPSPOT.COM">
+            <label for="fbCfgStorageBucket">Storage Bucket:</label>
+            <input type="text" id="fbCfgStorageBucket" class="form-control font-mono" placeholder="เช่น my-company-payroll.appspot.com">
           </div>
 
           <div class="form-group">
-            <label for="fbCfgMessagingSenderId">MESSAGING SENDER ID:</label>
+            <label for="fbCfgMessagingSenderId">Messaging Sender ID:</label>
             <input type="text" id="fbCfgMessagingSenderId" class="form-control font-mono" placeholder="เช่น 123456789012">
           </div>
 
           <div class="form-group">
-            <label for="fbCfgAppId">APP ID:</label>
-            <input type="text" id="fbCfgAppId" class="form-control font-mono" placeholder="เช่น 1:123456789012:WEB:ABCDEF">
+            <label for="fbCfgAppId">App ID:</label>
+            <input type="text" id="fbCfgAppId" class="form-control font-mono" placeholder="เช่น 1:123456789012:web:abcdef">
           </div>
         </div>
       </div>
 
       <div class="modal-footer modal-footer-between">
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button type="button" class="btn btn-outline-info" id="btnTestFbConn" onclick="testFirebaseConfigFromModal()" title="ทดสอบการเชื่อมต่อกับเซิร์ฟเวอร์ FIREBASE">
+          <button type="button" class="btn btn-outline-info" id="btnTestFbConn" onclick="testFirebaseConfigFromModal()" title="ทดสอบการเชื่อมต่อกับเซิร์ฟเวอร์ Firebase">
             ทดสอบการเชื่อมต่อ
           </button>
-          <button type="button" class="btn btn-outline-secondary" onclick="resetFirebaseConfigDefault()" title="คืนค่าเป็นโหมด LOCAL STORAGE ออฟไลน์">
-            คืนค่าเริ่มต้น (โหมด LOCAL)
+          <button type="button" class="btn btn-outline-secondary" onclick="resetFirebaseConfigDefault()" title="คืนค่าเป็นโหมด Local Storage ออฟไลน์">
+            คืนค่าเริ่มต้น (โหมด Local)
           </button>
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -1121,7 +1115,7 @@
 
   <!-- Success Confirmation Modal -->
   <div class="modal-backdrop" id="successConfirmModal" style="display:none; z-index: 99999;" onclick="handleSuccessBackdropClick(event)">
-    <div class="modal-dialog success-popup-dialog" style="max-width: 360px; text-align: center; border-radius: 8px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+    <div class="modal-dialog success-popup-dialog" style="max-width: 360px; text-align: center; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.15);">
       <div class="modal-body" style="padding: 28px 24px 24px 24px;">
         <div class="success-popup-icon-wrap">
           <div class="success-popup-check">✓</div>
@@ -1129,138 +1123,9 @@
         <h3 id="successPopupTitle" class="success-popup-title">บันทึกสำเร็จ</h3>
         <p id="successPopupMessage" class="success-popup-message">บันทึกข้อมูลเรียบร้อยแล้ว</p>
         <div style="margin-top: 22px;">
-          <button type="button" class="btn btn-primary btn-lg" id="successPopupOkBtn" onclick="closeSuccessPopup()" style="min-width: 140px; border-radius: 5px; font-weight: 700; padding: 7px 28px; font-size: 0.9rem;">
+          <button type="button" class="btn btn-primary btn-lg" id="successPopupOkBtn" onclick="closeSuccessPopup()" style="min-width: 140px; border-radius: 6px; font-weight: 600; padding: 7px 28px; font-size: 0.9rem;">
             ตกลง
           </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Phone Simulator Modal (Overlay) -->
-  <div class="simulator-backdrop" id="phoneSimulatorModal" style="display: none;" onclick="handleSimulatorBackdropClick(event)">
-    <!-- Floating Top Control Bar -->
-    <div class="sim-floating-toolbar" onclick="event.stopPropagation()">
-      <div class="sim-toolbar-left">
-        <div class="sim-brand-badge">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="5" y="2" width="14" height="20" rx="3" ry="3"/>
-            <line x1="12" y1="18" x2="12.01" y2="18"/>
-          </svg>
-          <span>IPHONE SIMULATOR</span>
-        </div>
-
-        <div class="sim-control-group">
-          <label for="simDeviceSelect" class="sim-control-label">รุ่นมือถือ:</label>
-          <select id="simDeviceSelect" class="sim-select" onchange="changeSimulatorDevice(this.value)">
-            <optgroup label="Dynamic Island Series">
-              <option value="iphone16promax">iPhone 16 Pro Max (440 × 956)</option>
-              <option value="iphone15pro" selected>iPhone 15 Pro / 16 (393 × 852)</option>
-              <option value="iphone15promax">iPhone 15 Pro Max / 14 Pro Max (430 × 932)</option>
-            </optgroup>
-            <optgroup label="Slim Notch Series">
-              <option value="iphone14">iPhone 14 / 13 / 12 (390 × 844)</option>
-              <option value="iphone14plus">iPhone 14 Plus / 13 Pro Max (428 × 926)</option>
-              <option value="iphone13mini">iPhone 13 mini / 12 mini (375 × 812)</option>
-            </optgroup>
-            <optgroup label="Classic Notch Series">
-              <option value="iphone11">iPhone 11 / XR (414 × 896)</option>
-              <option value="iphone11pro">iPhone 11 Pro / X (375 × 812)</option>
-            </optgroup>
-          </select>
-        </div>
-      </div>
-
-      <div class="sim-toolbar-right">
-        <div class="sim-control-group">
-          <label for="simScaleSelect" class="sim-control-label">ซูม/ขนาด:</label>
-          <select id="simScaleSelect" class="sim-select" onchange="changeSimulatorScale(this.value)">
-            <option value="fit" selected>พอดีหน้าจอ (AUTO FIT)</option>
-            <option value="1.0">100%</option>
-            <option value="0.85">85%</option>
-            <option value="0.75">75%</option>
-            <option value="0.65">65%</option>
-            <option value="0.5">50%</option>
-          </select>
-        </div>
-
-        <button type="button" class="sim-toolbar-btn" id="btnSimOrientation" onclick="toggleSimulatorOrientation()" title="สลับแนวตั้ง / แนวนอน (Rotate)">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="23 4 23 10 17 10"/>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-          </svg>
-          <span id="simOrientationText">แนวตั้ง</span>
-        </button>
-
-        <button type="button" class="sim-toolbar-btn" onclick="reloadSimulatorFrame()" title="รีเฟรชหน้าจำลอง (Reload)">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-          </svg>
-        </button>
-
-        <button type="button" class="sim-toolbar-btn sim-btn-close" onclick="closePhoneSimulator()" title="ปิดแบบจำลอง (ESC)">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- Stage Container (Center phone) -->
-    <div class="sim-stage-container" onclick="handleSimulatorBackdropClick(event)">
-      <div class="sim-device-scaler" id="simDeviceScaler">
-        <!-- Hardware Phone Chassis -->
-        <div class="sim-phone-frame" id="simPhoneFrame">
-          <!-- Hardware buttons -->
-          <div class="sim-hw-button sim-btn-silent"></div>
-          <div class="sim-hw-button sim-btn-vol-up"></div>
-          <div class="sim-hw-button sim-btn-vol-down"></div>
-          <div class="sim-hw-button sim-btn-power"></div>
-
-          <!-- Phone Screen Bezel -->
-          <div class="sim-screen-bezel" id="simScreenBezel">
-            <!-- Virtual iOS Status Bar -->
-            <div class="sim-status-bar" id="simStatusBar">
-              <div class="sim-status-time" id="simStatusTime">09:41</div>
-              
-              <!-- Cutout: Dynamic Island or Notch -->
-              <div class="sim-cutout-container" id="simCutoutContainer">
-                <div class="sim-dynamic-island" id="simDynamicIsland">
-                  <div class="sim-lens-dot"></div>
-                  <div class="sim-sensor-dot"></div>
-                </div>
-                <div class="sim-notch" id="simNotch" style="display: none;">
-                  <div class="sim-notch-speaker"></div>
-                  <div class="sim-notch-camera"></div>
-                </div>
-              </div>
-
-              <div class="sim-status-icons">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
-                  <rect x="2" y="16" width="3" height="6" rx="1"/>
-                  <rect x="7" y="12" width="3" height="10" rx="1"/>
-                  <rect x="12" y="8" width="3" height="14" rx="1"/>
-                  <rect x="17" y="4" width="3" height="18" rx="1"/>
-                </svg>
-                <span class="sim-5g-text">5G</span>
-                <div class="sim-battery-icon">
-                  <div class="sim-battery-body">
-                    <div class="sim-battery-level"></div>
-                  </div>
-                  <div class="sim-battery-tip"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Embedded Web View iframe -->
-            <iframe id="simIframe" class="sim-iframe" src="about:blank" title="Mobile App Simulator"></iframe>
-
-            <!-- Virtual iOS Home Indicator Bar -->
-            <div class="sim-home-bar-area">
-              <div class="sim-home-indicator"></div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

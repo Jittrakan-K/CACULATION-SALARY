@@ -16,7 +16,7 @@
         const link = document.createElement('link');
         link.type = 'image/svg+xml';
         link.rel = 'icon';
-        link.href = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KICA8cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSIxNCIgZmlsbD0iIzAwMDAwMCIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDgsIDgpIHNjYWxlKDIpIj4KICAgIDxwYXRoIGQ9Ik0xMyAyTDMgMTRoOGwtMiA4IDEwLTEyaC04bDItOHoiIGZpbGw9IiNmZmZmZmYiLz4KICA8L2c+Cjwvc3ZnPg==';
+        link.href = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ibG9nb0dyYWQiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZDkyMzY1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iNjAlIiBzdG9wLWNvbG9yPSIjN2MzYWVkIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzI1NjNlYiIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0Ij4KICAgIDxwYXRoIGQ9Ik0xMyAyTDMgMTRoOGwtMiA4IDEwLTEyaC04bDItOHoiIGZpbGw9IiNmZmZmZmYiLz4KICA8L2c+Cjwvc3ZnPgo=';
         document.head.appendChild(link);
       }
     })();
@@ -73,12 +73,6 @@
       <!-- Right: User Menu & Auth Actions -->
       <div class="nav-actions">
         <div id="navAuthArea" class="nav-auth-area">
-          <button type="button" class="btn-simulator-trigger" id="btnPhoneSimulator" onclick="openPhoneSimulator()" title="จำลองหน้าจอแอปบนมือถือ (PHONE SIMULATOR)">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="5" y="2" width="14" height="20" rx="3" ry="3"/>
-              <line x1="12" y1="18" x2="12.01" y2="18"/>
-            </svg>
-          </button>
           <button type="button" class="btn-factorium-outline" onclick="openAuthModal()">
             เข้าสู่ระบบ (LOGIN)
           </button>
@@ -1132,135 +1126,6 @@
           <button type="button" class="btn btn-primary btn-lg" id="successPopupOkBtn" onclick="closeSuccessPopup()" style="min-width: 140px; border-radius: 5px; font-weight: 700; padding: 7px 28px; font-size: 0.9rem;">
             ตกลง
           </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Phone Simulator Modal (Overlay) -->
-  <div class="simulator-backdrop" id="phoneSimulatorModal" style="display: none;" onclick="handleSimulatorBackdropClick(event)">
-    <!-- Floating Top Control Bar -->
-    <div class="sim-floating-toolbar" onclick="event.stopPropagation()">
-      <div class="sim-toolbar-left">
-        <div class="sim-brand-badge">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="5" y="2" width="14" height="20" rx="3" ry="3"/>
-            <line x1="12" y1="18" x2="12.01" y2="18"/>
-          </svg>
-          <span>IPHONE SIMULATOR</span>
-        </div>
-
-        <div class="sim-control-group">
-          <label for="simDeviceSelect" class="sim-control-label">รุ่นมือถือ:</label>
-          <select id="simDeviceSelect" class="sim-select" onchange="changeSimulatorDevice(this.value)">
-            <optgroup label="Dynamic Island Series">
-              <option value="iphone16promax">iPhone 16 Pro Max (440 × 956)</option>
-              <option value="iphone15pro" selected>iPhone 15 Pro / 16 (393 × 852)</option>
-              <option value="iphone15promax">iPhone 15 Pro Max / 14 Pro Max (430 × 932)</option>
-            </optgroup>
-            <optgroup label="Slim Notch Series">
-              <option value="iphone14">iPhone 14 / 13 / 12 (390 × 844)</option>
-              <option value="iphone14plus">iPhone 14 Plus / 13 Pro Max (428 × 926)</option>
-              <option value="iphone13mini">iPhone 13 mini / 12 mini (375 × 812)</option>
-            </optgroup>
-            <optgroup label="Classic Notch Series">
-              <option value="iphone11">iPhone 11 / XR (414 × 896)</option>
-              <option value="iphone11pro">iPhone 11 Pro / X (375 × 812)</option>
-            </optgroup>
-          </select>
-        </div>
-      </div>
-
-      <div class="sim-toolbar-right">
-        <div class="sim-control-group">
-          <label for="simScaleSelect" class="sim-control-label">ซูม/ขนาด:</label>
-          <select id="simScaleSelect" class="sim-select" onchange="changeSimulatorScale(this.value)">
-            <option value="fit" selected>พอดีหน้าจอ (AUTO FIT)</option>
-            <option value="1.0">100%</option>
-            <option value="0.85">85%</option>
-            <option value="0.75">75%</option>
-            <option value="0.65">65%</option>
-            <option value="0.5">50%</option>
-          </select>
-        </div>
-
-        <button type="button" class="sim-toolbar-btn" id="btnSimOrientation" onclick="toggleSimulatorOrientation()" title="สลับแนวตั้ง / แนวนอน (Rotate)">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="23 4 23 10 17 10"/>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-          </svg>
-          <span id="simOrientationText">แนวตั้ง</span>
-        </button>
-
-        <button type="button" class="sim-toolbar-btn" onclick="reloadSimulatorFrame()" title="รีเฟรชหน้าจำลอง (Reload)">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-          </svg>
-        </button>
-
-        <button type="button" class="sim-toolbar-btn sim-btn-close" onclick="closePhoneSimulator()" title="ปิดแบบจำลอง (ESC)">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- Stage Container (Center phone) -->
-    <div class="sim-stage-container" onclick="handleSimulatorBackdropClick(event)">
-      <div class="sim-device-scaler" id="simDeviceScaler">
-        <!-- Hardware Phone Chassis -->
-        <div class="sim-phone-frame" id="simPhoneFrame">
-          <!-- Hardware buttons -->
-          <div class="sim-hw-button sim-btn-silent"></div>
-          <div class="sim-hw-button sim-btn-vol-up"></div>
-          <div class="sim-hw-button sim-btn-vol-down"></div>
-          <div class="sim-hw-button sim-btn-power"></div>
-
-          <!-- Phone Screen Bezel -->
-          <div class="sim-screen-bezel" id="simScreenBezel">
-            <!-- Virtual iOS Status Bar -->
-            <div class="sim-status-bar" id="simStatusBar">
-              <div class="sim-status-time" id="simStatusTime">09:41</div>
-              
-              <!-- Cutout: Dynamic Island or Notch -->
-              <div class="sim-cutout-container" id="simCutoutContainer">
-                <div class="sim-dynamic-island" id="simDynamicIsland">
-                  <div class="sim-lens-dot"></div>
-                  <div class="sim-sensor-dot"></div>
-                </div>
-                <div class="sim-notch" id="simNotch" style="display: none;">
-                  <div class="sim-notch-speaker"></div>
-                  <div class="sim-notch-camera"></div>
-                </div>
-              </div>
-
-              <div class="sim-status-icons">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
-                  <rect x="2" y="16" width="3" height="6" rx="1"/>
-                  <rect x="7" y="12" width="3" height="10" rx="1"/>
-                  <rect x="12" y="8" width="3" height="14" rx="1"/>
-                  <rect x="17" y="4" width="3" height="18" rx="1"/>
-                </svg>
-                <span class="sim-5g-text">5G</span>
-                <div class="sim-battery-icon">
-                  <div class="sim-battery-body">
-                    <div class="sim-battery-level"></div>
-                  </div>
-                  <div class="sim-battery-tip"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Embedded Web View iframe -->
-            <iframe id="simIframe" class="sim-iframe" src="about:blank" title="Mobile App Simulator"></iframe>
-
-            <!-- Virtual iOS Home Indicator Bar -->
-            <div class="sim-home-bar-area">
-              <div class="sim-home-indicator"></div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
