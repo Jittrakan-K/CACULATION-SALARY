@@ -72,9 +72,29 @@ const EXCEL_SAMPLE_ATTENDANCE = [
 ];
 
 // ==========================================================================
-// 3. State Management (สถานะหลักของระบบ)
+// 3. State Management (สถานะหลักของระบบ & ระบบหลายบริษัท)
 // ==========================================================================
-let allCalendars = {};      // บันทึกปฏิทินทุกปี { '2026': {...}, '2027': {...} }
+const STORAGE_KEY_COMPANIES = 'multi_company_registry_v1';
+const STORAGE_KEY_ACTIVE_COMPANY = 'multi_company_active_id_v1';
+
+const DEFAULT_ORBRAY_COMPANY = {
+  id: 'orbray',
+  name: 'ORBRAY',
+  code: 'ORBRAY',
+  description: 'บริษัท ออร์เบรย์ (ประเทศไทย) จำกัด (ข้อมูลตั้งต้น)',
+  isDefault: true,
+  createdAt: '2026-01-01',
+  calendars: {
+    '2026': JSON.parse(JSON.stringify(DEFAULT_CALENDAR_2026))
+  }
+};
+
+let allCompanies = {
+  'orbray': JSON.parse(JSON.stringify(DEFAULT_ORBRAY_COMPANY))
+};
+let activeCompanyId = 'orbray';
+
+let allCalendars = {};      // บันทึกปฏิทินทุกปีของบริษัทปัจจุบัน { '2026': {...}, '2027': {...} }
 let activeYearCE = 2026;    // ปี ค.ศ. ปัจจุบันที่กำลังดู
 let currentPeriod = null;   // งวดการจ่ายปัจจุบัน
 let currentAttendance = []; // รายการลงเวลา 31 วันของงวดปัจจุบัน
@@ -165,23 +185,74 @@ function savePeriodSalaryConfigsToStorage() {
   }
 }
 
+function getScopedCompanyAttendanceKey() {
+  const uid = (typeof getActiveEditingUserId === 'function') ? getActiveEditingUserId() : 'user_admin';
+  return `${STORAGE_KEY_ATTENDANCE}_${activeCompanyId}_${uid}`;
+}
+
+function saveCompaniesToStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY_COMPANIES, JSON.stringify(allCompanies));
+    localStorage.setItem(STORAGE_KEY_ACTIVE_COMPANY, activeCompanyId);
+  } catch (e) {
+    console.warn('Companies save failed', e);
+  }
+}
+
 function loadStorageData() {
   try {
-    const rawCals = localStorage.getItem(STORAGE_KEY_CALENDARS);
-    if (rawCals) {
-      allCalendars = JSON.parse(rawCals);
+    // 1. โหลดข้อมูลทะเบียนบริษัททั้งหมด
+    const rawCompanies = localStorage.getItem(STORAGE_KEY_COMPANIES);
+    if (rawCompanies) {
+      try {
+        allCompanies = JSON.parse(rawCompanies);
+      } catch (err) {
+        console.error('Failed parsing companies registry', err);
+        allCompanies = { 'orbray': JSON.parse(JSON.stringify(DEFAULT_ORBRAY_COMPANY)) };
+      }
     } else {
-      allCalendars = { '2026': JSON.parse(JSON.stringify(DEFAULT_CALENDAR_2026)) };
+      allCompanies = { 'orbray': JSON.parse(JSON.stringify(DEFAULT_ORBRAY_COMPANY)) };
     }
 
+    if (!allCompanies['orbray']) {
+      allCompanies['orbray'] = JSON.parse(JSON.stringify(DEFAULT_ORBRAY_COMPANY));
+    }
+
+    // รองรับและนำเข้าข้อมูลเดิมจาก STORAGE_KEY_CALENDARS
+    const rawCals = localStorage.getItem(STORAGE_KEY_CALENDARS);
+    if (rawCals) {
+      try {
+        const legacyCals = JSON.parse(rawCals);
+        if (legacyCals && typeof legacyCals === 'object') {
+          allCompanies['orbray'].calendars = Object.assign({}, allCompanies['orbray'].calendars, legacyCals);
+        }
+      } catch (err) {}
+    }
+
+    // 2. โหลดรหัสบริษัทที่เปิดใช้งานอยู่
+    const savedCompId = localStorage.getItem(STORAGE_KEY_ACTIVE_COMPANY);
+    if (savedCompId && allCompanies[savedCompId]) {
+      activeCompanyId = savedCompId;
+    } else {
+      activeCompanyId = 'orbray';
+    }
+
+    const currentCompany = allCompanies[activeCompanyId] || allCompanies['orbray'];
+    allCalendars = currentCompany.calendars || {};
+
+    // 3. โหลดปี ค.ศ. ที่กำลังดู
     const savedYear = localStorage.getItem(STORAGE_KEY_YEAR);
+    const availableYears = Object.keys(allCalendars).map(Number).sort((a, b) => a - b);
     if (savedYear && allCalendars[savedYear]) {
       activeYearCE = parseInt(savedYear, 10);
+    } else if (availableYears.length > 0) {
+      activeYearCE = availableYears[0];
     } else {
       activeYearCE = 2026;
       if (!allCalendars['2026']) {
         allCalendars['2026'] = JSON.parse(JSON.stringify(DEFAULT_CALENDAR_2026));
       }
+      currentCompany.calendars['2026'] = allCalendars['2026'];
     }
 
     // โหลดการตั้งค่าโครงสร้างค่าเงินเฉพาะของ User ที่กำลัง Active
@@ -218,11 +289,13 @@ function loadStorageData() {
       periodSalaryConfigs = {};
     }
 
-    // อัปเดตข้อมูลพนักงานในสลิปตาม Active User
+    // อัปเดตข้อมูลพนักงานในสลิปตาม Active User และ Active Company
     syncSalaryProfileWithActiveUser();
   } catch (e) {
     console.error('Storage load failed, using default', e);
-    allCalendars = { '2026': JSON.parse(JSON.stringify(DEFAULT_CALENDAR_2026)) };
+    allCompanies = { 'orbray': JSON.parse(JSON.stringify(DEFAULT_ORBRAY_COMPANY)) };
+    activeCompanyId = 'orbray';
+    allCalendars = allCompanies['orbray'].calendars;
     activeYearCE = 2026;
     userBaseSalaryConfig = { ...DEFAULT_SALARY_CONFIG };
     periodSalaryConfigs = {};
@@ -232,7 +305,13 @@ function loadStorageData() {
 
 function saveCalendarsToStorage() {
   try {
-    localStorage.setItem(STORAGE_KEY_CALENDARS, JSON.stringify(allCalendars));
+    if (allCompanies[activeCompanyId]) {
+      allCompanies[activeCompanyId].calendars = allCalendars;
+      saveCompaniesToStorage();
+    }
+    if (activeCompanyId === 'orbray') {
+      localStorage.setItem(STORAGE_KEY_CALENDARS, JSON.stringify(allCalendars));
+    }
     localStorage.setItem(STORAGE_KEY_YEAR, activeYearCE.toString());
   } catch (e) {
     console.warn('Storage save failed', e);
@@ -241,16 +320,26 @@ function saveCalendarsToStorage() {
 
 function saveAttendanceToStorage(periodId, rows) {
   try {
-    const storeKey = getScopedUserKey(STORAGE_KEY_ATTENDANCE);
-    let store = {};
-    const raw = localStorage.getItem(storeKey);
-    if (raw) store = JSON.parse(raw);
-    store[periodId] = rows;
-    localStorage.setItem(storeKey, JSON.stringify(store));
+    const compStoreKey = getScopedCompanyAttendanceKey();
+    let compStore = {};
+    const rawComp = localStorage.getItem(compStoreKey);
+    if (rawComp) compStore = JSON.parse(rawComp);
+    compStore[periodId] = rows;
+    localStorage.setItem(compStoreKey, JSON.stringify(compStore));
+
+    // บันทึกลง key เดิมของ Orbray เพื่อรองรับความเข้ากันได้
+    if (activeCompanyId === 'orbray') {
+      const storeKey = getScopedUserKey(STORAGE_KEY_ATTENDANCE);
+      let store = {};
+      const raw = localStorage.getItem(storeKey);
+      if (raw) store = JSON.parse(raw);
+      store[periodId] = rows;
+      localStorage.setItem(storeKey, JSON.stringify(store));
+    }
 
     // ซิงค์ข้อมูลลง Cloud
     if (typeof syncDataToCloud === 'function') {
-      syncDataToCloud('attendance_' + periodId, rows);
+      syncDataToCloud(`attendance_${activeCompanyId}_${periodId}`, rows);
     }
   } catch (e) {
     console.warn('Attendance save failed', e);
@@ -259,13 +348,19 @@ function saveAttendanceToStorage(periodId, rows) {
 
 function loadAttendanceFromStorage(periodId) {
   try {
-    const uid = (typeof getActiveEditingUserId === 'function') ? getActiveEditingUserId() : 'user_admin';
-    const storeKey = getScopedUserKey(STORAGE_KEY_ATTENDANCE);
-    let raw = localStorage.getItem(storeKey);
-    // เฉพาะ user_admin เท่านั้นที่อนุญาตให้อ่าน legacy fallback ถ้ายังไม่มี scoped key
-    if (!raw && uid === 'user_admin') {
-      raw = localStorage.getItem(STORAGE_KEY_ATTENDANCE);
+    const compStoreKey = getScopedCompanyAttendanceKey();
+    let raw = localStorage.getItem(compStoreKey);
+
+    // Fallback สำหรับ Orbray
+    if (!raw && activeCompanyId === 'orbray') {
+      const uid = (typeof getActiveEditingUserId === 'function') ? getActiveEditingUserId() : 'user_admin';
+      const storeKey = getScopedUserKey(STORAGE_KEY_ATTENDANCE);
+      raw = localStorage.getItem(storeKey);
+      if (!raw && uid === 'user_admin') {
+        raw = localStorage.getItem(STORAGE_KEY_ATTENDANCE);
+      }
     }
+
     if (raw) {
       const store = JSON.parse(raw);
       if (store[periodId] && Array.isArray(store[periodId])) {
@@ -351,7 +446,7 @@ function generatePayrollPeriodsForYear(yearCE) {
 
 function getOrbrayDayInfo(dateStr) {
   const yearCE = parseInt(dateStr.split('-')[0], 10);
-  const cal = allCalendars[yearCE] || allCalendars[activeYearCE] || DEFAULT_CALENDAR_2026;
+  const cal = allCalendars[yearCE] || allCalendars[activeYearCE] || (allCompanies[activeCompanyId] && allCompanies[activeCompanyId].calendars[yearCE]) || DEFAULT_CALENDAR_2026;
 
   if (cal.customDayOverrides && cal.customDayOverrides[dateStr]) {
     const ov = cal.customDayOverrides[dateStr];
@@ -367,7 +462,7 @@ function getOrbrayDayInfo(dateStr) {
   if (cal.bridgeHolidays && cal.bridgeHolidays.includes(dateStr)) {
     return getDayTypeConfig('BRIDGE_HOLIDAY');
   }
-  if (cal.orbrayWorkDays && cal.orbrayWorkDays.includes(dateStr)) {
+  if ((cal.orbrayWorkDays && cal.orbrayWorkDays.includes(dateStr)) || (cal.specialWorkDays && cal.specialWorkDays.includes(dateStr))) {
     return getDayTypeConfig('ORBRAY_WORKDAY');
   }
 
@@ -618,6 +713,7 @@ function recalculateAttendanceTotals() {
     // วันทำงานเป้าหมาย: นับตามจำนวนวันทำงานปกติ และเสาร์ทำงาน รวมกันแทน
     const dayInfo = getOrbrayDayInfo(row.date);
     const isTargetDay = (
+      dayInfo.isWorkDay === true ||
       dayInfo.type === 'NORMAL_WORKDAY' ||
       dayInfo.type === 'WORKING_SATURDAY' ||
       dayInfo.type === 'ORBRAY_WORKDAY' ||
@@ -865,7 +961,17 @@ function recalculateSalary() {
   setElText('calcSumIncome', formatCurrency(totalEarnings));
   setElText('calcSumDeduct', totalDeductions > 0 ? `-${formatCurrency(totalDeductions)}` : '0.00');
   setElText('calcGrandNetPay', formatCurrency(netPay));
+  setElText('calcNetPayRow', formatCurrency(netPay));
   setElText('cardPayDateDisplay', salaryProfile.payDate || '-');
+
+  // Sync with Grand Net Formula Strip
+  setElText('netBoxIncomeVal', formatCurrency(totalEarnings));
+  setElText('netBoxDeductVal', totalDeductions > 0 ? formatCurrency(totalDeductions) : '0.00');
+  setElText('netBoxNetVal', formatCurrency(netPay));
+  if (currentPeriod) {
+    setElText('netBoxPeriod', `${currentPeriod.endMonthName} ${currentPeriod.yearBE}`);
+    setElText('netBoxPayDate', currentPeriod.payDate || salaryProfile.payDate || '-');
+  }
 
   // ปรับปรุงข้อความระบุอัตราบนหน้าจอให้ตรงกับการตั้งค่าปัจจุบัน
   updateRateLabelsOnCards();
@@ -976,6 +1082,15 @@ function renderOrbrayCalendarGrid() {
 
   setElText('calHeaderYear', `${yearBE} / ${yearCE}`);
 
+  const activeComp = allCompanies[activeCompanyId] || allCompanies['orbray'];
+  if (activeComp) {
+    setElText('calHeaderCompanyBadge', activeComp.name.toUpperCase());
+    const calCompSel = document.getElementById('calHeaderCompanySelect');
+    if (calCompSel && calCompSel.value !== activeCompanyId) {
+      calCompSel.value = activeCompanyId;
+    }
+  }
+
   const deleteBtn = document.getElementById('btnDeleteCurrentYear');
   if (deleteBtn) {
     deleteBtn.style.display = (yearCE === 2026 && Object.keys(allCalendars).length <= 1) ? 'none' : 'inline-flex';
@@ -1070,6 +1185,7 @@ function onAppYearChange() {
   activeYearCE = parseInt(select.value, 10);
   saveCalendarsToStorage();
 
+  renderCompanyDropdown();
   refreshPeriodSelector();
   renderOrbrayCalendarGrid();
 }
@@ -1136,7 +1252,7 @@ function onPayrollPeriodSelectChange() {
   const savedAtt = loadAttendanceFromStorage(found.id);
   if (savedAtt) {
     currentAttendance = savedAtt;
-  } else if (found.id === '2026-09' && uid === 'user_admin') {
+  } else if (found.id === '2026-09' && uid === 'user_admin' && activeCompanyId === 'orbray') {
     currentAttendance = JSON.parse(JSON.stringify(EXCEL_SAMPLE_ATTENDANCE));
   } else {
     generateAttendanceForPeriod(found.startDate, found.endDate);
@@ -1150,7 +1266,7 @@ function onPayrollPeriodSelectChange() {
 
   const btnExcel = document.getElementById('btnLoadExcelSample');
   if (btnExcel) {
-    btnExcel.style.display = (found.id === '2026-09' && uid === 'user_admin') ? 'inline-flex' : 'none';
+    btnExcel.style.display = (found.id === '2026-09' && uid === 'user_admin' && activeCompanyId === 'orbray') ? 'inline-flex' : 'none';
   }
 
   buildAttendanceTable();
@@ -1364,20 +1480,1244 @@ function saveDayStatusFromModal() {
 }
 
 // ==========================================================================
+// 11.1 ระบบเลือกและจัดการหลายบริษัท (Multi-Company & Calendar Registry System)
+// ==========================================================================
+
+function renderCompanyDropdown() {
+  const ribbonSelect = document.getElementById('ribbonCompanySelect');
+  const calHeaderSelect = document.getElementById('calHeaderCompanySelect');
+  const selects = [ribbonSelect, calHeaderSelect].filter(Boolean);
+  if (selects.length === 0) return;
+
+  const activeComp = allCompanies[activeCompanyId] || allCompanies['orbray'];
+  const activeYearBE = activeYearCE + 543;
+
+  selects.forEach(sel => {
+    sel.innerHTML = '';
+
+    // รายการบริษัทที่มีข้อมูลในระบบ
+    Object.values(allCompanies).forEach(comp => {
+      const opt = document.createElement('option');
+      opt.value = comp.id;
+      opt.innerText = `${comp.name.toUpperCase()}  ${activeYearBE} / ${activeYearCE}`;
+      if (comp.id === activeCompanyId) {
+        opt.selected = true;
+      }
+      sel.appendChild(opt);
+    });
+
+    // เส้นคั่น
+    const sep = document.createElement('option');
+    sep.disabled = true;
+    sep.innerText = '────────────────────────';
+    sel.appendChild(sep);
+
+    // เมนูเพิ่มบริษัทใหม่
+    const optAdd = document.createElement('option');
+    optAdd.value = '__ADD_COMPANY__';
+    optAdd.innerText = '➕ เพิ่มบริษัทใหม่ (กำหนดข้อมูลวันที่)...';
+    sel.appendChild(optAdd);
+
+    // เมนูจัดการรายชื่อบริษัท
+    const optManage = document.createElement('option');
+    optManage.value = '__MANAGE_COMPANIES__';
+    optManage.innerText = '⚙️ จัดการรายชื่อบริษัท & ข้อมูลวันที่...';
+    sel.appendChild(optManage);
+  });
+
+  // อัปเดต Badge บนหัวปฏิทิน
+  const badge = document.getElementById('calHeaderCompanyBadge');
+  if (badge && activeComp) {
+    badge.innerText = activeComp.name.toUpperCase();
+  }
+}
+
+function onRibbonCompanyChange(val) {
+  if (val === '__ADD_COMPANY__') {
+    renderCompanyDropdown();
+    openAddCompanyModal();
+    return;
+  }
+  if (val === '__MANAGE_COMPANIES__') {
+    renderCompanyDropdown();
+    openManageCompaniesModal();
+    return;
+  }
+  switchActiveCompany(val);
+}
+
+function switchActiveCompany(companyId) {
+  if (!allCompanies[companyId]) return;
+
+  activeCompanyId = companyId;
+  saveCompaniesToStorage();
+
+  const comp = allCompanies[activeCompanyId];
+  allCalendars = comp.calendars || {};
+
+  // ตรวจสอบปี ค.ศ.
+  const years = Object.keys(allCalendars).map(Number).sort((a, b) => a - b);
+  if (years.length > 0 && !allCalendars[activeYearCE]) {
+    activeYearCE = years[0];
+  }
+  localStorage.setItem(STORAGE_KEY_YEAR, activeYearCE.toString());
+
+  // อัปเดตชื่อบริษัทใน salaryProfile
+  salaryProfile.companyName = comp.name.toUpperCase();
+
+  // รีเฟรชหน้าจอทั้งหมด
+  renderCompanyDropdown();
+  updateYearSelectDropdown();
+  refreshPeriodSelector();
+  renderOrbrayCalendarGrid();
+  recalculateAttendanceTotals();
+  recalculateSalary();
+
+  showToastNotification(`🏢 สลับไปแสดงข้อมูลของบริษัท ${comp.name} (${activeYearCE + 543} / ${activeYearCE}) เรียบร้อยแล้ว`);
+}
+
+function openAddCompanyModal() {
+  const modal = document.getElementById('addCompanyModal');
+  if (!modal) return;
+
+  const nameInput = document.getElementById('compNewName');
+  const codeInput = document.getElementById('compNewCode');
+  const descInput = document.getElementById('compNewDesc');
+  const yearBEInput = document.getElementById('compNewYearBE');
+  const satPreset = document.getElementById('compNewSatPreset');
+  const natHolsCheck = document.getElementById('compNewUseNationalHols');
+  const memHolsInput = document.getElementById('compNewMemorialHols');
+  const specialWorkInput = document.getElementById('compNewSpecialWorkdays');
+
+  if (nameInput) nameInput.value = '';
+  if (codeInput) codeInput.value = '';
+  if (descInput) descInput.value = '';
+  if (yearBEInput) yearBEInput.value = (activeYearCE + 543).toString();
+  if (satPreset) satPreset.value = 'ALL_OFF';
+  if (natHolsCheck) natHolsCheck.checked = true;
+  if (memHolsInput) memHolsInput.value = '';
+  if (specialWorkInput) specialWorkInput.value = '';
+
+  updateCompNewYearCEPreview();
+  modal.style.display = 'flex';
+  if (nameInput) nameInput.focus();
+}
+
+function closeAddCompanyModal() {
+  const modal = document.getElementById('addCompanyModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function updateCompNewYearCEPreview() {
+  const inpBE = document.getElementById('compNewYearBE');
+  const preview = document.getElementById('compNewYearCEPreview');
+  if (!inpBE || !preview) return;
+  const val = parseInt(inpBE.value, 10);
+  if (val && val >= 2400 && val <= 3000) {
+    preview.innerText = (val - 543).toString();
+  } else {
+    preview.innerText = '-';
+  }
+}
+
+function confirmAddNewCompany() {
+  const nameInput = document.getElementById('compNewName');
+  const codeInput = document.getElementById('compNewCode');
+  const descInput = document.getElementById('compNewDesc');
+  const yearBEInput = document.getElementById('compNewYearBE');
+  const satPreset = document.getElementById('compNewSatPreset')?.value || 'ALL_OFF';
+  const useNationalHols = document.getElementById('compNewUseNationalHols')?.checked ?? true;
+  const memorialHolsInput = document.getElementById('compNewMemorialHols')?.value.trim() || '';
+  const specialWorkdaysInput = document.getElementById('compNewSpecialWorkdays')?.value.trim() || '';
+
+  const name = nameInput ? nameInput.value.trim() : '';
+  if (!name) {
+    alert('กรุณาระบุชื่อบริษัท');
+    nameInput?.focus();
+    return;
+  }
+
+  const yearBE = parseInt(yearBEInput?.value, 10);
+  if (!yearBE || yearBE < 2400 || yearBE > 3000) {
+    alert('กรุณาระบุปี พ.ศ. ให้ถูกต้อง (เช่น 2569)');
+    yearBEInput?.focus();
+    return;
+  }
+  const yearCE = yearBE - 543;
+
+  // ตรวจสอบชื่อซ้ำ
+  const existing = Object.values(allCompanies).find(c => c.name.toLowerCase() === name.toLowerCase());
+  if (existing) {
+    alert(`มีบริษัทชื่อ "${name}" อยู่ในระบบแล้ว กรุณาใช้ชื่ออื่น`);
+    nameInput?.focus();
+    return;
+  }
+
+  const newId = 'comp_' + Date.now();
+  const code = codeInput?.value.trim().toUpperCase() || name.substring(0, 6).toUpperCase();
+
+  // สร้างปฏิทินวันทำงานตามวันที่และรูปแบบที่เลือก
+  const newCal = {
+    yearCE,
+    yearBE,
+    title: `${yearBE} / ${yearCE}`,
+    nationalHolidays: [],
+    memorialHolidays: [],
+    bridgeHolidays: [],
+    orbrayWorkDays: [],
+    specialWorkDays: [],
+    workingSaturdays: [],
+    customDayOverrides: {}
+  };
+
+  // 1. วันหยุดนักขัตฤกษ์
+  if (useNationalHols) {
+    if (yearCE === 2026) {
+      newCal.nationalHolidays = [...DEFAULT_CALENDAR_2026.nationalHolidays];
+    } else {
+      newCal.nationalHolidays = [
+        `${yearCE}-01-01`, `${yearCE}-01-02`, `${yearCE}-04-06`, `${yearCE}-04-13`,
+        `${yearCE}-04-14`, `${yearCE}-04-15`, `${yearCE}-05-01`, `${yearCE}-05-04`,
+        `${yearCE}-07-28`, `${yearCE}-08-12`, `${yearCE}-10-13`, `${yearCE}-10-23`,
+        `${yearCE}-12-05`, `${yearCE}-12-10`, `${yearCE}-12-31`
+      ];
+    }
+  }
+
+  // 2. วันหยุดประเพณีบริษัท
+  if (memorialHolsInput) {
+    const mHols = memorialHolsInput.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean);
+    mHols.forEach(d => {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+        newCal.memorialHolidays.push(d);
+      }
+    });
+  }
+
+  // 3. วันทำงานพิเศษของบริษัท
+  if (specialWorkdaysInput) {
+    const sWorks = specialWorkdaysInput.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean);
+    sWorks.forEach(d => {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+        newCal.orbrayWorkDays.push(d);
+        newCal.specialWorkDays.push(d);
+      }
+    });
+  }
+
+  // 4. วันเสาร์ทำงาน / วันเสาร์หยุด
+  if (satPreset === 'CLONE_ORBRAY' && DEFAULT_CALENDAR_2026.workingSaturdays) {
+    newCal.workingSaturdays = [...DEFAULT_CALENDAR_2026.workingSaturdays];
+  } else {
+    let cur = new Date(yearCE, 0, 1);
+    const end = new Date(yearCE, 11, 31);
+    let satIndex = 0;
+    while (cur <= end) {
+      if (cur.getDay() === 6) {
+        const dStr = cur.toISOString().split('T')[0];
+        if (satPreset === 'ALL_WORK') {
+          newCal.workingSaturdays.push(dStr);
+        } else if (satPreset === 'ALT_WORK') {
+          if (satIndex % 2 === 1) {
+            newCal.workingSaturdays.push(dStr);
+          }
+        }
+        satIndex++;
+      }
+      cur.setDate(cur.getDate() + 1);
+    }
+  }
+
+  // บันทึกบริษัทใหม่
+  allCompanies[newId] = {
+    id: newId,
+    name: name.toUpperCase(),
+    code,
+    description: descInput?.value.trim() || '',
+    isDefault: false,
+    createdAt: new Date().toISOString().split('T')[0],
+    calendars: {
+      [yearCE.toString()]: newCal
+    }
+  };
+
+  saveCompaniesToStorage();
+  closeAddCompanyModal();
+
+  // สลับไปยังบริษัทใหม่ทันที
+  switchActiveCompany(newId);
+
+  showSuccessPopup(
+    'เพิ่มบริษัทสำเร็จ',
+    `บันทึกข้อมูลบริษัท "${name}" พร้อมปฏิทินวันทำงานปี ${yearBE} (${yearCE}) เรียบร้อยแล้ว ระบบได้เปิดแสดงข้อมูลของบริษัทนี้ให้ท่านทันที`
+  );
+}
+
+function openManageCompaniesModal() {
+  const modal = document.getElementById('manageCompaniesModal');
+  if (!modal) return;
+  renderManageCompaniesTable();
+  modal.style.display = 'flex';
+}
+
+function closeManageCompaniesModal() {
+  const modal = document.getElementById('manageCompaniesModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function renderManageCompaniesTable() {
+  const tbody = document.getElementById('manageCompaniesTableBody');
+  const countEl = document.getElementById('manageCompTotalCount');
+  if (!tbody) return;
+
+  const comps = Object.values(allCompanies);
+  if (countEl) countEl.innerText = comps.length.toString();
+
+  tbody.innerHTML = '';
+  comps.forEach(comp => {
+    const tr = document.createElement('tr');
+    const isActive = comp.id === activeCompanyId;
+    const yearsList = Object.keys(comp.calendars || {}).map(Number).sort((a, b) => a - b);
+    const yearsStr = yearsList.map(y => `${y + 543} (${y})`).join(', ') || '-';
+
+    tr.innerHTML = `
+      <td>
+        <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">
+          ${comp.name}
+          ${comp.isDefault ? '<span class="badge-default-pill">บริษัทหลัก</span>' : ''}
+        </div>
+        ${comp.description ? `<div class="text-muted small">${comp.description}</div>` : ''}
+      </td>
+      <td>
+        <span style="font-family: var(--font-mono); font-weight: 700;">${comp.code || '-'}</span>
+      </td>
+      <td>
+        <span style="font-size: 0.8rem; font-family: var(--font-mono);">${yearsStr}</span>
+      </td>
+      <td>
+        ${isActive 
+          ? '<span class="badge-active-comp">✓ กำลังแสดงผล</span>' 
+          : '<span class="text-muted small">ไม่ได้เลือก</span>'}
+      </td>
+      <td style="text-align: right; white-space: nowrap;">
+        ${!isActive 
+          ? `<button type="button" class="btn btn-sm btn-outline-primary" onclick="closeManageCompaniesModal(); switchActiveCompany('${comp.id}');" style="margin-right: 4px;">เลือกแสดง</button>`
+          : ''}
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="openEditCompanyModal('${comp.id}')" style="margin-right: 4px;">แก้ไข</button>
+        ${!comp.isDefault 
+          ? `<button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteCompany('${comp.id}')">ลบ</button>`
+          : '<button type="button" class="btn btn-sm btn-outline-secondary" disabled title="บริษัทเริ่มต้น ไม่สามารถลบได้">ลบ</button>'}
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function openEditCompanyModal(companyId) {
+  const comp = allCompanies[companyId];
+  if (!comp) return;
+
+  const modal = document.getElementById('editCompanyModal');
+  if (!modal) return;
+
+  document.getElementById('editCompanyTargetId').value = comp.id;
+  document.getElementById('editCompanyName').value = comp.name;
+  document.getElementById('editCompanyCode').value = comp.code || '';
+  document.getElementById('editCompanyDesc').value = comp.description || '';
+
+  modal.style.display = 'flex';
+}
+
+function closeEditCompanyModal() {
+  const modal = document.getElementById('editCompanyModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function saveEditCompany() {
+  const targetId = document.getElementById('editCompanyTargetId')?.value;
+  const comp = allCompanies[targetId];
+  if (!comp) return;
+
+  const nameInput = document.getElementById('editCompanyName');
+  const codeInput = document.getElementById('editCompanyCode');
+  const descInput = document.getElementById('editCompanyDesc');
+
+  const name = nameInput ? nameInput.value.trim() : '';
+  if (!name) {
+    alert('กรุณาระบุชื่อบริษัท');
+    nameInput?.focus();
+    return;
+  }
+
+  comp.name = name.toUpperCase();
+  comp.code = codeInput?.value.trim().toUpperCase() || comp.code;
+  comp.description = descInput?.value.trim() || '';
+
+  if (targetId === activeCompanyId) {
+    salaryProfile.companyName = comp.name;
+  }
+
+  saveCompaniesToStorage();
+  closeEditCompanyModal();
+  renderCompanyDropdown();
+  renderManageCompaniesTable();
+  renderOrbrayCalendarGrid();
+
+  showToastNotification(`✅ บันทึกการแก้ไขข้อมูลบริษัท ${comp.name} เรียบร้อยแล้ว`);
+}
+
+function deleteCompany(companyId) {
+  const comp = allCompanies[companyId];
+  if (!comp) return;
+
+  if (comp.isDefault || comp.id === 'orbray') {
+    alert('ไม่สามารถลบบริษัทเริ่มต้น (ORBRAY) ได้');
+    return;
+  }
+
+  if (Object.keys(allCompanies).length <= 1) {
+    alert('ระบบจำเป็นต้องมีบริษัทอย่างน้อย 1 แห่ง');
+    return;
+  }
+
+  if (!confirm(`คุณต้องการลบข้อมูลบริษัท "${comp.name}" พร้อมปฏิทินและข้อมูลที่เกี่ยวข้องทั้งหมดหรือไม่?`)) {
+    return;
+  }
+
+  const wasActive = (companyId === activeCompanyId);
+  delete allCompanies[companyId];
+
+  if (wasActive) {
+    activeCompanyId = 'orbray';
+  }
+
+  saveCompaniesToStorage();
+  if (wasActive) {
+    switchActiveCompany('orbray');
+  } else {
+    renderCompanyDropdown();
+    renderManageCompaniesTable();
+  }
+
+  showToastNotification(`🗑️ ลบข้อมูลบริษัท ${comp.name} เรียบร้อยแล้ว`);
+}
+
+// ==========================================================================
+// 11.2. ระบบสแกนและวิเคราะห์รูปปฏิทินบริษัทด้วย AI (AI Calendar Scanner & Vision Analyzer)
+// ==========================================================================
+const STORAGE_KEY_GEMINI_KEY = 'gemini_vision_api_key_v1';
+let scanUploadedImages = [];
+let currentScanResult = null;
+let isDropzoneInitialized = false;
+
+function openCalendarScanModal(targetCompanyId) {
+  const modal = document.getElementById('calendarScanModal');
+  if (!modal) return;
+
+  const currentComp = allCompanies[activeCompanyId] || allCompanies['orbray'];
+  const curNameEl = document.getElementById('scanCurrentCompName');
+  if (curNameEl && currentComp) {
+    curNameEl.innerText = currentComp.name.toUpperCase();
+  }
+
+  // กำหนดปีเริ่มต้นให้ตรงกับปีที่กำลังทำงาน
+  const beInput = document.getElementById('scanTargetYearBE');
+  const ceInput = document.getElementById('scanTargetYearCE');
+  if (beInput) beInput.value = (activeYearCE + 543).toString();
+  if (ceInput) ceInput.value = activeYearCE.toString();
+
+  // โหลด Gemini API Key จาก Storage
+  const apiKeyInp = document.getElementById('scanGeminiApiKey');
+  const savedApiKey = localStorage.getItem(STORAGE_KEY_GEMINI_KEY);
+  if (apiKeyInp && savedApiKey) {
+    apiKeyInp.value = savedApiKey;
+  }
+
+  // รีเซ็ตการเลือกบริษัทเป้าหมายเป็น CURRENT
+  const radioCurrent = document.getElementById('scanRadioCurrent');
+  if (radioCurrent) radioCurrent.checked = true;
+  toggleScanCompanyTarget('CURRENT');
+
+  // เตรียม drag & drop บน dropzone
+  initScanDropzone();
+
+  // ปรับปรุงการแสดงผลรูปภาพและผลลัพธ์
+  renderScanImagesGallery();
+  if (!currentScanResult) {
+    const resSec = document.getElementById('scanResultsSection');
+    if (resSec) resSec.style.display = 'none';
+    const applyBtn = document.getElementById('btnApplyScanResult');
+    if (applyBtn) applyBtn.disabled = true;
+  }
+
+  modal.style.display = 'flex';
+}
+
+function closeCalendarScanModal() {
+  const modal = document.getElementById('calendarScanModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function initScanDropzone() {
+  if (isDropzoneInitialized) return;
+  const dropzone = document.getElementById('scanDropzone');
+  if (!dropzone) return;
+
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropzone.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.add('drag-hover');
+    }, false);
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    dropzone.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropzone.classList.remove('drag-hover');
+    }, false);
+  });
+
+  dropzone.addEventListener('drop', (e) => {
+    const dt = e.dataTransfer;
+    if (dt && dt.files && dt.files.length > 0) {
+      handleScanFilesSelected(dt.files);
+    }
+  }, false);
+
+  isDropzoneInitialized = true;
+}
+
+function toggleScanCompanyTarget(val) {
+  const newFields = document.getElementById('scanNewCompFields');
+  if (!newFields) return;
+  if (val === 'NEW') {
+    newFields.style.display = 'block';
+    const nameInp = document.getElementById('scanInpNewCompName');
+    if (nameInp) nameInp.focus();
+  } else {
+    newFields.style.display = 'none';
+  }
+}
+
+function toggleScanApiKeyAccordion() {
+  const body = document.getElementById('scanApiKeyBody');
+  const icon = document.getElementById('scanApiKeyToggleIcon');
+  if (!body) return;
+  const isHidden = (body.style.display === 'none' || !body.style.display);
+  body.style.display = isHidden ? 'block' : 'none';
+  if (icon) icon.innerText = isHidden ? '▴' : '▾';
+}
+
+function onScanApiKeyInput(val) {
+  if (val && val.trim()) {
+    localStorage.setItem(STORAGE_KEY_GEMINI_KEY, val.trim());
+  } else {
+    localStorage.removeItem(STORAGE_KEY_GEMINI_KEY);
+  }
+}
+
+function onScanYearChange(val) {
+  const be = parseInt(val, 10);
+  const ceInp = document.getElementById('scanTargetYearCE');
+  if (ceInp) {
+    ceInp.value = (be && be >= 2400 && be <= 3000) ? (be - 543).toString() : '-';
+  }
+}
+
+function handleScanFilesSelected(files) {
+  if (!files || files.length === 0) return;
+
+  const validFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+  if (validFiles.length === 0) {
+    alert('กรุณาเลือกไฟล์ที่เป็นรูปภาพเท่านั้น (JPG, PNG, WEBP)');
+    return;
+  }
+
+  // รองรับสูงสุด 2 รูปภาพ (เช่น หน้า/หลัง หรือ ครึ่งปีแรก/ครึ่งปีหลัง)
+  const remainingSlots = 2 - scanUploadedImages.length;
+  if (remainingSlots <= 0) {
+    alert('สามารถอัพโหลดรูปภาพได้สูงสุด 2 รูป หากต้องการเปลี่ยนรูป กรุณากด "ล้างรูปภาพ" ก่อน');
+    return;
+  }
+
+  const filesToAdd = validFiles.slice(0, remainingSlots);
+  let loadedCount = 0;
+
+  filesToAdd.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      const base64Data = dataUrl.split(',')[1] || '';
+      scanUploadedImages.push({
+        name: file.name,
+        size: file.size,
+        mimeType: file.type || 'image/jpeg',
+        dataUrl,
+        base64Data
+      });
+      loadedCount++;
+      if (loadedCount === filesToAdd.length) {
+        renderScanImagesGallery();
+        updateScanStatus(`อัพโหลดรูปภาพเรียบร้อยแล้ว (${scanUploadedImages.length}/2 รูป)`);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // เคลียร์ input file เพื่อให้เลือกไฟล์เดิมซ้ำได้ถ้าลบไป
+  const fileInput = document.getElementById('scanFileInput');
+  if (fileInput) fileInput.value = '';
+}
+
+async function loadSampleOrbrayImages() {
+  updateScanStatus('กำลังโหลดภาพตัวอย่างปฏิทิน Orbray 2569 (Image 1 & 2)...');
+  const sampleUrls = [
+    { name: 'Image (1).jpg - ปฏิทิน Orbray 2569 (ม.ค. - มิ.ย.)', url: 'Image (1).jpg' },
+    { name: 'Image (2).jpg - ปฏิทิน Orbray 2569 (ก.ค. - ธ.ค.)', url: 'Image (2).jpg' }
+  ];
+
+  scanUploadedImages = [];
+  for (const sample of sampleUrls) {
+    try {
+      const res = await fetch(sample.url);
+      const blob = await res.blob();
+      const reader = new FileReader();
+      await new Promise((resolve) => {
+        reader.onloadend = () => {
+          const dataUrl = reader.result;
+          scanUploadedImages.push({
+            name: sample.name,
+            size: blob.size,
+            mimeType: blob.type || 'image/jpeg',
+            dataUrl: dataUrl,
+            base64Data: dataUrl.split(',')[1] || ''
+          });
+          resolve();
+        };
+        reader.readAsDataURL(blob);
+      });
+    } catch (err) {
+      console.warn('Fetch fallback to Image element for', sample.url, err);
+      await new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth || 800;
+            canvas.height = img.naturalHeight || 600;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            scanUploadedImages.push({
+              name: sample.name,
+              size: 1200000,
+              mimeType: 'image/jpeg',
+              dataUrl: dataUrl,
+              base64Data: dataUrl.split(',')[1] || ''
+            });
+          } catch (e) {
+            scanUploadedImages.push({
+              name: sample.name,
+              size: 1200000,
+              mimeType: 'image/jpeg',
+              dataUrl: sample.url,
+              base64Data: ''
+            });
+          }
+          resolve();
+        };
+        img.onerror = () => resolve();
+        img.src = sample.url;
+      });
+    }
+  }
+
+  renderScanImagesGallery();
+  updateScanStatus(`โหลดภาพตัวอย่างปฏิทิน Orbray 2569 สำเร็จ (${scanUploadedImages.length} รูป) สามารถกดเริ่มวิเคราะห์ได้ทันที`);
+  showToastNotification(`📂 โหลดภาพตัวอย่างปฏิทิน Orbray 2569 ครบทั้ง 2 รูปแล้ว`);
+}
+
+function clearScanImages() {
+  scanUploadedImages = [];
+  renderScanImagesGallery();
+  const resSec = document.getElementById('scanResultsSection');
+  if (resSec) resSec.style.display = 'none';
+  const applyBtn = document.getElementById('btnApplyScanResult');
+  if (applyBtn) applyBtn.disabled = true;
+  updateScanStatus('ล้างรูปภาพแล้ว กรุณาอัพโหลดรูปภาพปฏิทิน');
+}
+
+function removeScanImage(index) {
+  if (index >= 0 && index < scanUploadedImages.length) {
+    scanUploadedImages.splice(index, 1);
+    renderScanImagesGallery();
+    updateScanStatus(`เหลือรูปภาพ ${scanUploadedImages.length} รูป`);
+  }
+}
+
+function renderScanImagesGallery() {
+  const gallery = document.getElementById('scanImagesGallery');
+  const countEl = document.getElementById('scanImageCount');
+  const clearBtn = document.getElementById('btnClearScanImages');
+  if (!gallery) return;
+
+  if (countEl) countEl.innerText = scanUploadedImages.length.toString();
+  if (clearBtn) clearBtn.style.display = scanUploadedImages.length > 0 ? 'inline-block' : 'none';
+
+  if (scanUploadedImages.length === 0) {
+    gallery.innerHTML = `
+      <div class="scan-empty-gallery-hint">
+        <div class="hint-icon">🖼️</div>
+        <div>ยังไม่ได้เลือกรูปภาพ</div>
+        <small class="text-muted">กรุณาเลือกไฟล์ภาพปฏิทิน หรือคลิก "โหลดตัวอย่างปฏิทิน Orbray 2569"</small>
+      </div>
+    `;
+    return;
+  }
+
+  let html = '';
+  scanUploadedImages.forEach((img, idx) => {
+    const sizeKb = img.size ? Math.round(img.size / 1024) : 0;
+    const sizeStr = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
+    html += `
+      <div class="scan-img-card">
+        <div class="scan-img-thumb-wrap">
+          <img src="${img.dataUrl}" alt="${img.name}" class="scan-img-thumb" />
+          <button type="button" class="btn-remove-scan-img" onclick="removeScanImage(${idx})" title="ลบรูปนี้">&times;</button>
+        </div>
+        <div class="scan-img-meta">
+          <div class="scan-img-name" title="${img.name}">${img.name}</div>
+          <div class="scan-img-size">${sizeStr} • รูปที่ ${idx + 1}</div>
+        </div>
+      </div>
+    `;
+  });
+  gallery.innerHTML = html;
+}
+
+function updateScanStatus(msg) {
+  const el = document.getElementById('scanStatusMsg');
+  if (el) el.innerText = msg;
+}
+
+async function startCalendarAnalysis(mode) {
+  const beInp = document.getElementById('scanTargetYearBE');
+  const targetYearBE = parseInt(beInp ? beInp.value : '2569', 10) || 2569;
+  const targetYearCE = targetYearBE - 543;
+
+  if (mode === 'PRESET') {
+    updateScanStatus('กำลังวิเคราะห์โครงสร้างปฏิทินด้วย Smart Preset...');
+    setTimeout(() => {
+      currentScanResult = buildSmartCalendarPreset(targetYearCE, targetYearBE);
+      renderScanResults(currentScanResult);
+      updateScanStatus('⚡ วิเคราะห์สำเร็จด้วย Smart Preset เรียบร้อยแล้ว (สามารถคลิกแก้ไขวันได้โดยตรง)');
+      showToastNotification(`⚡ วิเคราะห์และจัดวันปฏิทินปี ${targetYearBE} เรียบร้อยแล้ว`);
+    }, 250);
+    return;
+  }
+
+  // โหมด AI Vision
+  if (scanUploadedImages.length === 0) {
+    alert('กรุณาอัพโหลดรูปถ่ายการ์ดปฏิทินอย่างน้อย 1 รูป หรือคลิก "โหลดตัวอย่างปฏิทิน Orbray 2569" ก่อนเริ่มวิเคราะห์');
+    return;
+  }
+
+  const apiKeyInp = document.getElementById('scanGeminiApiKey');
+  const apiKey = (apiKeyInp ? apiKeyInp.value.trim() : '') || localStorage.getItem(STORAGE_KEY_GEMINI_KEY) || '';
+
+  if (!apiKey) {
+    const choosePreset = confirm('ยังไม่ได้ระบุ Gemini API Key สำหรับการประมวลผลด้วย Google Vision AI\n\n- กด "ตกลง (OK)" เพื่อเปิดช่องกรอก Gemini API Key\n- กด "ยกเลิก (Cancel)" เพื่อประมวลผลด้วย Smart Preset ทันที (ไม่ต้องใช้คีย์)');
+    if (choosePreset) {
+      const body = document.getElementById('scanApiKeyBody');
+      if (body) body.style.display = 'block';
+      if (apiKeyInp) apiKeyInp.focus();
+    } else {
+      startCalendarAnalysis('PRESET');
+    }
+    return;
+  }
+
+  await callGeminiCalendarVisionAPI(scanUploadedImages, apiKey, targetYearBE, targetYearCE);
+}
+
+async function callGeminiCalendarVisionAPI(images, apiKey, targetYearBE, targetYearCE) {
+  const spin = document.getElementById('scanAISpin');
+  const btnAI = document.getElementById('btnRunAIScan');
+  const btnPreset = document.getElementById('btnRunPresetScan');
+
+  if (spin) spin.style.display = 'inline';
+  if (btnAI) btnAI.disabled = true;
+  if (btnPreset) btnPreset.disabled = true;
+  updateScanStatus('✨ กำลังส่งรูปภาพให้ Google Gemini AI Vision วิเคราะห์สัญลักษณ์สีและตารางวัน...');
+
+  const promptText = `
+You are an expert AI specialized in Thai industrial/company annual calendar cards.
+Examine the uploaded calendar image(s) carefully.
+The user is registering the calendar for Year พ.ศ. ${targetYearBE} (CE ${targetYearCE}).
+
+Legend and Visual Markers to Detect:
+1. National Holidays (วันหยุดนักขัตฤกษ์): Marked by yellow dots or yellow shaded circles.
+2. Memorial Day with pay (วันหยุดประเพณีจ่ายเงิน): Marked by purple dots or distinct purple symbols.
+3. Special Workdays (วันทำงานพิเศษ เช่น Orbray Day): Marked with red circles, red badges, or red text on what would otherwise be a weekend/holiday.
+4. Working Saturdays (วันเสาร์ทำงาน): Look at column 'S' (Saturday).
+   - If Saturday date has NO circle around it -> It is a WORKING SATURDAY (วันเสาร์ทำงาน).
+   - If Saturday date HAS a circle around it -> It is a SATURDAY HOLIDAY (วันเสาร์หยุด).
+5. Bridge / Special Holidays: Any other special company holidays indicated in the legend.
+
+Format Requirement:
+Return ONLY a valid, raw JSON object (without markdown code blocks, without backticks, without commentary).
+Use ISO date format: YYYY-MM-DD (where YYYY is ${targetYearCE}).
+Schema:
+{
+  "companyName": "ORBRAY",
+  "yearBE": ${targetYearBE},
+  "yearCE": ${targetYearCE},
+  "title": "${targetYearBE} / ${targetYearCE}",
+  "nationalHolidays": ["YYYY-MM-DD", ...],
+  "memorialHolidays": ["YYYY-MM-DD", ...],
+  "bridgeHolidays": ["YYYY-MM-DD", ...],
+  "orbrayWorkDays": ["YYYY-MM-DD", ...],
+  "workingSaturdays": ["YYYY-MM-DD", ...]
+}
+`;
+
+  try {
+    const parts = [{ text: promptText }];
+    images.forEach(img => {
+      if (img.base64Data) {
+        parts.push({
+          inline_data: {
+            mime_type: img.mimeType || 'image/jpeg',
+            data: img.base64Data
+          }
+        });
+      }
+    });
+
+    const payload = {
+      contents: [{ parts }],
+      generationConfig: {
+        temperature: 0.1,
+        response_mime_type: 'application/json'
+      }
+    };
+
+    // รองรับโมเดล Gemini 1.5 Flash
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errJson = await response.json().catch(() => ({}));
+      const errMsg = errJson.error ? errJson.error.message : `HTTP ${response.status} ${response.statusText}`;
+      throw new Error(errMsg);
+    }
+
+    const data = await response.json();
+    let textResponse = '';
+    if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
+      textResponse = data.candidates[0].content.parts.map(p => p.text || '').join('');
+    }
+
+    // Clean JSON response
+    textResponse = textResponse.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+    let parsed = null;
+    try {
+      parsed = JSON.parse(textResponse);
+    } catch (parseErr) {
+      // Regex extraction fallback
+      const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsed = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('ไม่สามารถแปลงผลลัพธ์จาก AI เป็นโครงสร้างข้อมูล JSON ได้');
+      }
+    }
+
+    // ทำความสะอาดและตรวจทานข้อมูล
+    parsed.yearCE = targetYearCE;
+    parsed.yearBE = targetYearBE;
+    parsed.title = `${targetYearBE} / ${targetYearCE}`;
+    if (!Array.isArray(parsed.nationalHolidays)) parsed.nationalHolidays = [];
+    if (!Array.isArray(parsed.memorialHolidays)) parsed.memorialHolidays = [];
+    if (!Array.isArray(parsed.bridgeHolidays)) parsed.bridgeHolidays = [];
+    if (!Array.isArray(parsed.orbrayWorkDays)) parsed.orbrayWorkDays = [];
+    if (!Array.isArray(parsed.workingSaturdays)) parsed.workingSaturdays = [];
+    if (!parsed.customDayOverrides) parsed.customDayOverrides = {};
+
+    currentScanResult = parsed;
+    renderScanResults(currentScanResult);
+    updateScanStatus('✨ วิเคราะห์ภาพปฏิทินด้วย Google Gemini AI Vision สำเร็จเรียบร้อยแล้ว!');
+    showToastNotification(`✨ AI Vision วิเคราะห์ปฏิทินสำเร็จ (${parsed.workingSaturdays.length} วันเสาร์ทำงาน, ${parsed.nationalHolidays.length} วันหยุด)`);
+
+  } catch (error) {
+    console.error('Gemini Vision API error:', error);
+    updateScanStatus(`⚠️ เกิดข้อผิดพลาดจาก AI: ${error.message}`);
+    const fallback = confirm(`ไม่สามารถเชื่อมต่อ Gemini API ได้ (${error.message})\n\nท่านต้องการใช้ระบบ Smart Preset เพื่อจัดวันให้อัตโนมัติตอนนี้หรือไม่?`);
+    if (fallback) {
+      startCalendarAnalysis('PRESET');
+    }
+  } finally {
+    if (spin) spin.style.display = 'none';
+    if (btnAI) btnAI.disabled = false;
+    if (btnPreset) btnPreset.disabled = false;
+  }
+}
+
+function buildSmartCalendarPreset(yearCE, yearBE) {
+  // หากเป็นปี 2569 (2026) คืนค่าปฏิทินตามรูปถ่ายการ์ด Orbray Image (1) & Image (2) เต็มรูปแบบ
+  if (yearCE === 2026) {
+    return JSON.parse(JSON.stringify(DEFAULT_CALENDAR_2026));
+  }
+
+  // สำหรับปีอื่น ใช้หลักเกณฑ์ปฏิทินไทยและโรงงานอุตสาหกรรม
+  const preset = {
+    yearCE,
+    yearBE,
+    title: `${yearBE} / ${yearCE}`,
+    nationalHolidays: [
+      `${yearCE}-01-01`, `${yearCE}-01-02`, `${yearCE}-04-06`, `${yearCE}-04-13`,
+      `${yearCE}-04-14`, `${yearCE}-04-15`, `${yearCE}-05-01`, `${yearCE}-05-04`,
+      `${yearCE}-07-28`, `${yearCE}-08-12`, `${yearCE}-10-13`, `${yearCE}-10-23`,
+      `${yearCE}-12-05`, `${yearCE}-12-10`, `${yearCE}-12-31`
+    ],
+    memorialHolidays: [],
+    bridgeHolidays: [],
+    orbrayWorkDays: [],
+    workingSaturdays: [],
+    customDayOverrides: {}
+  };
+
+  // จัดวันเสาร์ทำงานแบบสลับเสาร์ (Alternate Saturdays)
+  let cur = new Date(yearCE, 0, 1);
+  const end = new Date(yearCE, 11, 31);
+  let satIndex = 0;
+  while (cur <= end) {
+    if (cur.getDay() === 6) {
+      if (satIndex % 2 === 1) {
+        preset.workingSaturdays.push(cur.toISOString().split('T')[0]);
+      }
+      satIndex++;
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  return preset;
+}
+
+function getTotalSaturdaysInYear(yearCE) {
+  let count = 0;
+  let cur = new Date(yearCE, 0, 1);
+  const end = new Date(yearCE, 11, 31);
+  while (cur <= end) {
+    if (cur.getDay() === 6) count++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  return count || 52;
+}
+
+function renderScanResults(cal) {
+  if (!cal) return;
+
+  const resSection = document.getElementById('scanResultsSection');
+  const applyBtn = document.getElementById('btnApplyScanResult');
+  if (resSection) resSection.style.display = 'block';
+  if (applyBtn) applyBtn.disabled = false;
+
+  const natCount = (cal.nationalHolidays || []).length;
+  const memCount = (cal.memorialHolidays || []).length;
+  const specCount = (cal.orbrayWorkDays || []).length + (cal.specialWorkDays || []).length;
+  const workSatCount = (cal.workingSaturdays || []).length;
+  const totalSats = getTotalSaturdaysInYear(cal.yearCE);
+  const satOffCount = Math.max(0, totalSats - workSatCount);
+
+  setElText('resCountNat', natCount.toString());
+  setElText('resCountMem', memCount.toString());
+  setElText('resCountSpec', specCount.toString());
+  setElText('resCountWorkSat', workSatCount.toString());
+  setElText('resCountSatOff', satOffCount.toString());
+
+  // ชื่อบริษัทและปี
+  const radioCurrent = document.getElementById('scanRadioCurrent');
+  let compName = 'ORBRAY';
+  if (radioCurrent && radioCurrent.checked) {
+    compName = allCompanies[activeCompanyId] ? allCompanies[activeCompanyId].name : 'ORBRAY';
+  } else {
+    const newNameInp = document.getElementById('scanInpNewCompName');
+    compName = (newNameInp && newNameInp.value.trim()) ? newNameInp.value.trim().toUpperCase() : 'บริษัทใหม่';
+  }
+  setElText('scanResCompName', compName);
+  setElText('scanResYear', `${cal.yearBE} / ${cal.yearCE}`);
+
+  // วาดตาราง 12 เดือนจำลองที่คลิกสลับวันได้
+  renderScanMiniCalendar(cal);
+
+  // เลื่อนหน้าจอให้เห็นผลลัพธ์อย่างนุ่มนวล
+  resSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function renderScanMiniCalendar(cal) {
+  const container = document.getElementById('scanMiniCalendarGrid');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const thaiDayHeaders = ['S', 'M', 'T', 'W', 'TH', 'F', 'S'];
+
+  for (let m = 0; m < 12; m++) {
+    const monthCard = document.createElement('div');
+    monthCard.className = 'scan-mini-month-card';
+
+    const lastDay = getLastDayOfMonth(cal.yearCE, m);
+    const firstDayDate = new Date(cal.yearCE, m, 1);
+    const firstDayOfWeek = firstDayDate.getDay();
+
+    let html = `
+      <div class="scan-mini-month-header">
+        <strong>${m + 1}. ${THAI_MONTHS[m]}</strong>
+        <span class="text-muted small">${cal.yearBE}</span>
+      </div>
+      <table class="scan-mini-table">
+        <thead>
+          <tr>
+            ${thaiDayHeaders.map((dh, i) => `<th class="${i === 0 ? 'col-sun' : ''}">${dh}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    let currentDay = 1;
+    for (let r = 0; r < 6; r++) {
+      if (currentDay > lastDay) break;
+      html += '<tr>';
+      for (let c = 0; c < 7; c++) {
+        if (r === 0 && c < firstDayOfWeek) {
+          html += '<td class="scan-mini-cell empty"></td>';
+        } else if (currentDay > lastDay) {
+          html += '<td class="scan-mini-cell empty"></td>';
+        } else {
+          const dateStr = `${cal.yearCE}-${formatDay2Digit(m + 1)}-${formatDay2Digit(currentDay)}`;
+          const dayStatus = getScanDateStatus(dateStr, cal);
+
+          html += `
+            <td class="scan-mini-cell">
+              <span class="scan-mini-day-badge ${dayStatus.cls}" 
+                    id="scanDay_${dateStr}"
+                    title="${dateStr} - ${dayStatus.name} (คลิกเพื่อเปลี่ยนสถานะ)"
+                    onclick="toggleScanCalendarDate('${dateStr}')">
+                ${currentDay}
+              </span>
+            </td>
+          `;
+          currentDay++;
+        }
+      }
+      html += '</tr>';
+    }
+
+    html += '</tbody></table>';
+    monthCard.innerHTML = html;
+    container.appendChild(monthCard);
+  }
+}
+
+function getScanDateStatus(dateStr, cal) {
+  if (cal.nationalHolidays && cal.nationalHolidays.includes(dateStr)) {
+    return { type: 'NATIONAL_HOLIDAY', name: 'วันหยุดนักขัตฤกษ์', cls: 'day-national-holiday' };
+  }
+  if (cal.memorialHolidays && cal.memorialHolidays.includes(dateStr)) {
+    return { type: 'MEMORIAL_HOLIDAY', name: 'วันหยุดประเพณีจ่ายเงิน', cls: 'day-memorial-holiday' };
+  }
+  if ((cal.orbrayWorkDays && cal.orbrayWorkDays.includes(dateStr)) || (cal.specialWorkDays && cal.specialWorkDays.includes(dateStr))) {
+    return { type: 'ORBRAY_WORKDAY', name: 'วันทำงานพิเศษ', cls: 'day-orbray-work' };
+  }
+  if (cal.bridgeHolidays && cal.bridgeHolidays.includes(dateStr)) {
+    return { type: 'BRIDGE_HOLIDAY', name: 'วันหยุดพิเศษ', cls: 'day-bridge' };
+  }
+
+  const d = new Date(dateStr);
+  const dow = d.getDay();
+
+  if (dow === 0) {
+    return { type: 'SUNDAY', name: 'วันอาทิตย์หยุด', cls: 'day-sunday' };
+  }
+
+  if (dow === 6) {
+    if (cal.workingSaturdays && cal.workingSaturdays.includes(dateStr)) {
+      return { type: 'WORKING_SATURDAY', name: 'เสาร์ทำงาน', cls: 'day-working-sat' };
+    } else {
+      return { type: 'SATURDAY_HOLIDAY', name: 'เสาร์หยุด', cls: 'day-sat-holiday' };
+    }
+  }
+
+  return { type: 'NORMAL_WORKDAY', name: 'วันทำงานปกติ', cls: '' };
+}
+
+function toggleScanCalendarDate(dateStr) {
+  if (!currentScanResult) return;
+
+  const d = new Date(dateStr);
+  const dow = d.getDay();
+  const cal = currentScanResult;
+
+  if (!cal.nationalHolidays) cal.nationalHolidays = [];
+  if (!cal.memorialHolidays) cal.memorialHolidays = [];
+  if (!cal.orbrayWorkDays) cal.orbrayWorkDays = [];
+  if (!cal.workingSaturdays) cal.workingSaturdays = [];
+
+  if (dow === 6) {
+    // เสาร์: สลับระหว่าง เสาร์ทำงาน <-> เสาร์หยุด
+    const idx = cal.workingSaturdays.indexOf(dateStr);
+    if (idx >= 0) {
+      cal.workingSaturdays.splice(idx, 1);
+    } else {
+      cal.workingSaturdays.push(dateStr);
+      cal.workingSaturdays.sort();
+    }
+  } else if (dow === 0) {
+    // อาทิตย์: สลับระหว่าง วันอาทิตย์หยุด <-> วันทำงานพิเศษ
+    const idx = cal.orbrayWorkDays.indexOf(dateStr);
+    if (idx >= 0) {
+      cal.orbrayWorkDays.splice(idx, 1);
+    } else {
+      cal.orbrayWorkDays.push(dateStr);
+      cal.orbrayWorkDays.sort();
+    }
+  } else {
+    // วันธรรมดา (จันทร์ - ศุกร์): วนลูป สถานะ
+    // 1. วันทำงานปกติ -> 2. วันหยุดนักขัตฤกษ์ -> 3. วันหยุดประเพณี -> 4. วันทำงานพิเศษ -> วนกลับ
+    if (cal.nationalHolidays.includes(dateStr)) {
+      cal.nationalHolidays = cal.nationalHolidays.filter(s => s !== dateStr);
+      cal.memorialHolidays.push(dateStr);
+    } else if (cal.memorialHolidays.includes(dateStr)) {
+      cal.memorialHolidays = cal.memorialHolidays.filter(s => s !== dateStr);
+      cal.orbrayWorkDays.push(dateStr);
+    } else if (cal.orbrayWorkDays.includes(dateStr)) {
+      cal.orbrayWorkDays = cal.orbrayWorkDays.filter(s => s !== dateStr);
+    } else {
+      cal.nationalHolidays.push(dateStr);
+    }
+  }
+
+  // อัปเดต badge และ title ของวันที่ถูกกด
+  const badge = document.getElementById(`scanDay_${dateStr}`);
+  const newStatus = getScanDateStatus(dateStr, cal);
+  if (badge) {
+    badge.className = `scan-mini-day-badge ${newStatus.cls}`;
+    badge.title = `${dateStr} - ${newStatus.name} (คลิกเพื่อเปลี่ยนสถานะ)`;
+  }
+
+  // อัปเดต KPI Summary Pills
+  const natCount = cal.nationalHolidays.length;
+  const memCount = cal.memorialHolidays.length;
+  const specCount = cal.orbrayWorkDays.length;
+  const workSatCount = cal.workingSaturdays.length;
+  const totalSats = getTotalSaturdaysInYear(cal.yearCE);
+  const satOffCount = Math.max(0, totalSats - workSatCount);
+
+  setElText('resCountNat', natCount.toString());
+  setElText('resCountMem', memCount.toString());
+  setElText('resCountSpec', specCount.toString());
+  setElText('resCountWorkSat', workSatCount.toString());
+  setElText('resCountSatOff', satOffCount.toString());
+}
+
+function applyAnalyzedCalendarToCompany() {
+  if (!currentScanResult) {
+    alert('ยังไม่มีข้อมูลปฏิทินที่ผ่านการวิเคราะห์ กรุณากดปุ่มวิเคราะห์ภาพก่อน');
+    return;
+  }
+
+  const radioNew = document.getElementById('scanRadioNew');
+  const isNew = radioNew && radioNew.checked;
+  const yearCE = currentScanResult.yearCE;
+  const yearBE = currentScanResult.yearBE;
+
+  if (isNew) {
+    const nameInp = document.getElementById('scanInpNewCompName');
+    const codeInp = document.getElementById('scanInpNewCompCode');
+    const name = nameInp ? nameInp.value.trim() : '';
+
+    if (!name) {
+      alert('กรุณาระบุชื่อบริษัทใหม่ที่ต้องการสร้าง');
+      if (nameInp) nameInp.focus();
+      return;
+    }
+
+    // ตรวจสอบชื่อซ้ำ
+    const existing = Object.values(allCompanies).find(c => c.name.toLowerCase() === name.toLowerCase());
+    if (existing) {
+      alert(`มีบริษัทชื่อ "${name}" อยู่ในระบบแล้ว กรุณาใช้ชื่ออื่น หรือเลือกบันทึกลงบริษัทเดิม`);
+      if (nameInp) nameInp.focus();
+      return;
+    }
+
+    const newId = 'comp_' + Date.now();
+    const code = (codeInp && codeInp.value.trim()) ? codeInp.value.trim().toUpperCase() : name.substring(0, 6).toUpperCase();
+
+    allCompanies[newId] = {
+      id: newId,
+      name: name.toUpperCase(),
+      code,
+      description: `สร้างจากการวิเคราะห์รูปภาพปฏิทิน (${new Date().toLocaleDateString('th-TH')})`,
+      isDefault: false,
+      createdAt: new Date().toISOString().split('T')[0],
+      calendars: {
+        [yearCE.toString()]: currentScanResult
+      }
+    };
+
+    saveCompaniesToStorage();
+    closeCalendarScanModal();
+    switchActiveCompany(newId);
+
+    showSuccessPopup(
+      'สร้างบริษัทและจัดวันสำเร็จ',
+      `ระบบได้สร้างบริษัท "${name}" พร้อมจัดวันทำงานและวันหยุดปี พ.ศ. ${yearBE} (${yearCE}) จากภาพถ่ายปฏิทิน และสลับมาแสดงผลให้ท่านเรียบร้อยแล้ว`
+    );
+  } else {
+    // บันทึกลงบริษัทปัจจุบัน
+    const comp = allCompanies[activeCompanyId] || allCompanies['orbray'];
+    if (!comp.calendars) comp.calendars = {};
+    comp.calendars[yearCE.toString()] = currentScanResult;
+
+    allCalendars = comp.calendars;
+    activeYearCE = yearCE;
+
+    saveCalendarsToStorage();
+    closeCalendarScanModal();
+
+    renderCompanyDropdown();
+    updateYearSelectDropdown();
+    refreshPeriodSelector();
+    renderOrbrayCalendarGrid();
+    recalculateAttendanceTotals();
+    recalculateSalary();
+
+    showSuccessPopup(
+      'จัดวันปฏิทินสำเร็จ',
+      `บันทึกข้อมูลปฏิทินวันทำงานปี พ.ศ. ${yearBE} (${yearCE}) ให้กับบริษัท "${comp.name}" เรียบร้อยแล้ว ระบบนำวันทำงาน วันหยุด และเสาร์ทำงานไปใช้อัตโนมัติทันที`
+    );
+  }
+}
+
+// ==========================================================================
 // 12. การสลับแท็บและพิมพ์สลิป (View Navigation & Printing)
 // ==========================================================================
 function toggleCalendarView() {
   const calSection = document.getElementById('view-calendar');
-  const btnToggle = document.getElementById('btnToggleCalendar');
   if (!calSection) return;
 
   if (calSection.style.display === 'none' || !calSection.style.display) {
-    calSection.style.display = 'block';
-    if (btnToggle) btnToggle.innerText = '✖ ปิดปฏิทินวันทำงาน';
-    calSection.scrollIntoView({ behavior: 'smooth' });
+    switchView('calendar');
   } else {
-    calSection.style.display = 'none';
-    if (btnToggle) btnToggle.innerText = '📅 ปฏิทินวันทำงาน';
+    switchView(currentActiveView || 'main');
   }
 }
 
@@ -1396,6 +2736,10 @@ function switchView(viewName) {
   const navBtnAtt = document.getElementById('navBtnAttendance');
   const navBtnCal = document.getElementById('navBtnCalendar');
 
+  const mobTabMain = document.getElementById('mobileTabMain');
+  const mobTabAtt = document.getElementById('mobileTabAttendance');
+  const mobTabCal = document.getElementById('mobileTabCalendar');
+
   // Track the primary view
   if (viewName === 'attendance' || viewName === 'timesheet') {
     currentActiveView = 'attendance';
@@ -1408,25 +2752,23 @@ function switchView(viewName) {
   if (attView) attView.style.display = 'none';
   if (calView) calView.style.display = 'none';
 
-  // Remove active class from nav buttons
-  [navBtnMain, navBtnAtt, navBtnCal].forEach(btn => {
+  // Remove active class from nav buttons and mobile tabs
+  [navBtnMain, navBtnAtt, navBtnCal, mobTabMain, mobTabAtt, mobTabCal].forEach(btn => {
     if (btn) btn.classList.remove('active');
   });
 
   if (viewName === 'main' || viewName === 'salary') {
     if (mainView) mainView.style.display = 'block';
     if (navBtnMain) navBtnMain.classList.add('active');
+    if (mobTabMain) mobTabMain.classList.add('active');
   } else if (viewName === 'attendance' || viewName === 'timesheet') {
     if (attView) attView.style.display = 'block';
     if (navBtnAtt) navBtnAtt.classList.add('active');
+    if (mobTabAtt) mobTabAtt.classList.add('active');
   } else if (viewName === 'calendar') {
-    if (currentActiveView === 'attendance') {
-      if (attView) attView.style.display = 'block';
-    } else {
-      if (mainView) mainView.style.display = 'block';
-    }
     if (calView) calView.style.display = 'block';
     if (navBtnCal) navBtnCal.classList.add('active');
+    if (mobTabCal) mobTabCal.classList.add('active');
   }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -2779,11 +4121,13 @@ window.addEventListener('DOMContentLoaded', () => {
   // ตรวจสอบว่ากำลังทำงานอยู่ภายใน Phone Simulator หรือไม่
   if (window.self !== window.top || window.location.search.includes('mode=mobile_sim')) {
     document.body.classList.add('is-in-simulator');
+    document.documentElement.classList.add('is-in-simulator');
     const simModal = document.getElementById('phoneSimulatorModal');
     if (simModal) simModal.remove();
   }
 
   loadStorageData();
+  renderCompanyDropdown();
   updateYearSelectDropdown();
   refreshPeriodSelector();
   renderOrbrayCalendarGrid();
