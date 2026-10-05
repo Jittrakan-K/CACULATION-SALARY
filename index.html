@@ -126,6 +126,9 @@
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           </span>
           <select id="payrollPeriodSelect" class="exec-period-select" onchange="onPayrollPeriodSelectChange()"></select>
+          <span class="exec-period-arrow-down">
+            <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
         </div>
         <button type="button" class="btn-period-arrow" onclick="navNextPeriod()" title="งวดถัดไป">
           <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -261,20 +264,18 @@
             <div>
               <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                 <h2 class="card-header-title" style="margin-bottom: 0;">สรุปรายการเงินได้และเงินหักประจำรอบ</h2>
-                <span class="card-paydate-badge" id="cardPeriodBadge">งวด: -</span>
-                <span class="card-paydate-badge" id="cardPeriodConfigStatusBadge">ค่ามาตรฐาน</span>
+                <span class="card-paydate-badge" id="cardPeriodBadge" style="letter-spacing: 0.5px;">-</span>
+                <span id="cardPeriodConfigStatusBadge" style="display: none !important;"></span>
               </div>
               <p class="subtitle text-muted small" id="cardPeriodSubtitle" style="margin-top: 4px;">คำนวณจากยอดลงเวลาตามสูตรโครงสร้างเงินได้</p>
             </div>
             <div class="card-header-actions">
               <button type="button" class="btn btn-sm btn-outline-secondary" onclick="openSettingsSalaryModal()" title="แก้ไขค่าเงินเดือน เบี้ยเลี้ยง และอัตรา OT เฉพาะงวดนี้">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
-                <span>ปรับโครงสร้างค่าเงิน</span>
+                <span class="btn-lbl-long">ปรับโครงสร้างค่าเงิน</span>
+                <span class="btn-lbl-short">โครงสร้าง</span>
               </button>
-              <div class="card-paydate-badge">
-                <span>วันที่จ่าย: </span>
-                <strong id="cardPayDateDisplay">-</strong>
-              </div>
+              <span id="cardPayDateDisplay" style="display: none !important;"></span>
             </div>
           </div>
           <div class="card-body">
@@ -429,6 +430,87 @@
               <span>งวดถัดไป</span>
               <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
+          </div>
+        </div>
+
+        <!-- Insight Panel: 2D Visual Summary Tiles (fills space below breakdown) -->
+        <div class="insight-grid">
+          <!-- Tile 1: Income composition stacked bar -->
+          <div class="insight-tile">
+            <div class="insight-head">
+              <span class="insight-icon">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+              </span>
+              <span class="insight-title">สัดส่วนรายได้</span>
+            </div>
+            <div class="mix-bar">
+              <span class="mix-seg seg-regular" id="mixSegRegular" style="width:0%"></span>
+              <span class="mix-seg seg-ot" id="mixSegOT" style="width:0%"></span>
+              <span class="mix-seg seg-deduct" id="mixSegDeduct" style="width:0%"></span>
+            </div>
+            <div class="mix-legend">
+              <span><i class="dot seg-regular"></i>ประจำ <b id="mixPctRegular">0%</b></span>
+              <span><i class="dot seg-ot"></i>OT <b id="mixPctOT">0%</b></span>
+              <span><i class="dot seg-deduct"></i>หัก <b id="mixPctDeduct">0%</b></span>
+            </div>
+          </div>
+
+          <!-- Tile 2: Attendance progress ring -->
+          <div class="insight-tile insight-tile-row">
+            <svg class="att-ring" viewBox="0 0 44 44" width="58" height="58">
+              <circle cx="22" cy="22" r="18" class="ring-bg"/>
+              <circle cx="22" cy="22" r="18" class="ring-fg" id="attRingFg" stroke-dasharray="113.1" stroke-dashoffset="113.1"/>
+              <text x="22" y="25" text-anchor="middle" class="ring-text" id="attRingPct">0%</text>
+            </svg>
+            <div class="insight-body">
+              <div class="insight-head">
+                <span class="insight-icon">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><polyline points="9 15 11 17 15 13"/></svg>
+                </span>
+                <span class="insight-title">การมาทำงาน</span>
+              </div>
+              <div class="insight-big"><span id="insCameDays">0</span><small> / <span id="insTargetDays">0</span> วัน</small></div>
+              <div class="insight-sub" id="insAttStatus">-</div>
+            </div>
+          </div>
+
+          <!-- Tile 3: Rates -->
+          <div class="insight-tile">
+            <div class="insight-head">
+              <span class="insight-icon">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </span>
+              <span class="insight-title">อัตราค่าจ้าง</span>
+            </div>
+            <div class="rate-list">
+              <div class="rate-item"><span>ค่าแรง / วัน</span><b id="insDailyRate">0.00</b></div>
+              <div class="rate-item"><span>ค่าแรง / ชม.</span><b id="insHourlyRate">0.00</b></div>
+              <div class="rate-item"><span>OT 1.5 / ชม.</span><b id="insOT15Rate">0.00</b></div>
+            </div>
+          </div>
+
+          <!-- Tile 4: Quick actions -->
+          <div class="insight-tile">
+            <div class="insight-head">
+              <span class="insight-icon">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </span>
+              <span class="insight-title">ทางลัด</span>
+            </div>
+            <div class="quick-actions">
+              <button type="button" class="qa-btn" onclick="prepareAndPrint()" title="พิมพ์สลิปเงินเดือน">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                <span>พิมพ์สลิป</span>
+              </button>
+              <button type="button" class="qa-btn" onclick="openSettingsSalaryModal()" title="ตั้งค่าเงินเดือน">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+                <span>ตั้งค่าเงิน</span>
+              </button>
+              <button type="button" class="qa-btn" onclick="openCalendarScanModal()" title="สแกนรูปปฏิทินบริษัท">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <span>สแกนปฏิทิน</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -901,13 +983,94 @@
     </div>
   </div>
 
+  <!-- MODAL: USER PROFILE & QUICK ACTIONS POPUP (MOBILE & DESKTOP) -->
+  <div class="modal-backdrop user-profile-modal-backdrop" id="userProfileModal" style="display: none; z-index: 1055;" onclick="handleUserProfileBackdropClick(event)">
+    <div class="modal-dialog modal-dialog-sm user-profile-modal-dialog" onclick="event.stopPropagation()">
+      <div class="modal-header user-profile-modal-header">
+        <div class="user-profile-header-left">
+          <div class="user-modal-avatar" id="userModalAvatar">J</div>
+          <div class="user-modal-details">
+            <div class="user-modal-name" id="userModalName">JITTRAKAN K.</div>
+            <div class="user-modal-role-row">
+              <span class="user-modal-role-pill role-admin" id="userModalRoleBadge">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                <span>ผู้ดูแลระบบ (ADMIN)</span>
+              </span>
+              <span class="user-modal-code" id="userModalCode">ID: 20523</span>
+            </div>
+          </div>
+        </div>
+        <button type="button" class="modal-close" onclick="closeUserProfileModal()" aria-label="ปิด">&times;</button>
+      </div>
+
+      <div class="modal-body user-profile-modal-body">
+        <!-- Admin Switch User Card (Only shown for Admin) -->
+        <div class="user-modal-card" id="userModalAdminSection" style="display: none;">
+          <label class="user-modal-card-label" for="userModalSwitchSelect">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>สลับดูข้อมูลพนักงาน (SWITCH USER):</span>
+          </label>
+          <select id="userModalSwitchSelect" class="form-control user-modal-select" onchange="handleModalUserSwitch(this.value)">
+            <!-- Options populated dynamically -->
+          </select>
+        </div>
+
+        <!-- Quick Action Buttons List -->
+        <div class="user-modal-actions-list">
+          <button type="button" class="user-modal-action-btn" onclick="closeUserProfileModal(); openAccountModal();">
+            <div class="user-modal-action-icon">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div class="user-modal-action-text">
+              <div class="user-modal-action-title">ข้อมูลบัญชีของฉัน (MY ACCOUNT)</div>
+              <div class="user-modal-action-desc">ดูและแก้ไขข้อมูลโปรไฟล์ รหัสพนักงาน รหัส PIN</div>
+            </div>
+            <span class="user-modal-arrow">›</span>
+          </button>
+
+          <button type="button" class="user-modal-action-btn" id="userModalManageUsersBtn" onclick="closeUserProfileModal(); openManageUsersModal();">
+            <div class="user-modal-action-icon">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="user-modal-action-text">
+              <div class="user-modal-action-title">จัดการผู้ใช้ทั้งหมด (MANAGE USERS)</div>
+              <div class="user-modal-action-desc">เพิ่ม ลบ หรือแก้ไขข้อมูลและ PIN พนักงาน</div>
+            </div>
+            <span class="user-modal-arrow">›</span>
+          </button>
+
+          <button type="button" class="user-modal-action-btn" onclick="closeUserProfileModal(); openFirebaseConfigModal();">
+            <div class="user-modal-action-icon">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+            </div>
+            <div class="user-modal-action-text">
+              <div class="user-modal-action-title">
+                <span>เซิร์ฟเวอร์ FIREBASE</span>
+                <span class="user-modal-status-pill status-online" id="userModalFbStatus">ONLINE</span>
+              </div>
+              <div class="user-modal-action-desc">ตรวจสอบการเชื่อมต่อและซิงค์ฐานข้อมูล Cloud</div>
+            </div>
+            <span class="user-modal-arrow">›</span>
+          </button>
+        </div>
+
+        <div class="user-modal-footer-sep"></div>
+
+        <button type="button" class="user-modal-logout-btn" onclick="closeUserProfileModal(); handleLogout();">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span>ออกจากระบบ (LOGOUT)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: MY ACCOUNT PROFILE -->
   <div class="modal-backdrop" id="accountModal" style="display:none;">
     <div class="modal-dialog">
       <div class="modal-header">
-        <div>
-          <h3 style="margin:0;">จัดการข้อมูลบัญชีของฉัน (MY ACCOUNT)</h3>
-          <p class="subtitle text-muted small" style="margin:2px 0 0 0;">ดูและแก้ไขข้อมูลโปรไฟล์ สังกัด รหัสพนักงาน และรหัส PIN</p>
+        <div style="min-width: 0; flex: 1;">
+          <h3 style="margin:0; font-size: 0.95rem; font-weight: 800; line-height: 1.25;">ข้อมูลบัญชีของฉัน (MY ACCOUNT)</h3>
+          <p class="subtitle text-muted small" style="margin:2px 0 0 0; line-height: 1.25;">ดูและแก้ไขข้อมูลโปรไฟล์ รหัสพนักงาน รหัส PIN</p>
         </div>
         <button type="button" class="modal-close" onclick="closeAccountModal()">&times;</button>
       </div>
@@ -962,8 +1125,8 @@
             </div>
           </div>
 
-          <div class="modal-footer modal-footer-custom" style="padding: 14px 0 0 0; margin-top: 18px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 10px;">
-            <button type="button" class="btn btn-secondary" onclick="closeAccountModal()">ปิด / ยกเลิก</button>
+          <div class="modal-footer modal-footer-custom" style="padding: 14px 0 0 0; margin-top: 18px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+            <button type="button" class="btn btn-secondary" onclick="goBackToUserProfileModal()">← ย้อนกลับ</button>
             <button type="submit" class="btn btn-primary" id="btnSubmitAccountProfile" onclick="handleSaveAccountProfile(event)">
               บันทึกข้อมูลบัญชี
             </button>
@@ -977,9 +1140,9 @@
   <div class="modal-backdrop" id="manageUsersModal" style="display:none;">
     <div class="modal-dialog modal-dialog-lg">
       <div class="modal-header">
-        <div>
-          <h3>จัดการรายชื่อพนักงานและรหัส PIN (MANAGE USERS)</h3>
-          <p class="subtitle text-muted small" style="margin:2px 0 0 0;">เฉพาะผู้ดูแลระบบ (ADMIN) จัดการสิทธิ์ เพิ่ม หรือเปลี่ยนรหัส PIN ของพนักงาน</p>
+        <div style="min-width: 0; flex: 1;">
+          <h3 style="margin:0; font-size: 0.95rem; font-weight: 800; line-height: 1.25;">จัดการผู้ใช้ทั้งหมด (MANAGE USERS)</h3>
+          <p class="subtitle text-muted small" style="margin:2px 0 0 0; line-height: 1.25;">เพิ่ม ลบ หรือแก้ไขข้อมูลและ PIN พนักงาน</p>
         </div>
         <button type="button" class="modal-close" onclick="closeManageUsersModal()">&times;</button>
       </div>
@@ -1018,20 +1181,21 @@
           </form>
         </div>
 
-        <!-- System Users Table -->
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-          <h4 style="color:var(--text-primary); font-size:0.95rem; margin:0;">
-            รายชื่อผู้ใช้ทั้งหมดในระบบ (SYSTEM USERS)
-          </h4>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <button type="button" class="btn btn-outline-danger btn-xs" onclick="confirmClearAllStaffUsers()" title="ลบรายชื่อพนักงานทั้งหมด เหลือเฉพาะบัญชี ADMIN">
-              ลบพนักงานทั้งหมด
-            </button>
-            <span class="text-muted small">คลิกปุ่มเพื่อแก้ไขหรือลบพนักงาน</span>
+        <!-- System Users List Section -->
+        <div class="user-mgmt-section-header">
+          <div>
+            <h4 style="color:var(--text-primary); font-size:0.92rem; font-weight:800; margin:0;">
+              รายชื่อผู้ใช้ทั้งหมดในระบบ (SYSTEM USERS)
+            </h4>
+            <span class="text-muted small" style="font-size:0.72rem;">คลิกปุ่มเพื่อแก้ไขหรือลบพนักงาน</span>
           </div>
+          <button type="button" class="btn btn-outline-danger btn-xs" onclick="confirmClearAllStaffUsers()" title="ลบรายชื่อพนักงานทั้งหมด เหลือเฉพาะบัญชี ADMIN">
+            ลบพนักงานทั้งหมด
+          </button>
         </div>
 
-        <div class="user-table-wrapper">
+        <!-- Desktop Table View (Hidden on mobile) -->
+        <div class="user-table-wrapper desktop-only-table">
           <table class="users-table-modern">
             <thead>
               <tr>
@@ -1048,9 +1212,15 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Mobile Cards View (Visible only on mobile <= 768px and in simulator) -->
+        <div id="manageUsersCardsMobile" class="user-cards-mobile-container mobile-only-cards">
+          <!-- Rendered dynamically -->
+        </div>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" onclick="closeManageUsersModal()">ปิดหน้าต่าง</button>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+        <button type="button" class="btn btn-secondary" onclick="goBackToUserProfileModal()">← ย้อนกลับ</button>
+        <button type="button" class="btn btn-outline-secondary" onclick="closeManageUsersModal()">ปิดหน้าต่าง</button>
       </div>
     </div>
   </div>
@@ -1100,9 +1270,10 @@
   <div class="modal-backdrop" id="firebaseConfigModal" style="display:none; z-index: 1070;">
     <div class="modal-dialog fb-config-dialog" style="max-width: 620px;">
       <div class="modal-header">
-        <h3 style="display: flex; align-items: center; gap: 8px;">
-          <span>ตั้งค่าเซิร์ฟเวอร์ FIREBASE (CLOUD DATABASE)</span>
-        </h3>
+        <div style="min-width: 0; flex: 1;">
+          <h3 style="margin:0; font-size: 0.95rem; font-weight: 800; line-height: 1.25;">เซิร์ฟเวอร์ FIREBASE</h3>
+          <p class="subtitle text-muted small" style="margin:2px 0 0 0; line-height: 1.25;">ตรวจสอบการเชื่อมต่อและซิงค์ฐานข้อมูล CLOUD</p>
+        </div>
         <button type="button" class="modal-close" onclick="closeFirebaseConfigModal()">&times;</button>
       </div>
       <div class="modal-body" style="max-height: 80vh; overflow-y: auto;">
@@ -1173,8 +1344,8 @@
         </div>
       </div>
 
-      <div class="modal-footer modal-footer-between">
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <div class="modal-footer modal-footer-between fb-modal-footer">
+        <div class="fb-footer-left">
           <button type="button" class="btn btn-outline-info" id="btnTestFbConn" onclick="testFirebaseConfigFromModal()" title="ทดสอบการเชื่อมต่อกับเซิร์ฟเวอร์ FIREBASE">
             ทดสอบการเชื่อมต่อ
           </button>
@@ -1182,8 +1353,8 @@
             คืนค่าเริ่มต้น (โหมด LOCAL)
           </button>
         </div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button type="button" class="btn btn-secondary" onclick="closeFirebaseConfigModal()">ปิด</button>
+        <div class="fb-footer-right">
+          <button type="button" class="btn btn-secondary" onclick="goBackToUserProfileModal()">← ย้อนกลับ</button>
           <button type="button" class="btn btn-primary" id="btnSaveFbConfig" onclick="saveFirebaseConfigFromModal()">
             บันทึกและเชื่อมต่อเซิร์ฟเวอร์
           </button>
@@ -1752,7 +1923,7 @@
 
   <footer class="app-footer no-print">
     <div class="container text-center">
-      <p>ระบบคิดเงินเดือน & บันทึกเวลาเข้า-ออกงาน (21–20) • CACULATION SALARY BY JITTRAKAN K.</p>
+      <p>CACULATION SALARY BY JITTRAKAN K.</p>
     </div>
   </footer>
 

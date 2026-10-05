@@ -421,7 +421,7 @@ function generatePayrollPeriodsForYear(yearCE) {
 
     const lastDay = getLastDayOfMonth(yearCE, m);
     const payDate = `${formatDay2Digit(lastDay)}/${formatDay2Digit(monthNum)}/${yearBE}`;
-    const displayName = `${endMonthNameEN} ${yearCE} (เงินจ่ายสิ้นเดือน)`;
+    const displayName = `${endMonthNameEN} ${yearCE} (${endMonthName})`;
 
     periods.push({
       id: periodId,
@@ -962,6 +962,36 @@ function recalculateSalary() {
   setElText('calcSumDeduct', totalDeductions > 0 ? `-${formatCurrency(totalDeductions)}` : '0.00');
   setElText('calcGrandNetPay', formatCurrency(netPay));
   setElText('calcNetPayRow', formatCurrency(netPay));
+
+  // อัปเดต Insight Panel (สัดส่วนรายได้ / วงแหวนการมาทำงาน / อัตราค่าจ้าง)
+  const regularIncome = E2_actualSalary + J2_foodAllowance + L2_travelAllowance + M2_diligenceAllowance;
+  const otIncome = K2_otMealAllowance + N2_ot15Amount + O2_ot1Amount + P2_ot3Amount;
+  const mixTotal = regularIncome + otIncome + totalDeductions;
+  const pct = (v) => mixTotal > 0 ? (v / mixTotal * 100) : 0;
+  const pReg = pct(regularIncome), pOT = pct(otIncome), pDed = pct(totalDeductions);
+  const segReg = document.getElementById('mixSegRegular');
+  const segOT = document.getElementById('mixSegOT');
+  const segDed = document.getElementById('mixSegDeduct');
+  if (segReg) segReg.style.width = `${pReg}%`;
+  if (segOT) segOT.style.width = `${pOT}%`;
+  if (segDed) segDed.style.width = `${pDed}%`;
+  setElText('mixPctRegular', `${Math.round(pReg)}%`);
+  setElText('mixPctOT', `${Math.round(pOT)}%`);
+  setElText('mixPctDeduct', `${Math.round(pDed)}%`);
+
+  const attRatio = B2_targetDays > 0 ? Math.min(1, D2_cameDays / B2_targetDays) : 0;
+  const ringFg = document.getElementById('attRingFg');
+  if (ringFg) ringFg.setAttribute('stroke-dashoffset', (113.1 * (1 - attRatio)).toFixed(1));
+  const ringTxt = document.getElementById('attRingPct');
+  if (ringTxt) ringTxt.textContent = `${Math.round(attRatio * 100)}%`;
+  setElText('insCameDays', D2_cameDays);
+  setElText('insTargetDays', B2_targetDays);
+  const missingDays = Math.max(0, B2_targetDays - D2_cameDays);
+  setElText('insAttStatus', missingDays === 0 && B2_targetDays > 0 ? 'ครบวันทำงาน • ได้เบี้ยขยัน' : `ขาดอีก ${missingDays} วัน`);
+
+  setElText('insDailyRate', formatCurrency(C2_dailyRate));
+  setElText('insHourlyRate', formatCurrency(baseHourlyRate));
+  setElText('insOT15Rate', formatCurrency(baseHourlyRate * ot15Multiplier));
   setElText('cardPayDateDisplay', salaryProfile.payDate || '-');
 
   // Sync with Grand Net Formula Strip
@@ -1027,24 +1057,12 @@ function updateCardPeriodBadge() {
   if (!currentPeriod) return;
 
   if (badgeEl) {
-    badgeEl.innerText = `งวด: ${currentPeriod.endMonthName} ${currentPeriod.yearBE}`;
+    badgeEl.innerText = (currentPeriod.endMonthNameEN || '').toUpperCase();
   }
 
   const hasOverride = Boolean(periodSalaryConfigs && periodSalaryConfigs[currentPeriod.id]);
   if (statusEl) {
-    if (hasOverride) {
-      statusEl.innerText = '✏️ ค่าเงินเฉพาะงวดนี้';
-      statusEl.title = `งวดนี้มีการกำหนดค่าเงินเดือนหรือเบี้ยเลี้ยงแยกเฉพาะงวด ${currentPeriod.displayName}`;
-      statusEl.style.background = '#eff6ff';
-      statusEl.style.color = '#1d4ed8';
-      statusEl.style.borderColor = '#bfdbfe';
-    } else {
-      statusEl.innerText = '🌐 ค่ามาตรฐาน';
-      statusEl.title = 'งวดนี้ใช้ค่าเงินเดือนและเบี้ยเลี้ยงตามโครงสร้างมาตรฐาน';
-      statusEl.style.background = '#f8fafc';
-      statusEl.style.color = '#475569';
-      statusEl.style.borderColor = '#cbd5e1';
-    }
+    statusEl.style.display = 'none';
   }
 
   if (subtitleEl) {
@@ -1173,7 +1191,7 @@ function updateYearSelectDropdown() {
     const opt = document.createElement('option');
     opt.value = y;
     const cal = allCalendars[y];
-    opt.innerText = `พ.ศ. ${cal.yearBE} (${cal.yearCE})`;
+    opt.innerText = `ค.ศ. ${cal.yearCE} (${cal.yearBE})`;
     if (y === activeYearCE) opt.selected = true;
     select.appendChild(opt);
   });
@@ -1499,7 +1517,7 @@ function renderCompanyDropdown() {
     Object.values(allCompanies).forEach(comp => {
       const opt = document.createElement('option');
       opt.value = comp.id;
-      opt.innerText = `${comp.name.toUpperCase()}  ${activeYearBE} / ${activeYearCE}`;
+      opt.innerText = `${comp.name.toUpperCase()} ${activeYearCE}`;
       if (comp.id === activeCompanyId) {
         opt.selected = true;
       }
@@ -1509,19 +1527,19 @@ function renderCompanyDropdown() {
     // เส้นคั่น
     const sep = document.createElement('option');
     sep.disabled = true;
-    sep.innerText = '────────────────────────';
+    sep.innerText = '──────────';
     sel.appendChild(sep);
 
     // เมนูเพิ่มบริษัทใหม่
     const optAdd = document.createElement('option');
     optAdd.value = '__ADD_COMPANY__';
-    optAdd.innerText = '➕ เพิ่มบริษัทใหม่ (กำหนดข้อมูลวันที่)...';
+    optAdd.innerText = '➕ เพิ่มบริษัทใหม่...';
     sel.appendChild(optAdd);
 
     // เมนูจัดการรายชื่อบริษัท
     const optManage = document.createElement('option');
     optManage.value = '__MANAGE_COMPANIES__';
-    optManage.innerText = '⚙️ จัดการรายชื่อบริษัท & ข้อมูลวันที่...';
+    optManage.innerText = '⚙️ จัดการบริษัท...';
     sel.appendChild(optManage);
   });
 
@@ -3150,9 +3168,11 @@ function switchEditingUser(targetUserId) {
   recalculateSalary();
   updateAdminScopeBanner();
 
-  // อัปเดต Dropdown ใน Navbar ให้ตรงกัน
+  // อัปเดต Dropdown ใน Navbar และ Modal ให้ตรงกัน
   const navSelect = document.getElementById('adminUserNavSelect');
   if (navSelect) navSelect.value = targetUserId;
+  const modalSelect = document.getElementById('userModalSwitchSelect');
+  if (modalSelect) modalSelect.value = targetUserId;
   updateNavbarAuthUI(currentUser);
 
   showToastNotification(`สลับไปยังข้อมูลของ: ${targetUser.name}`);
@@ -3192,24 +3212,142 @@ function updateAdminScopeBanner() {
 }
 
 /**
- * เปิด/ปิด Dropdown เมนูข้อมูลผู้ใช้เมื่อกดที่ชื่อ
+ * เปิดหน้าต่างป๊อปอัพข้อมูลผู้ใช้และเมนูลัด (User Profile Modal)
  */
-function toggleUserMenu(event) {
-  if (event) event.stopPropagation();
-  const dropdown = document.getElementById('userProfileDropdown');
-  if (!dropdown) return;
-  dropdown.style.display = (dropdown.style.display === 'none' || !dropdown.style.display) ? 'block' : 'none';
+function openUserProfileModal(event) {
+  if (event) {
+    if (typeof event.stopPropagation === 'function') event.stopPropagation();
+    if (typeof event.preventDefault === 'function') event.preventDefault();
+  }
+
+  // หากยังไม่ได้ล็อกอิน ให้เปิดหน้าต่าง Login แทน
+  if (!currentUser) {
+    if (typeof openAuthModal === 'function') openAuthModal();
+    return;
+  }
+
+  const modal = document.getElementById('userProfileModal');
+  if (!modal) return;
+
+  const activeUserId = (typeof getActiveEditingUserId === 'function') ? getActiveEditingUserId() : currentUser.id;
+  const activeUser = (typeof getActiveEditingUser === 'function') ? (getActiveEditingUser() || currentUser) : currentUser;
+
+  // 1. Avatar
+  const avatarEl = document.getElementById('userModalAvatar');
+  if (avatarEl) {
+    avatarEl.innerText = (currentUser.name || 'U').charAt(0).toUpperCase();
+  }
+
+  // 2. Name & Role
+  const nameEl = document.getElementById('userModalName');
+  if (nameEl) {
+    nameEl.innerText = (currentUser.name || 'USER').toUpperCase();
+  }
+
+  const roleBadgeEl = document.getElementById('userModalRoleBadge');
+  if (roleBadgeEl) {
+    if (currentUser.role === 'admin') {
+      roleBadgeEl.className = 'user-modal-role-pill role-admin';
+      roleBadgeEl.innerHTML = `
+        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+        <span>ผู้ดูแลระบบ (ADMIN)</span>
+      `;
+    } else {
+      roleBadgeEl.className = 'user-modal-role-pill role-user';
+      roleBadgeEl.innerHTML = `
+        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 8 0v2"/></svg>
+        <span>พนักงานทั่วไป (USER)</span>
+      `;
+    }
+  }
+
+  const codeEl = document.getElementById('userModalCode');
+  if (codeEl) {
+    codeEl.innerText = currentUser.empCode ? `รหัส: ${currentUser.empCode}` : `ID: ${currentUser.id ? currentUser.id.replace('user_', '') : '20523'}`;
+  }
+
+  // 3. Admin Switch Section & Manage Users button
+  const adminSec = document.getElementById('userModalAdminSection');
+  const manageUsersBtn = document.getElementById('userModalManageUsersBtn');
+  const switchSelect = document.getElementById('userModalSwitchSelect');
+
+  if (currentUser.role === 'admin') {
+    if (adminSec) adminSec.style.display = 'block';
+    if (manageUsersBtn) manageUsersBtn.style.display = 'flex';
+    
+    if (switchSelect && typeof getAllSystemUsers === 'function') {
+      const allUsers = getAllSystemUsers();
+      switchSelect.innerHTML = allUsers.map(u => {
+        const isSel = (u.id === activeUserId) ? 'selected' : '';
+        const meLabel = (u.id === currentUser.id) ? ' (ฉันเอง)' : '';
+        return `<option value="${u.id}" ${isSel}>${escapeHtml(u.name.toUpperCase())}${meLabel}</option>`;
+      }).join('');
+    }
+  } else {
+    if (adminSec) adminSec.style.display = 'none';
+    if (manageUsersBtn) manageUsersBtn.style.display = 'none';
+  }
+
+  // 4. Firebase Cloud Status
+  const fbStatusEl = document.getElementById('userModalFbStatus');
+  if (fbStatusEl) {
+    const isOnline = (typeof isFirebaseOnline !== 'undefined') ? Boolean(isFirebaseOnline) : false;
+    if (isOnline) {
+      fbStatusEl.className = 'user-modal-status-pill status-online';
+      fbStatusEl.innerText = 'ONLINE';
+    } else {
+      fbStatusEl.className = 'user-modal-status-pill status-offline';
+      fbStatusEl.innerText = 'LOCAL';
+    }
+  }
+
+  modal.style.display = 'flex';
 }
 
 /**
- * ปิด Dropdown เมนูข้อมูลผู้ใช้
+ * ปิดหน้าต่างป๊อปอัพข้อมูลผู้ใช้
  */
-function closeUserMenu() {
-  const dropdown = document.getElementById('userProfileDropdown');
-  if (dropdown) dropdown.style.display = 'none';
+function closeUserProfileModal() {
+  const modal = document.getElementById('userProfileModal');
+  if (modal) modal.style.display = 'none';
 }
 
-// Global click listener to close user profile dropdown when clicking outside
+function handleUserProfileBackdropClick(event) {
+  if (event.target && (event.target.id === 'userProfileModal' || event.target.classList.contains('user-profile-modal-backdrop') || event.target.classList.contains('modal-backdrop'))) {
+    closeUserProfileModal();
+  }
+}
+
+function handleModalUserSwitch(targetUserId) {
+  closeUserProfileModal();
+  if (typeof switchEditingUser === 'function') {
+    switchEditingUser(targetUserId);
+  }
+}
+
+/**
+ * ย้อนกลับไปยังหน้าต่างเมนูโปรไฟล์ผู้ใช้ (Back Button Navigation)
+ */
+function goBackToUserProfileModal() {
+  if (typeof closeAccountModal === 'function') closeAccountModal();
+  if (typeof closeManageUsersModal === 'function') closeManageUsersModal();
+  if (typeof closeFirebaseConfigModal === 'function') closeFirebaseConfigModal();
+  if (typeof closeEditUserModal === 'function') closeEditUserModal();
+  openUserProfileModal();
+}
+
+/**
+ * ฟังก์ชันสำรองสำหรับโค้ดเดิม
+ */
+function toggleUserMenu(event) {
+  openUserProfileModal(event);
+}
+
+function closeUserMenu() {
+  closeUserProfileModal();
+}
+
+// Global click listener to close dropdown when clicking outside
 window.addEventListener('click', (e) => {
   const dropdown = document.getElementById('userProfileDropdown');
   const trigger = document.getElementById('userProfileTriggerBtn');
@@ -3296,53 +3434,11 @@ function updateNavbarAuthUI(user, isOnline) {
           ${fbPillHtml}
 
           <div class="user-menu-container">
-            <button type="button" class="btn-user-profile-trigger" id="userProfileTriggerBtn" onclick="toggleUserMenu(event)" title="คลิกเพื่อจัดการบัญชีและข้อมูลผู้ใช้">
-              <span class="user-role-badge">ADMIN</span>
-              <span class="user-name-text">${escapeHtml(activeUser.name.toUpperCase())}</span>
-              <span class="user-caret-icon">▾</span>
+            <button type="button" class="btn-user-profile-trigger" id="userProfileTriggerBtn" onclick="openUserProfileModal(event)" title="ผู้ดูแลระบบ: ${escapeHtml(activeUser.name)} (คลิกเพื่อเปิดโปรไฟล์)">
+              <span class="user-role-badge user-role-badge-icon" title="ผู้ดูแลระบบ (ADMIN)">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+              </span>
             </button>
-
-            <!-- Dropdown Popover เมื่อกดที่ชื่อ JITTRAKAN K. -->
-            <div class="user-dropdown-popover" id="userProfileDropdown" style="display: none;">
-              <div class="user-dropdown-header">
-                <div class="user-dropdown-avatar">${escapeHtml(user.name.charAt(0).toUpperCase())}</div>
-                <div class="user-dropdown-info">
-                  <div class="user-dropdown-name">${escapeHtml(user.name.toUpperCase())}</div>
-                  <div class="user-dropdown-role">ผู้ดูแลระบบ (ADMIN)</div>
-                </div>
-              </div>
-              <div class="user-dropdown-divider"></div>
-
-              <button type="button" class="user-dropdown-item" onclick="closeUserMenu(); openAccountModal();" title="ดูและจัดการข้อมูลบัญชีโปรไฟล์ของฉัน">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                <span>บัญชีของฉัน (MY ACCOUNT)</span>
-              </button>
-
-              <button type="button" class="user-dropdown-item" onclick="closeUserMenu(); openManageUsersModal();" title="จัดการรายชื่อและรหัส PIN พนักงาน">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <span>จัดการผู้ใช้ (MANAGE USERS)</span>
-              </button>
-
-              <button type="button" class="user-dropdown-item" onclick="closeUserMenu(); openFirebaseConfigModal();" title="เพิ่มและตั้งค่าเซิร์ฟเวอร์ Firebase Cloud Database">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
-                <span>เซิร์ฟเวอร์ FIREBASE</span>
-              </button>
-
-              <!-- สลับดูข้อมูลพนักงานสำหรับ Admin -->
-              <div class="user-dropdown-section">
-                <label class="user-dropdown-label">สลับดูข้อมูลพนักงาน (SWITCH USER):</label>
-                <select id="adminUserNavSelect" class="user-dropdown-select" onchange="switchEditingUser(this.value); closeUserMenu();">
-                  ${optionsHtml}
-                </select>
-              </div>
-
-              <div class="user-dropdown-divider"></div>
-
-              <button type="button" class="user-dropdown-item text-danger" onclick="closeUserMenu(); handleLogout();" title="ออกจากระบบ">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                <span>ออกจากระบบ (LOGOUT)</span>
-              </button>
-            </div>
           </div>
         </div>
       `;
@@ -3354,39 +3450,11 @@ function updateNavbarAuthUI(user, isOnline) {
           ${fbPillHtml}
 
           <div class="user-menu-container">
-            <button type="button" class="btn-user-profile-trigger" id="userProfileTriggerBtn" onclick="toggleUserMenu(event)" title="คลิกเพื่อจัดการบัญชี">
-              <span class="user-role-badge badge-user">USER</span>
-              <span class="user-name-text">${escapeHtml(user.name.toUpperCase())}</span>
-              <span class="user-caret-icon">▾</span>
+            <button type="button" class="btn-user-profile-trigger" id="userProfileTriggerBtn" onclick="openUserProfileModal(event)" title="พนักงาน: ${escapeHtml(user.name)} (คลิกเพื่อเปิดโปรไฟล์)">
+              <span class="user-role-badge badge-user user-role-badge-icon" title="พนักงาน (USER)">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </span>
             </button>
-
-            <div class="user-dropdown-popover" id="userProfileDropdown" style="display: none;">
-              <div class="user-dropdown-header">
-                <div class="user-dropdown-avatar">${escapeHtml(user.name.charAt(0).toUpperCase())}</div>
-                <div class="user-dropdown-info">
-                  <div class="user-dropdown-name">${escapeHtml(user.name.toUpperCase())}</div>
-                  <div class="user-dropdown-role">พนักงาน (USER)</div>
-                </div>
-              </div>
-              <div class="user-dropdown-divider"></div>
-
-              <button type="button" class="user-dropdown-item" onclick="closeUserMenu(); openAccountModal();">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                <span>บัญชีของฉัน (MY ACCOUNT)</span>
-              </button>
-
-              <button type="button" class="user-dropdown-item" onclick="closeUserMenu(); openFirebaseConfigModal();">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
-                <span>เซิร์ฟเวอร์ FIREBASE</span>
-              </button>
-
-              <div class="user-dropdown-divider"></div>
-
-              <button type="button" class="user-dropdown-item text-danger" onclick="closeUserMenu(); handleLogout();">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                <span>ออกจากระบบ (LOGOUT)</span>
-              </button>
-            </div>
           </div>
         </div>
       `;
@@ -3416,6 +3484,7 @@ function updateNavbarAuthUI(user, isOnline) {
  * ==========================================================================
  */
 function openAccountModal() {
+  closeUserProfileModal();
   const modal = document.getElementById('accountModal');
   if (!modal) return;
 
@@ -3565,6 +3634,7 @@ function openManageUsersModal() {
     openAuthModal();
     return;
   }
+  closeUserProfileModal();
   const modal = document.getElementById('manageUsersModal');
   if (!modal) return;
   renderManageUsersTable();
@@ -3578,39 +3648,98 @@ function closeManageUsersModal() {
 
 function renderManageUsersTable() {
   const tbody = document.getElementById('manageUsersTableBody');
-  if (!tbody) return;
+  const cardsContainer = document.getElementById('manageUsersCardsMobile');
+  if (!tbody && !cardsContainer) return;
 
   const users = getAllSystemUsers();
-  tbody.innerHTML = users.map(u => {
-    const isMasterAdmin = (u.id === 'user_admin');
-    const badge = isMasterAdmin 
-      ? '<span class="user-role-badge">ADMIN</span>' 
-      : '<span class="user-role-badge badge-user">USER</span>';
 
-    const actionHtml = isMasterAdmin 
-      ? '<span class="badge-pill-locked" title="MASTER ADMIN">MASTER</span>' 
-      : `
-        <div class="user-action-group">
-          <button type="button" class="btn btn-outline-primary btn-action-pill" onclick="openEditUserModal('${u.id}')" title="EDIT USER">
-            EDIT
-          </button>
-          <button type="button" class="btn btn-outline-danger btn-action-pill" onclick="confirmDeleteUser('${u.id}')" title="DELETE USER">
-            DELETE
-          </button>
+  // 1. Desktop Table HTML
+  if (tbody) {
+    tbody.innerHTML = users.map(u => {
+      const isMasterAdmin = (u.id === 'user_admin');
+      const badge = isMasterAdmin 
+        ? '<span class="user-role-badge">ADMIN</span>' 
+        : '<span class="user-role-badge badge-user">USER</span>';
+
+      const actionHtml = isMasterAdmin 
+        ? '<span class="badge-pill-locked" title="MASTER ADMIN">MASTER</span>' 
+        : `
+          <div class="user-action-group">
+            <button type="button" class="btn btn-outline-primary btn-action-pill" onclick="openEditUserModal('${u.id}')" title="EDIT USER">
+              EDIT
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-action-pill" onclick="confirmDeleteUser('${u.id}')" title="DELETE USER">
+              DELETE
+            </button>
+          </div>
+        `;
+
+      return `
+        <tr>
+          <td style="text-align: center;">${badge}</td>
+          <td><strong>${escapeHtml(u.name.toUpperCase())}</strong></td>
+          <td style="text-align: center;"><span class="badge-account-code">${escapeHtml(u.empCode || '-')}</span></td>
+          <td><span>${escapeHtml(u.department || '-')}</span></td>
+          <td style="text-align: center;"><span class="pin-code-badge">${escapeHtml(u.pin)}</span></td>
+          <td style="text-align: center;">${actionHtml}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // 2. Mobile Cards HTML (Full responsive without horizontal scroll)
+  if (cardsContainer) {
+    cardsContainer.innerHTML = users.map(u => {
+      const isMasterAdmin = (u.id === 'user_admin');
+      const badge = isMasterAdmin 
+        ? '<span class="user-role-badge">ADMIN</span>' 
+        : '<span class="user-role-badge badge-user">USER</span>';
+
+      const actionHtml = isMasterAdmin 
+        ? '<span class="badge-pill-locked" title="MASTER ADMIN">MASTER</span>' 
+        : `
+          <div class="user-card-action-btns">
+            <button type="button" class="btn btn-outline-primary btn-action-pill" onclick="openEditUserModal('${u.id}')" title="แก้ไขข้อมูล">
+              แก้ไข
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-action-pill" onclick="confirmDeleteUser('${u.id}')" title="ลบผู้ใช้">
+              ลบ
+            </button>
+          </div>
+        `;
+
+      return `
+        <div class="user-card-mobile">
+          <div class="user-card-top">
+            <div class="user-card-identity">
+              ${badge}
+              <span class="user-card-name">${escapeHtml(u.name.toUpperCase())}</span>
+            </div>
+            <div class="user-card-actions">
+              ${actionHtml}
+            </div>
+          </div>
+          <div class="user-card-divider"></div>
+          <div class="user-card-info-grid">
+            <div class="user-card-info-row">
+              <div class="user-card-meta-item">
+                <span class="user-card-meta-label">รหัส:</span>
+                <span class="user-card-val">${escapeHtml(u.empCode || '-')}</span>
+              </div>
+              <div class="user-card-meta-item">
+                <span class="user-card-meta-label">รหัส PIN:</span>
+                <span class="user-card-val">${escapeHtml(u.pin)}</span>
+              </div>
+            </div>
+            <div class="user-card-dept-row">
+              <span class="user-card-meta-label">แผนก:</span>
+              <span class="user-card-dept-text">${escapeHtml(u.department || '-')}</span>
+            </div>
+          </div>
         </div>
       `;
-
-    return `
-      <tr>
-        <td style="text-align: center;">${badge}</td>
-        <td><strong>${escapeHtml(u.name.toUpperCase())}</strong></td>
-        <td style="text-align: center;"><span class="badge-account-code">${escapeHtml(u.empCode || '-')}</span></td>
-        <td><span>${escapeHtml(u.department || '-')}</span></td>
-        <td style="text-align: center;"><span class="pin-code-badge">${escapeHtml(u.pin)}</span></td>
-        <td style="text-align: center;">${actionHtml}</td>
-      </tr>
-    `;
-  }).join('');
+    }).join('');
+  }
 }
 
 function handleAddNewUserSubmit(e) {
@@ -3777,6 +3906,7 @@ function escapeHtml(str) {
 // ==========================================================================
 function openFirebaseConfigModal() {
   closeAuthModal();
+  closeUserProfileModal();
   const modal = document.getElementById('firebaseConfigModal');
   if (!modal) return;
 
@@ -3807,8 +3937,8 @@ function openFirebaseConfigModal() {
       statusBanner.innerHTML = `
         <div class="fb-status-icon">🟢</div>
         <div class="fb-status-content">
-          <div class="fb-status-title">เซิร์ฟเวอร์ที่กำลังใช้งาน: <strong>${escapeHtml(cfg.projectId)}</strong></div>
-          <div class="fb-status-desc">ระบบเชื่อมต่อกับเซิร์ฟเวอร์คลาวด์ Firebase Firestore สำเร็จ ข้อมูลจะถูกซิงก์ออนไลน์</div>
+          <div class="fb-status-title">เซิร์ฟเวอร์: <strong>${escapeHtml(cfg.projectId)}</strong> <span class="fb-status-tag-custom">(ออนไลน์)</span></div>
+          <div class="fb-status-desc">เชื่อมต่อ Firebase Firestore สำเร็จ ข้อมูลจะถูกซิงก์ออนไลน์</div>
         </div>
       `;
     } else {
@@ -3816,8 +3946,8 @@ function openFirebaseConfigModal() {
       statusBanner.innerHTML = `
         <div class="fb-status-icon">🟡</div>
         <div class="fb-status-content">
-          <div class="fb-status-title">เซิร์ฟเวอร์ปัจจุบัน: <strong>โหมด Local Storage (ออฟไลน์)</strong></div>
-          <div class="fb-status-desc">ยังไม่ได้เชื่อมต่อเซิร์ฟเวอร์คลาวด์ ข้อมูลถูกจัดเก็บปลอดภัยภายในเบราว์เซอร์เครื่องนี้</div>
+          <div class="fb-status-title">เซิร์ฟเวอร์: <strong>Local Storage</strong> <span class="fb-status-tag-demo">(ออฟไลน์)</span></div>
+          <div class="fb-status-desc">ยังไม่ได้เชื่อมต่อ Cloud ข้อมูลถูกจัดเก็บปลอดภัยภายในเครื่องนี้</div>
         </div>
       `;
     }
@@ -4409,6 +4539,11 @@ window.addEventListener('resize', () => {
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
+    const profModal = document.getElementById('userProfileModal');
+    if (profModal && profModal.style.display !== 'none') {
+      closeUserProfileModal();
+      return;
+    }
     const modal = document.getElementById('phoneSimulatorModal');
     if (modal && modal.style.display !== 'none') {
       closePhoneSimulator();
