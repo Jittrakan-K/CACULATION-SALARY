@@ -487,21 +487,21 @@ function getOrbrayDayInfo(dateStr) {
 function getDayTypeConfig(type, customName = null) {
   switch (type) {
     case 'NATIONAL_HOLIDAY':
-      return { type, name: customName || 'วันหยุดนักขัตฤกษ์', isWorkDay: false, badgeClass: 'badge-national', calClass: 'day-national-holiday' };
+      return { type, name: customName || 'วันหยุดนักขัตฤกษ์', shortName: 'วันหยุด', isWorkDay: false, badgeClass: 'badge-national', calClass: 'day-national-holiday' };
     case 'MEMORIAL_HOLIDAY':
-      return { type, name: customName || 'วันหยุดประเพณีจ่ายเงิน', isWorkDay: false, badgeClass: 'badge-memorial', calClass: 'day-memorial-holiday' };
+      return { type, name: customName || 'วันหยุดประเพณีจ่ายเงิน', shortName: 'วันหยุด', isWorkDay: false, badgeClass: 'badge-memorial', calClass: 'day-memorial-holiday' };
     case 'ORBRAY_WORKDAY':
-      return { type, name: customName || 'วันทำงานพิเศษ', isWorkDay: true, badgeClass: 'badge-orbray', calClass: 'day-orbray-work' };
+      return { type, name: customName || 'วันทำงานพิเศษ', shortName: 'ทำงานพิเศษ', isWorkDay: true, badgeClass: 'badge-orbray', calClass: 'day-orbray-work' };
     case 'WORKING_SATURDAY':
-      return { type, name: customName || 'เสาร์ทำงาน', isWorkDay: true, badgeClass: 'badge-work-sat', calClass: 'day-working-sat' };
+      return { type, name: customName || 'เสาร์ทำงาน', shortName: 'เสาร์ทำ', isWorkDay: true, badgeClass: 'badge-work-sat', calClass: 'day-working-sat' };
     case 'SATURDAY_HOLIDAY':
-      return { type, name: customName || 'เสาร์หยุด', isWorkDay: false, badgeClass: 'badge-sat-holiday', calClass: 'day-sat-holiday' };
+      return { type, name: customName || 'เสาร์หยุด', shortName: 'เสาร์หยุด', isWorkDay: false, badgeClass: 'badge-sat-holiday', calClass: 'day-sat-holiday' };
     case 'SUNDAY':
-      return { type, name: customName || 'วันอาทิตย์หยุด', isWorkDay: false, badgeClass: 'badge-sunday', calClass: 'day-sunday' };
+      return { type, name: customName || 'วันอาทิตย์หยุด', shortName: 'อาทิตย์', isWorkDay: false, badgeClass: 'badge-sunday', calClass: 'day-sunday' };
     case 'BRIDGE_HOLIDAY':
-      return { type, name: customName || 'วันหยุดพิเศษ', isWorkDay: false, badgeClass: 'badge-bridge', calClass: 'day-bridge' };
+      return { type, name: customName || 'วันหยุดพิเศษ', shortName: 'หยุดพิเศษ', isWorkDay: false, badgeClass: 'badge-bridge', calClass: 'day-bridge' };
     default:
-      return { type: 'NORMAL_WORKDAY', name: customName || 'วันทำงานปกติ', isWorkDay: true, badgeClass: 'badge-workday', calClass: '' };
+      return { type: 'NORMAL_WORKDAY', name: customName || 'วันทำงานปกติ', shortName: 'วันปกติ', isWorkDay: true, badgeClass: 'badge-workday', calClass: '' };
   }
 }
 
@@ -599,6 +599,12 @@ function buildAttendanceTable() {
     '19:00', '19:20'
   ];
 
+  const normalInOptions = [
+    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+    '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+    '16:00', '16:30'
+  ];
+
   const normalOutOptions = [
     '17:00', '17:30', '17:50', '18:20', '18:50', '19:20', '19:50'
   ];
@@ -616,42 +622,102 @@ function buildAttendanceTable() {
     const isSundayOrHoliday = !dayInfo.isWorkDay;
     const availableOptions = isSundayOrHoliday ? sundayOutOptions : normalOutOptions;
 
+    let inOptionsHtml = `<option value="" ${!row.inTime ? 'selected' : ''}>-</option>`;
+    normalInOptions.forEach(opt => {
+      const isSelected = (row.inTime === opt || (!row.inTime && row.workDay && opt === '08:00'));
+      inOptionsHtml += `<option value="${opt}" ${isSelected ? 'selected' : ''}>${opt}</option>`;
+    });
+
     let optionsHtml = `<option value="" ${!row.outTime ? 'selected' : ''}>-</option>`;
     availableOptions.forEach(opt => {
       const isSelected = (row.outTime === opt || (opt === '18:20' && row.outTime === '18:00'));
       optionsHtml += `<option value="${opt}" ${isSelected ? 'selected' : ''}>${opt}</option>`;
     });
 
+    const totalRowOT = (row.workDay ? ((row.ot || 0) + (row.hol || 0) + (row.otHol || 0)) : 0);
+    const otDisplay = totalRowOT > 0 ? totalRowOT.toFixed(1) : '-';
+    const outTimeText = row.workDay && row.outTime ? row.outTime : '-';
+
     tr.innerHTML = `
-      <td class="text-center font-monospace">${row.date.split('-').slice(1).join('/')}</td>
-      <td class="text-center font-weight-bold">${dayName}</td>
-      <td class="text-center"><span class="day-badge ${dayInfo.badgeClass}">${dayInfo.name}</span></td>
-      <td class="text-center font-monospace ${row.workDay ? 'text-primary font-weight-bold' : 'text-muted'}">
-        <span class="time-in-val">${row.workDay ? '08:00' : '-'}</span>
+      <!-- Col 0: Mobile Only Edit Icon Button -->
+      <td class="col-att-edit mobile-only-table-cell text-center">
+        <button type="button" class="btn-att-edit-mini" onclick="openAttendanceEditModal(${idx})" title="แก้ไขข้อมูล">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+        </button>
       </td>
-      <td>
+
+      <!-- Col 1: วันที่ -->
+      <td class="col-att-date text-center font-monospace">${row.date.split('-').slice(1).join('/')}</td>
+
+      <!-- Col 2: วัน -->
+      <td class="col-att-day text-center font-weight-bold">${dayName}</td>
+
+      <!-- Col 3: สถานะ -->
+      <td class="col-att-status text-center">
+        <span class="day-badge ${dayInfo.badgeClass}">
+          <span class="desktop-only-inline">${dayInfo.name}</span>
+          <span class="mobile-only-inline">${dayInfo.shortName || dayInfo.name}</span>
+        </span>
+      </td>
+
+      <!-- Col 4: เวลาเข้า (Desktop Only) -->
+      <td class="col-att-in desktop-only-table-cell text-center">
         <select class="form-control form-control-sm form-select text-center" 
-          onchange="onAttendanceTimeChange(${idx}, 'out', this.value)" 
+          onchange="onAttendanceTimeChange(${idx}, 'in', this.value)" 
           ${!row.workDay ? 'disabled' : ''}>
-          ${optionsHtml}
+          ${inOptionsHtml}
         </select>
       </td>
-      <td class="text-right font-monospace ${row.workDay && row.ot > 0 ? 'text-primary font-weight-bold' : 'text-muted'}">
+
+      <!-- Col 5: เวลาออก (Desktop shows select, Mobile shows formatted text) -->
+      <td class="col-att-out text-center">
+        <span class="mobile-only-inline font-monospace font-weight-bold ${row.workDay && row.outTime ? 'text-primary' : 'text-muted'}">
+          ${outTimeText}
+        </span>
+        <span class="desktop-only-inline">
+          <select class="form-control form-control-sm form-select text-center" 
+            onchange="onAttendanceTimeChange(${idx}, 'out', this.value)" 
+            ${!row.workDay ? 'disabled' : ''}>
+            ${optionsHtml}
+          </select>
+        </span>
+      </td>
+
+      <!-- Col 6: OT 1.5 (Desktop Only) -->
+      <td class="col-att-ot15 desktop-only-table-cell text-right font-monospace ${row.workDay && row.ot > 0 ? 'text-primary font-weight-bold' : 'text-muted'}">
         ${row.workDay && row.ot ? row.ot.toFixed(1) : '0'}
       </td>
-      <td class="text-right font-monospace ${row.workDay && row.hol > 0 ? 'text-primary font-weight-bold' : 'text-muted'}">
+
+      <!-- Col 7: HOLIDAY 1.0 (Desktop Only) -->
+      <td class="col-att-hol desktop-only-table-cell text-right font-monospace ${row.workDay && row.hol > 0 ? 'text-primary font-weight-bold' : 'text-muted'}">
         ${row.workDay && row.hol ? row.hol.toFixed(1) : '0'}
       </td>
-      <td class="text-right font-monospace ${row.workDay && row.otHol > 0 ? 'text-primary font-weight-bold' : 'text-muted'}">
+
+      <!-- Col 8: OT HOL 3.0 (Desktop Only) -->
+      <td class="col-att-othol desktop-only-table-cell text-right font-monospace ${row.workDay && row.otHol > 0 ? 'text-primary font-weight-bold' : 'text-muted'}">
         ${row.workDay && row.otHol ? row.otHol.toFixed(1) : '0'}
       </td>
-      <td class="text-center">
-        <input type="checkbox" ${row.workDay ? 'checked' : ''} onchange="onAttendanceToggleWorkDay(${idx}, this.checked)">
+
+      <!-- Col 9: OT รวม (Mobile Only) -->
+      <td class="col-att-ot-total mobile-only-table-cell text-center font-monospace font-weight-bold ${totalRowOT > 0 ? 'text-primary' : 'text-muted'}">
+        ${otDisplay}
       </td>
-      <td class="text-center">
+
+      <!-- Col 10: มาทำงาน (Desktop Only Checkbox) -->
+      <td class="col-att-workday desktop-only-table-cell text-center">
+        <input type="checkbox" ${row.workDay ? 'checked' : ''} onchange="onAttendanceToggleWorkDay(${idx}, this.checked)" title="ติ๊กเมื่อมาทำงาน">
+      </td>
+
+      <!-- Col 11: วันที่มา (Desktop Only) -->
+      <td class="col-att-come desktop-only-table-cell text-center">
         <span class="${row.come ? 'text-success font-weight-bold' : 'text-muted'}">${row.come ? '1' : '0'}</span>
       </td>
-      <td class="text-center">
+
+      <!-- Col 12: วันทำ OT (Desktop Only) -->
+      <td class="col-att-otday desktop-only-table-cell text-center">
         <span class="${row.otDay ? 'text-primary font-weight-bold' : 'text-muted'}">${row.otDay ? '1' : '0'}</span>
       </td>
     `;
@@ -665,6 +731,8 @@ function onAttendanceTimeChange(index, field, value) {
   const row = currentAttendance[index];
   if (field === 'out') {
     row.outTime = value ? value.trim() : '';
+  } else if (field === 'in') {
+    row.inTime = value ? value.trim() : '';
   }
   updateRowOT(row);
   buildAttendanceTable();
@@ -744,7 +812,180 @@ function recalculateAttendanceTotals() {
   if (elCame) elCame.innerText = totalCameDays;
   if (elOTDays) elOTDays.innerText = totalOTDays;
 
+  // อัปเดตแถบสรุปสำหรับมือถือ (Mobile Sum Row)
+  const elMobileCame = document.getElementById('attMobileCameDays');
+  const elMobileTarget = document.getElementById('attMobileTargetDays');
+  const elMobileOT = document.getElementById('attMobileTotalOT');
+  if (elMobileCame) elMobileCame.innerText = totalCameDays;
+  if (elMobileTarget) elMobileTarget.innerText = totalTargetDays;
+  if (elMobileOT) elMobileOT.innerText = (totalOT15 + totalHol + totalOTHol).toFixed(1);
+
   return { totalOT15, totalHol, totalOTHol, totalTargetDays, totalCameDays, totalOTDays };
+}
+
+// ==========================================================================
+// 7.1 ระบบแก้ไขเวลาทำงานสำหรับมือถือ (Mobile Attendance Quick Edit Modal)
+// ==========================================================================
+let currentAttEditIndex = -1;
+
+function openAttendanceEditModal(idx) {
+  if (idx === undefined || idx === null || idx < 0 || idx >= currentAttendance.length) return;
+  currentAttEditIndex = idx;
+  const row = currentAttendance[idx];
+  const dayInfo = getOrbrayDayInfo(row.date);
+  const thaiDaysLong = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];
+  const d = new Date(row.date);
+  const dayLong = thaiDaysLong[d.getDay()];
+
+  const modal = document.getElementById('modalAttendanceEdit');
+  if (!modal) return;
+
+  const idxEl = document.getElementById('attEditRowIndex');
+  if (idxEl) idxEl.value = idx;
+
+  const subEl = document.getElementById('attEditModalSubtitle');
+  if (subEl) subEl.innerText = `${row.date} (${dayLong})`;
+
+  const badgeEl = document.getElementById('attEditDayBadge');
+  if (badgeEl) {
+    badgeEl.className = `day-badge ${dayInfo.badgeClass}`;
+    badgeEl.innerText = dayInfo.name;
+  }
+
+  const checkEl = document.getElementById('attEditWorkDayCheck');
+  if (checkEl) {
+    checkEl.checked = !!row.workDay;
+  }
+
+  const hintEl = document.getElementById('attEditWorkStatusHint');
+  if (hintEl) {
+    hintEl.innerText = row.workDay ? 'มาทำงาน (บันทึกเวลาทำงาน)' : 'ไม่ได้มาทำงานในวันนี้';
+  }
+
+  const normalInOptions = [
+    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+    '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+    '16:00', '16:30'
+  ];
+
+  const sundayOutOptions = [
+    '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00',
+    '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00',
+    '16:30', '17:00', '17:30', '17:50', '18:00', '18:20', '18:30', '18:50',
+    '19:00', '19:20'
+  ];
+
+  const normalOutOptions = [
+    '17:00', '17:30', '17:50', '18:20', '18:50', '19:20', '19:50'
+  ];
+
+  const isSundayOrHoliday = !dayInfo.isWorkDay;
+  const availableOptions = isSundayOrHoliday ? sundayOutOptions : normalOutOptions;
+
+  const inSelectEl = document.getElementById('attEditInTimeSelect');
+  if (inSelectEl) {
+    inSelectEl.innerHTML = `<option value="">- ไม่ระบุ -</option>`;
+    normalInOptions.forEach(opt => {
+      const isSelected = (row.inTime === opt || (!row.inTime && row.workDay && opt === '08:00'));
+      inSelectEl.innerHTML += `<option value="${opt}" ${isSelected ? 'selected' : ''}>${opt}</option>`;
+    });
+    inSelectEl.disabled = !row.workDay;
+  }
+
+  const selectEl = document.getElementById('attEditOutTimeSelect');
+  if (selectEl) {
+    selectEl.innerHTML = `<option value="">- ไม่ระบุ -</option>`;
+    availableOptions.forEach(opt => {
+      const isSelected = (row.outTime === opt || (opt === '18:20' && row.outTime === '18:00'));
+      selectEl.innerHTML += `<option value="${opt}" ${isSelected ? 'selected' : ''}>${opt}</option>`;
+    });
+    selectEl.disabled = !row.workDay;
+  }
+
+  updateAttEditModalPreview();
+  modal.style.display = 'flex';
+}
+
+function closeAttendanceEditModal() {
+  const modal = document.getElementById('modalAttendanceEdit');
+  if (modal) modal.style.display = 'none';
+  currentAttEditIndex = -1;
+}
+
+function onAttEditModalWorkDayToggle(isChecked) {
+  const inSelectEl = document.getElementById('attEditInTimeSelect');
+  const selectEl = document.getElementById('attEditOutTimeSelect');
+  const hintEl = document.getElementById('attEditWorkStatusHint');
+
+  if (inSelectEl) {
+    inSelectEl.disabled = !isChecked;
+    if (isChecked && (!inSelectEl.value || inSelectEl.value === '')) {
+      inSelectEl.value = '08:00';
+    }
+  }
+
+  if (selectEl) {
+    selectEl.disabled = !isChecked;
+    if (isChecked && (!selectEl.value || selectEl.value === '')) {
+      selectEl.value = '17:00';
+    }
+  }
+  if (hintEl) {
+    hintEl.innerText = isChecked ? 'มาทำงาน (บันทึกเวลาทำงาน)' : 'ไม่ได้มาทำงานในวันนี้';
+  }
+
+  updateAttEditModalPreview();
+}
+
+function onAttEditModalTimeChange(val) {
+  updateAttEditModalPreview();
+}
+
+function updateAttEditModalPreview() {
+  if (currentAttEditIndex < 0 || currentAttEditIndex >= currentAttendance.length) return;
+  const origRow = currentAttendance[currentAttEditIndex];
+  const isWork = document.getElementById('attEditWorkDayCheck') ? document.getElementById('attEditWorkDayCheck').checked : false;
+  const inTime = isWork && document.getElementById('attEditInTimeSelect') ? document.getElementById('attEditInTimeSelect').value : '';
+  const outTime = isWork && document.getElementById('attEditOutTimeSelect') ? document.getElementById('attEditOutTimeSelect').value : '';
+
+  const tempRow = { ...origRow, workDay: isWork ? 1 : 0, come: isWork ? 1 : 0, inTime: inTime, outTime: outTime };
+  updateRowOT(tempRow);
+
+  const totalOT = (tempRow.ot || 0) + (tempRow.hol || 0) + (tempRow.otHol || 0);
+
+  const ot15El = document.getElementById('attEditPreviewOT15');
+  const holEl = document.getElementById('attEditPreviewHol');
+  const otHolEl = document.getElementById('attEditPreviewOTHol');
+  const sumEl = document.getElementById('attEditTotalOTSum');
+
+  if (ot15El) ot15El.innerText = `${(tempRow.ot || 0).toFixed(1)} ชม.`;
+  if (holEl) holEl.innerText = `${(tempRow.hol || 0).toFixed(1)} ชม.`;
+  if (otHolEl) otHolEl.innerText = `${(tempRow.otHol || 0).toFixed(1)} ชม.`;
+  if (sumEl) sumEl.innerText = `${totalOT.toFixed(1)} ชม.`;
+}
+
+function saveAttendanceEditModal() {
+  if (currentAttEditIndex < 0 || currentAttEditIndex >= currentAttendance.length) return;
+  const row = currentAttendance[currentAttEditIndex];
+  const isWork = document.getElementById('attEditWorkDayCheck') ? document.getElementById('attEditWorkDayCheck').checked : false;
+  const inTime = isWork && document.getElementById('attEditInTimeSelect') ? document.getElementById('attEditInTimeSelect').value : '';
+  const outTime = isWork && document.getElementById('attEditOutTimeSelect') ? document.getElementById('attEditOutTimeSelect').value : '';
+
+  row.workDay = isWork ? 1 : 0;
+  row.come = isWork ? 1 : 0;
+  row.inTime = inTime ? inTime.trim() : (isWork ? '08:00' : '');
+  row.outTime = outTime ? outTime.trim() : '';
+
+  updateRowOT(row);
+  buildAttendanceTable();
+  recalculateSalary();
+  saveCurrentAttendance();
+
+  closeAttendanceEditModal();
+
+  if (typeof showToast === 'function') {
+    showToast(`บันทึกเวลาทำงานวันที่ ${row.date} สำเร็จ`, 'success');
+  }
 }
 
 function autoFillNormalWorkdays() {
@@ -917,7 +1158,7 @@ function recalculateSalary() {
   // อัปเดตแถบ KPI บนหน้าบันทึกเวลาออกงาน (Attendance Page)
   setElText('attCardTargetDays', `${B2_targetDays} วัน`);
   setElText('attCardCameDays', `${D2_cameDays} วัน`);
-  setElText('attCardOTHours', `${totalOTHours} ชม.`);
+  setElText('attCardOTHours', `${Number(totalOTHours || 0).toFixed(1)} ชม.`);
   setElText('attCardNetPay', `${formatCurrency(netPay)} บาท`);
 
   // อัปเดตรายการคำนวณเงินเดือนในการ์ด (รูปที่ 2)
@@ -1279,7 +1520,7 @@ function onPayrollPeriodSelectChange() {
 
   const periodSubtitle = document.getElementById('timesheetPeriodSubtitle');
   if (periodSubtitle) {
-    periodSubtitle.innerText = `${found.displayName} (ตัดรอบ ${found.startDate} ถึง ${found.endDate} | จ่ายสิ้นเดือน ${found.payDate})`;
+    periodSubtitle.innerText = `${found.displayName} (ตัดรอบ ${found.startDate} ถึง ${found.endDate})`;
   }
 
   const btnExcel = document.getElementById('btnLoadExcelSample');
@@ -1794,30 +2035,43 @@ function renderManageCompaniesTable() {
   tbody.innerHTML = '';
   comps.forEach(comp => {
     const tr = document.createElement('tr');
+    tr.className = 'manage-comp-row';
     const isActive = comp.id === activeCompanyId;
     const yearsList = Object.keys(comp.calendars || {}).map(Number).sort((a, b) => a - b);
     const yearsStr = yearsList.map(y => `${y + 543} (${y})`).join(', ') || '-';
 
     tr.innerHTML = `
-      <td>
-        <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">
-          ${comp.name}
-          ${comp.isDefault ? '<span class="badge-default-pill">บริษัทหลัก</span>' : ''}
+      <td class="col-comp-info">
+        <div class="comp-title-line">
+          <div class="comp-title-left">
+            <span class="comp-title-text">${comp.name}</span>
+            ${comp.isDefault ? '<span class="badge-default-pill">บริษัทหลัก</span>' : ''}
+          </div>
+          <div class="mobile-only-inline comp-status-mobile">
+            ${isActive 
+              ? '<span class="badge-active-comp">✓ กำลังแสดงผล</span>' 
+              : '<span class="text-muted small">ไม่ได้เลือก</span>'}
+          </div>
         </div>
-        ${comp.description ? `<div class="text-muted small">${comp.description}</div>` : ''}
+        ${comp.description ? `<div class="comp-desc text-muted small">${comp.description}</div>` : ''}
+        <div class="mobile-only-block comp-meta-mobile">
+          <span class="comp-meta-item"><span class="text-muted">รหัสย่อ:</span> <strong>${comp.code || '-'}</strong></span>
+          <span class="comp-meta-sep">•</span>
+          <span class="comp-meta-item"><span class="text-muted">ปีปฏิทิน:</span> <strong>${yearsStr}</strong></span>
+        </div>
       </td>
-      <td>
+      <td class="col-comp-code desktop-only-table-cell">
         <span style="font-family: var(--font-mono); font-weight: 700;">${comp.code || '-'}</span>
       </td>
-      <td>
+      <td class="col-comp-years desktop-only-table-cell">
         <span style="font-size: 0.8rem; font-family: var(--font-mono);">${yearsStr}</span>
       </td>
-      <td>
+      <td class="col-comp-status desktop-only-table-cell">
         ${isActive 
           ? '<span class="badge-active-comp">✓ กำลังแสดงผล</span>' 
           : '<span class="text-muted small">ไม่ได้เลือก</span>'}
       </td>
-      <td style="text-align: right; white-space: nowrap;">
+      <td class="col-comp-actions">
         ${!isActive 
           ? `<button type="button" class="btn btn-sm btn-outline-primary" onclick="closeManageCompaniesModal(); switchActiveCompany('${comp.id}');" style="margin-right: 4px;">เลือกแสดง</button>`
           : ''}

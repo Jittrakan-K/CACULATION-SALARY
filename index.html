@@ -95,6 +95,7 @@
       <!-- Left: Company Selector & Management -->
       <div class="exec-brand-cluster">
         <div class="exec-pill-company" title="เลือกบริษัทที่จะแสดงข้อมูล">
+          <span class="btn-comp-spacer" aria-hidden="true"></span>
           <span class="exec-icon">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="9" y1="22" x2="9" y2="22.01"/><line x1="15" y1="22" x2="15" y2="22.01"/><line x1="9" y1="6" x2="9" y2="6.01"/><line x1="15" y1="6" x2="15" y2="6.01"/><line x1="9" y1="10" x2="9" y2="10.01"/><line x1="15" y1="10" x2="15" y2="10.01"/><line x1="9" y1="14" x2="9" y2="14.01"/><line x1="15" y1="14" x2="15" y2="14.01"/><line x1="9" y1="18" x2="9" y2="18.01"/><line x1="15" y1="18" x2="15" y2="18.01"/></svg>
           </span>
@@ -138,13 +139,17 @@
       <!-- Right: Calendar Year & Structure Config -->
       <div class="exec-tools-cluster">
         <div class="exec-year-picker" title="เลือกปีปฏิทิน">
+          <span class="btn-year-spacer" aria-hidden="true"></span>
           <span class="exec-year-icon">
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
           </span>
           <select id="appYearSelect" class="exec-year-select" onchange="onAppYearChange()"></select>
+          <span class="exec-year-arrow-down">
+            <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
           <button type="button" class="btn-year-plus" onclick="openAddYearModal()" title="เพิ่มปีปฏิทินใหม่">+</button>
         </div>
-        <button type="button" class="btn-exec-settings" onclick="openSettingsSalaryModal()" title="แก้ไขค่าเงินเดือน เบี้ยเลี้ยง และอัตรา OT เฉพาะงวดนี้">
+        <button type="button" class="btn-exec-settings desktop-only-inline" onclick="openSettingsSalaryModal()" title="แก้ไขค่าเงินเดือน เบี้ยเลี้ยง และอัตรา OT เฉพาะงวดนี้">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
           <span>ตั้งค่าเงิน</span>
         </button>
@@ -525,33 +530,38 @@
         <div id="adminScopeBannerAtt" class="admin-scope-banner" style="display:none;"></div>
 
         <!-- Period Navigation Toolbar for Attendance -->
-        <div class="period-navigator card">
+        <div class="period-navigator card" id="attPeriodNavigator">
           <div class="period-nav-left">
             <button type="button" class="btn-subnav-arrow" onclick="switchView('main')" title="กลับหน้าสรุปเงินเดือน">
               <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-              <span>กลับหน้าคำนวณ</span>
+              <span class="desktop-only-inline">กลับหน้าคำนวณ</span>
+              <span class="mobile-only-inline">กลับ</span>
             </button>
-            <span class="period-nav-label">รอบเดือน:</span>
+            <span class="period-nav-label desktop-only-inline">รอบเดือน:</span>
             <button type="button" class="btn btn-outline-primary btn-nav-arrow" onclick="navPrevPeriod()" title="งวดก่อนหน้า">
-              ◀ ก่อนหน้า
+              <span class="desktop-only-inline">◀ ก่อนหน้า</span>
+              <span class="mobile-only-inline">◀</span>
             </button>
             <div class="period-select-wrapper">
               <select id="payrollPeriodSelectAtt" class="form-select form-select-period" onchange="onPayrollPeriodSelectAttChange()"></select>
             </div>
             <button type="button" class="btn btn-outline-primary btn-nav-arrow" onclick="navNextPeriod()" title="งวดถัดไป">
-              ถัดไป ▶
+              <span class="desktop-only-inline">ถัดไป ▶</span>
+              <span class="mobile-only-inline">▶</span>
             </button>
           </div>
 
           <div class="period-nav-right">
-            <button type="button" class="btn btn-outline-success" onclick="autoFillNormalWorkdays()">
-              ⚡ เติมวันปกติ (08:00–17:00)
+            <button type="button" class="btn btn-outline-success" onclick="autoFillNormalWorkdays()" title="เติมเวลาทำงานปกติ (08:00–17:00)">
+              <span class="desktop-only-inline">⚡ เติมวันปกติ (08:00–17:00)</span>
+              <span class="mobile-only-inline">⚡ เติมวันปกติ</span>
             </button>
-            <button type="button" class="btn btn-outline-danger" onclick="clearAttendanceTable()">
+            <button type="button" class="btn btn-outline-danger" onclick="clearAttendanceTable()" title="ล้างเวลาทั้งหมดในรอบนี้">
               🗑️ ล้างเวลา
             </button>
-            <button type="button" class="btn btn-secondary" onclick="switchView('calendar')">
-              📅 ปฏิทินวันทำงาน ➔
+            <button type="button" class="btn btn-secondary" onclick="switchView('calendar')" title="ดูปฏิทินวันทำงาน">
+              <span class="desktop-only-inline">📅 ปฏิทินวันทำงาน ➔</span>
+              <span class="mobile-only-inline">📅 ปฏิทิน</span>
             </button>
           </div>
         </div>
@@ -576,7 +586,7 @@
               <strong class="kpi-val" id="attCardOTHours">0.0 ชม.</strong>
             </div>
           </div>
-          <div class="kpi-mini-card">
+          <div class="kpi-mini-card kpi-net-card">
             <div class="kpi-info">
               <span class="kpi-label">เงินได้สุทธิประมาณการ</span>
               <strong class="kpi-val" id="attCardNetPay">0.00 บาท</strong>
@@ -592,47 +602,90 @@
               <p class="subtitle" id="timesheetPeriodSubtitle">รอบการลงเวลาทำงาน</p>
             </div>
             <div class="ot-quick-badges">
-              <span class="badge-rule">เข้า: ติ๊กวันที่มาทำงาน = 08:00</span>
-              <span class="badge-rule">ออก: เลือกจาก DROP DOWN</span>
-              <span class="badge-rule">OT: คำนวณและปัดเศษอัตโนมัติ</span>
+              <span class="badge-rule">✔ เวลาเข้า: 08:00 (เมื่อติ๊กมาทำงาน)</span>
+              <span class="badge-rule">🕒 เวลาออก: เลือกจากรายการ</span>
+              <span class="badge-rule">⚡ OT: คำนวณอัตโนมัติ</span>
             </div>
           </div>
 
           <div class="card-body">
-            <div class="ot-hint-banner">
-              <strong>กฎเวลาออก & OT:</strong>
-              <span>วันปกติ: 17:00=0 ชม. | 17:30/17:50=0.5 ชม. | 18:20=1.0 ชม. | 18:50=1.5 ชม. | 19:20=2.0 ชม. | 19:50=2.5 ชม.</span>
-              <br>
-              <em>* วันอาทิตย์/วันหยุด: มีตัวเลือกเวลาออกตั้งแต่ 08:30 คิดเป็น HOLIDAY OT 1.0 และหลัง 17:00 คิดเป็น OT HOLIDAY 3.0</em>
-            </div>
+            <details class="ot-hint-banner" id="otHintDetails">
+              <summary class="ot-hint-summary">
+                <span class="ot-hint-title">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  <strong>เกณฑ์เวลาออก &amp; อัตราคิด OT</strong>
+                </span>
+                <span class="ot-hint-toggle">ดูกฎเวลา ▾</span>
+              </summary>
+              <div class="ot-hint-content">
+                <div class="ot-rule-line">
+                  <span class="ot-pill-tag">วันปกติ</span>
+                  <span>17:00=0 ชม. | 17:30/17:50=0.5 ชม. | 18:20=1.0 ชม. | 18:50=1.5 ชม. | 19:20=2.0 ชม. | 19:50=2.5 ชม.</span>
+                </div>
+                <div class="ot-rule-line" style="margin-top: 4px;">
+                  <span class="ot-pill-tag">วันหยุด</span>
+                  <span>เวลาออก 08:30–17:00 คิด <strong>Holiday OT 1.0</strong> • หลัง 17:00 คิด <strong>OT Holiday 3.0</strong></span>
+                </div>
+              </div>
+            </details>
 
             <div class="table-responsive">
               <table class="table-timesheet" id="tableAttendance">
                 <thead>
                   <tr>
-                    <th style="width:75px;">วันที่</th>
-                    <th style="width:45px;">วัน</th>
-                    <th style="width:145px;">สถานะ</th>
-                    <th style="width:85px;">เวลาเข้า</th>
-                    <th style="width:110px;">เวลาออก</th>
-                    <th style="width:85px;">OT (1.5)</th>
-                    <th style="width:85px;">HOLIDAY (1)</th>
-                    <th style="width:85px;">OT HOL (3)</th>
-                    <th style="width:85px;">วันที่มาทำงาน</th>
-                    <th style="width:65px;">วันที่มา</th>
-                    <th style="width:70px;">วันทำ OT</th>
+                    <!-- Col 0: Mobile Only Edit Icon -->
+                    <th class="col-att-edit mobile-only-table-cell text-center" title="แก้ไขการลงเวลา">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                      </svg>
+                    </th>
+                    <!-- Col 1: วันที่ -->
+                    <th class="col-att-date text-center" style="width:58px;">วันที่</th>
+                    <!-- Col 2: วัน -->
+                    <th class="col-att-day text-center" style="width:40px;">วัน</th>
+                    <!-- Col 3: สถานะ -->
+                    <th class="col-att-status text-center" style="width:130px;">สถานะ</th>
+                    <!-- Col 4: เวลาเข้า (Desktop Only) -->
+                    <th class="col-att-in desktop-only-table-cell text-center" style="width:90px;">เวลาเข้า</th>
+                    <!-- Col 5: เวลาออก -->
+                    <th class="col-att-out text-center" style="width:95px;">เวลาออก</th>
+                    <!-- Col 6: OT 1.5 (Desktop Only) -->
+                    <th class="col-att-ot15 desktop-only-table-cell text-right" style="width:80px;">OT (1.5)</th>
+                    <!-- Col 7: Holiday 1.0 (Desktop Only) -->
+                    <th class="col-att-hol desktop-only-table-cell text-right" style="width:80px;">HOLIDAY (1)</th>
+                    <!-- Col 8: OT Hol 3.0 (Desktop Only) -->
+                    <th class="col-att-othol desktop-only-table-cell text-right" style="width:80px;">OT HOL (3)</th>
+                    <!-- Col 9: OT รวม (Mobile Only) -->
+                    <th class="col-att-ot-total mobile-only-table-cell text-center" style="width:48px;">OT</th>
+                    <!-- Col 10: มาทำงาน (Desktop Only Checkbox) -->
+                    <th class="col-att-workday desktop-only-table-cell" style="width:80px;">มาทำงาน</th>
+                    <!-- Col 11: วันที่มา (Desktop Only) -->
+                    <th class="col-att-come desktop-only-table-cell" style="width:65px;">วันที่มา</th>
+                    <!-- Col 12: วันทำ OT (Desktop Only) -->
+                    <th class="col-att-otday desktop-only-table-cell" style="width:70px;">วันทำ OT</th>
                   </tr>
                 </thead>
                 <tbody id="attendanceTbody"></tbody>
                 <tfoot>
-                  <tr class="timesheet-sum-row">
-                    <td colspan="5" class="text-right font-weight-bold">รวมยอดทั้งหมดในรอบนี้:</td>
+                  <!-- Desktop Sum Row (11 columns matching Desktop order) -->
+                  <tr class="timesheet-sum-row desktop-only-table-row">
+                    <td colspan="5" class="text-right font-weight-bold">รวมยอด:</td>
                     <td class="text-right font-weight-bold" id="attTotalOT15">0.0</td>
                     <td class="text-right font-weight-bold" id="attTotalHol">0.0</td>
                     <td class="text-right font-weight-bold" id="attTotalOTHol">0.0</td>
                     <td class="text-center font-weight-bold" id="attTotalTargetDays">0</td>
                     <td class="text-center font-weight-bold" id="attTotalCameDays">0</td>
                     <td class="text-center font-weight-bold" id="attTotalOTDays">0</td>
+                  </tr>
+
+                  <!-- Mobile Sum Row (6 columns matching Mobile order) -->
+                  <tr class="timesheet-sum-row mobile-only-table-row">
+                    <td colspan="4" class="text-center font-weight-bold">
+                      มาทำงาน: <span id="attMobileCameDays">0</span>/<span id="attMobileTargetDays">0</span> วัน
+                    </td>
+                    <td class="text-center font-weight-bold" style="font-size: 0.72rem; white-space: nowrap;">รวม OT:</td>
+                    <td class="text-center font-weight-bold" id="attMobileTotalOT">0.0</td>
                   </tr>
                 </tfoot>
               </table>
@@ -669,30 +722,44 @@
               <p class="subtitle">สามารถคลิกที่วันในปฏิทินเพื่อเปลี่ยนสถานะวันทำงาน/วันหยุดได้โดยตรง</p>
             </div>
             <div class="calendar-header-actions">
-              <button type="button" class="btn btn-primary btn-sm btn-scan-cal-cta" onclick="openCalendarScanModal()" title="สแกนและวิเคราะห์รูปปฏิทินบริษัทด้วย AI">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 3px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                <span>สแกนรูปปฏิทิน AI</span>
-              </button>
-              <button type="button" class="btn btn-outline-secondary btn-sm" onclick="switchView('main')">
-                ← กลับหน้าคำนวณเงินเดือน
-              </button>
-              <button type="button" class="btn btn-outline-secondary btn-sm" onclick="switchView('attendance')">
+              <!-- Mobile Row 1: Quick Navigation & AI Scan Action -->
+              <div class="cal-header-row cal-header-nav-row">
+                <button type="button" class="btn btn-outline-secondary btn-sm cal-btn-back" onclick="switchView('main')" title="กลับหน้าคำนวณเงินเดือน">
+                  <span class="desktop-only-inline">← กลับหน้าคำนวณเงินเดือน</span>
+                  <span class="mobile-only-inline">← กลับหน้าคำนวณ</span>
+                </button>
+                <button type="button" class="btn btn-primary btn-sm btn-scan-cal-cta" onclick="openCalendarScanModal()" title="สแกนและวิเคราะห์รูปปฏิทินบริษัทด้วย AI">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 3px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  <span>สแกนรูปปฏิทิน AI</span>
+                </button>
+              </div>
+
+              <!-- Desktop-only attendance shortcut (redundant on mobile bottom nav) -->
+              <button type="button" class="btn btn-outline-secondary btn-sm desktop-only-inline" onclick="switchView('attendance')">
                 ⏱️ ไปหน้าลงเวลาทำงาน
               </button>
-              <div class="cal-company-picker">
-                <span class="cal-company-label">บริษัท:</span>
-                <select id="calHeaderCompanySelect" class="form-select form-select-sm cal-header-select" onchange="onRibbonCompanyChange(this.value)" title="เลือกบริษัทเพื่อดู/แก้ไขปฏิทิน"></select>
+
+              <!-- Mobile Row 2: Company Picker & Calendar Setup -->
+              <div class="cal-header-row cal-header-tools-row">
+                <div class="cal-company-picker">
+                  <span class="cal-company-label">บริษัท:</span>
+                  <select id="calHeaderCompanySelect" class="form-select form-select-sm cal-header-select" onchange="onRibbonCompanyChange(this.value)" title="เลือกบริษัทเพื่อดู/แก้ไขปฏิทิน"></select>
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm cal-btn-add-comp" onclick="openAddCompanyModal()" title="เพิ่มบริษัทใหม่พร้อมข้อมูลวันที่">
+                  <span class="desktop-only-inline">+ เพิ่มบริษัท</span>
+                  <span class="mobile-only-inline">+ บริษัท</span>
+                </button>
+                <button type="button" class="btn btn-primary btn-sm cal-btn-add-year" onclick="openAddYearModal()" title="เพิ่มปีปฏิทินใหม่">
+                  <span class="desktop-only-inline">เพิ่มปีปฏิทินใหม่</span>
+                  <span class="mobile-only-inline">+ เพิ่มปี</span>
+                </button>
+                <button type="button" class="btn btn-outline-danger btn-sm" id="btnDeleteCurrentYear" onclick="deleteCurrentYear()" style="display:none;">
+                  ลบปีนี้
+                </button>
               </div>
-              <button type="button" class="btn btn-outline-primary btn-sm" onclick="openAddCompanyModal()" title="เพิ่มบริษัทใหม่พร้อมข้อมูลวันที่">
-                + เพิ่มบริษัท
-              </button>
-              <button type="button" class="btn btn-primary btn-sm" onclick="openAddYearModal()">
-                เพิ่มปีปฏิทินใหม่
-              </button>
-              <button type="button" class="btn btn-outline-danger btn-sm" id="btnDeleteCurrentYear" onclick="deleteCurrentYear()">
-                ลบปีนี้
-              </button>
-              <button type="button" class="btn btn-secondary btn-sm" onclick="switchView('main')">
+
+              <!-- Desktop-only close button (redundant with back button on mobile) -->
+              <button type="button" class="btn btn-secondary btn-sm desktop-only-inline" onclick="switchView('main')">
                 ปิดปฏิทิน
               </button>
             </div>
@@ -1271,8 +1338,8 @@
     <div class="modal-dialog fb-config-dialog" style="max-width: 620px;">
       <div class="modal-header">
         <div style="min-width: 0; flex: 1;">
-          <h3 style="margin:0; font-size: 0.95rem; font-weight: 800; line-height: 1.25;">เซิร์ฟเวอร์ FIREBASE</h3>
-          <p class="subtitle text-muted small" style="margin:2px 0 0 0; line-height: 1.25;">ตรวจสอบการเชื่อมต่อและซิงค์ฐานข้อมูล CLOUD</p>
+          <h3 style="margin:0; font-size: 0.95rem; font-weight: 800; line-height: 1.25;">เซิร์ฟเวอร์ Firebase</h3>
+          <p class="subtitle text-muted small" style="margin:2px 0 0 0; line-height: 1.25;">ตรวจสอบการเชื่อมต่อและซิงค์ฐานข้อมูล Cloud Firestore</p>
         </div>
         <button type="button" class="modal-close" onclick="closeFirebaseConfigModal()">&times;</button>
       </div>
@@ -1285,16 +1352,51 @@
 
         <!-- Auto-Paste & Auto-Detect Card -->
         <div class="fb-autopaste-card">
-          <div class="fb-card-title">
-            วางโค้ด FIREBASE CONFIGURATION จาก FIREBASE CONSOLE (แยกลงช่องอัตโนมัติ)
+          <div class="fb-card-header">
+            <div class="fb-card-title-group">
+              <span class="fb-card-icon">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                  <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                </svg>
+              </span>
+              <span class="fb-card-title">วางโค้ด Firebase Configuration</span>
+            </div>
+            <span class="fb-card-badge">AUTO FILL</span>
           </div>
-          <p class="text-muted small" style="margin-bottom: 8px;">
-            จาก FIREBASE CONSOLE ไปที่ <strong>PROJECT SETTINGS &gt; GENERAL &gt; YOUR APPS &gt; SDK SETUP AND CONFIGURATION (CONFIG)</strong> แล้วคัดลอกโค้ดมาวางที่นี่:
-          </p>
-          <textarea id="fbCfgRawPaste" class="form-control font-mono" rows="3" placeholder="const firebaseConfig = {&#10;  apiKey: &quot;AIzaSy...&quot;,&#10;  projectId: &quot;my-salary-app&quot;,&#10;  ...&#10;};"></textarea>
-          <div style="margin-top: 8px; display: flex; justify-content: flex-end;">
-            <button type="button" class="btn btn-outline-primary btn-sm" onclick="parseRawFirebaseConfig()">
-              แยกและเติมข้อมูลอัตโนมัติ (AUTO FILL)
+
+          <div class="fb-guide-wrapper">
+            <div class="fb-guide-intro">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              <span>คัดลอกโค้ดจาก Firebase:</span>
+            </div>
+            <div class="fb-path-bar">
+              <span class="fb-path-node">Project settings</span>
+              <span class="fb-path-sep">›</span>
+              <span class="fb-path-node">Your apps</span>
+              <span class="fb-path-sep">›</span>
+              <span class="fb-path-node fb-path-active">Config</span>
+            </div>
+          </div>
+
+          <div class="fb-textarea-wrapper">
+            <textarea id="fbCfgRawPaste" class="form-control font-mono preserve-case" rows="4" placeholder="// วางโค้ดคอนฟิกจาก Firebase ที่นี่&#10;const firebaseConfig = {&#10;  apiKey: &quot;AIzaSy...&quot;,&#10;  projectId: &quot;my-salary-app&quot;,&#10;  ...&#10;};"></textarea>
+          </div>
+
+          <div class="fb-autopaste-actions">
+            <div class="fb-autopaste-tip">
+              <span>💡</span>
+              <span>รองรับทั้งรูปแบบ <code>JavaScript</code> และ <code>JSON</code></span>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm fb-parse-btn" onclick="parseRawFirebaseConfig()">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+              แยกและเติมข้อมูลอัตโนมัติ (Auto Fill)
             </button>
           </div>
         </div>
@@ -1308,14 +1410,14 @@
         <!-- Form Fields Grid -->
         <div class="fb-form-grid">
           <div class="form-group">
-            <label for="fbCfgProjectId">รหัสโครงการ (PROJECT ID) <span class="text-danger">*</span>:</label>
-            <input type="text" id="fbCfgProjectId" class="form-control font-mono" placeholder="เช่น MY-COMPANY-PAYROLL">
+            <label for="fbCfgProjectId">Project ID (รหัสโครงการ) <span class="text-danger">*</span>:</label>
+            <input type="text" id="fbCfgProjectId" class="form-control font-mono preserve-case" placeholder="เช่น my-company-payroll">
           </div>
 
           <div class="form-group">
-            <label for="fbCfgApiKey">API KEY <span class="text-danger">*</span>:</label>
+            <label for="fbCfgApiKey">API Key <span class="text-danger">*</span>:</label>
             <div class="input-unit-group">
-              <input type="password" id="fbCfgApiKey" class="form-control font-mono" placeholder="AIzaSy...">
+              <input type="password" id="fbCfgApiKey" class="form-control font-mono preserve-case" placeholder="AIzaSy...">
               <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleFbApiKeyVisibility()" style="border:none; background:transparent; padding: 0 8px;" title="แสดง/ซ่อน API Key">
                 <span id="fbApiKeyToggleIcon">👁️</span>
               </button>
@@ -1323,34 +1425,34 @@
           </div>
 
           <div class="form-group">
-            <label for="fbCfgAuthDomain">AUTH DOMAIN:</label>
-            <input type="text" id="fbCfgAuthDomain" class="form-control font-mono" placeholder="เช่น MY-COMPANY-PAYROLL.FIREBASEAPP.COM">
+            <label for="fbCfgAuthDomain">Auth Domain:</label>
+            <input type="text" id="fbCfgAuthDomain" class="form-control font-mono preserve-case" placeholder="เช่น my-company-payroll.firebaseapp.com">
           </div>
 
           <div class="form-group">
-            <label for="fbCfgStorageBucket">STORAGE BUCKET:</label>
-            <input type="text" id="fbCfgStorageBucket" class="form-control font-mono" placeholder="เช่น MY-COMPANY-PAYROLL.APPSPOT.COM">
+            <label for="fbCfgStorageBucket">Storage Bucket:</label>
+            <input type="text" id="fbCfgStorageBucket" class="form-control font-mono preserve-case" placeholder="เช่น my-company-payroll.appspot.com">
           </div>
 
           <div class="form-group">
-            <label for="fbCfgMessagingSenderId">MESSAGING SENDER ID:</label>
-            <input type="text" id="fbCfgMessagingSenderId" class="form-control font-mono" placeholder="เช่น 123456789012">
+            <label for="fbCfgMessagingSenderId">Messaging Sender ID:</label>
+            <input type="text" id="fbCfgMessagingSenderId" class="form-control font-mono preserve-case" placeholder="เช่น 123456789012">
           </div>
 
           <div class="form-group">
-            <label for="fbCfgAppId">APP ID:</label>
-            <input type="text" id="fbCfgAppId" class="form-control font-mono" placeholder="เช่น 1:123456789012:WEB:ABCDEF">
+            <label for="fbCfgAppId">App ID:</label>
+            <input type="text" id="fbCfgAppId" class="form-control font-mono preserve-case" placeholder="เช่น 1:123456789012:web:abcdef">
           </div>
         </div>
       </div>
 
       <div class="modal-footer modal-footer-between fb-modal-footer">
         <div class="fb-footer-left">
-          <button type="button" class="btn btn-outline-info" id="btnTestFbConn" onclick="testFirebaseConfigFromModal()" title="ทดสอบการเชื่อมต่อกับเซิร์ฟเวอร์ FIREBASE">
+          <button type="button" class="btn btn-outline-info" id="btnTestFbConn" onclick="testFirebaseConfigFromModal()" title="ทดสอบการเชื่อมต่อกับเซิร์ฟเวอร์ Firebase">
             ทดสอบการเชื่อมต่อ
           </button>
-          <button type="button" class="btn btn-outline-secondary" onclick="resetFirebaseConfigDefault()" title="คืนค่าเป็นโหมด LOCAL STORAGE ออฟไลน์">
-            คืนค่าเริ่มต้น (โหมด LOCAL)
+          <button type="button" class="btn btn-outline-secondary" onclick="resetFirebaseConfigDefault()" title="คืนค่าเป็นโหมด Local Storage ออฟไลน์">
+            คืนค่าเริ่มต้น (โหมด Local)
           </button>
         </div>
         <div class="fb-footer-right">
@@ -1492,6 +1594,83 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" onclick="closeManageCompaniesModal()">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: MOBILE ATTENDANCE QUICK EDIT -->
+  <div class="modal-backdrop" id="modalAttendanceEdit" style="display:none; z-index: 1070;" onclick="if(event.target.id === 'modalAttendanceEdit') closeAttendanceEditModal()">
+    <div class="modal-dialog att-edit-modal-dialog">
+      <div class="modal-header">
+        <div>
+          <h3 class="m-0" style="font-size: 1.05rem; display: flex; align-items: center; gap: 6px;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            แก้ไขการลงเวลาทำงาน
+          </h3>
+          <p class="subtitle m-0" id="attEditModalSubtitle" style="font-size: 0.76rem; margin-top: 2px;">วันที่ --/--/----</p>
+        </div>
+        <button type="button" class="modal-close" onclick="closeAttendanceEditModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 16px;">
+        <input type="hidden" id="attEditRowIndex" value="-1">
+
+        <!-- แถบประเภทวัน -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--gray-50); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 14px;">
+          <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary);">ประเภทวัน:</span>
+          <span id="attEditDayBadge" class="day-badge badge-workday">วันทำงานปกติ</span>
+        </div>
+
+        <!-- มาทำงานในวันนี้ -->
+        <div style="padding: 12px 14px; background: var(--bg-surface); border: 1.5px solid var(--border-color); border-radius: 10px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <strong style="font-size: 0.92rem; display: block; color: var(--text-primary);">มาทำงานในวันนี้</strong>
+            <span style="font-size: 0.72rem; color: var(--text-muted);" id="attEditWorkStatusHint">บันทึกเวลาเข้า-ออกงาน</span>
+          </div>
+          <input type="checkbox" id="attEditWorkDayCheck" style="width: 22px; height: 22px; accent-color: var(--black); cursor: pointer;" onchange="onAttEditModalWorkDayToggle(this.checked)">
+        </div>
+
+        <!-- ฟิลด์เวลาเข้า & เวลาออก -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">เวลาเข้างาน</label>
+            <select id="attEditInTimeSelect" class="form-control form-select text-center font-monospace" style="height: 38px; font-weight: 700;" onchange="onAttEditModalTimeChange(this.value)">
+              <!-- Options populated dynamically -->
+            </select>
+          </div>
+          <div>
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">เวลาออกงาน</label>
+            <select id="attEditOutTimeSelect" class="form-control form-select text-center font-monospace" style="height: 38px; font-weight: 700;" onchange="onAttEditModalTimeChange(this.value)">
+              <!-- Options populated dynamically -->
+            </select>
+          </div>
+        </div>
+
+        <!-- สรุปผลการคิด OT สดๆ -->
+        <div style="padding: 12px 14px; background: var(--gray-50); border: 1px solid var(--border-subtle); border-radius: 8px;">
+          <div style="font-size: 0.76rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; display: flex; justify-content: space-between;">
+            <span>สรุปชั่วโมง OT วันนี้:</span>
+            <span id="attEditTotalOTSum" class="font-monospace text-primary font-weight-bold">0.0 ชม.</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 4px;">
+            <span>• OT 1.5 เท่า (วันปกติหลัง 17:00):</span>
+            <span class="font-monospace font-weight-bold" id="attEditPreviewOT15">0.0 ชม.</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 4px;">
+            <span>• Holiday 1.0 เท่า (วันหยุด 08:30-17:00):</span>
+            <span class="font-monospace font-weight-bold" id="attEditPreviewHol">0.0 ชม.</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.74rem; color: var(--text-secondary);">
+            <span>• OT Holiday 3.0 เท่า (วันหยุดหลัง 17:00):</span>
+            <span class="font-monospace font-weight-bold" id="attEditPreviewOTHol">0.0 ชม.</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 16px;">
+        <button type="button" class="btn btn-secondary" onclick="closeAttendanceEditModal()" style="width: 100%;">ยกเลิก</button>
+        <button type="button" class="btn btn-primary" onclick="saveAttendanceEditModal()" style="width: 100%; font-weight: 700;">บันทึก</button>
       </div>
     </div>
   </div>
