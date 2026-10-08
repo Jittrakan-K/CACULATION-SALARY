@@ -742,7 +742,6 @@
               <!-- Mobile Row 2: Company Picker & Calendar Setup -->
               <div class="cal-header-row cal-header-tools-row">
                 <div class="cal-company-picker">
-                  <span class="cal-company-label">บริษัท:</span>
                   <select id="calHeaderCompanySelect" class="form-select form-select-sm cal-header-select" onchange="onRibbonCompanyChange(this.value)" title="เลือกบริษัทเพื่อดู/แก้ไขปฏิทิน"></select>
                 </div>
                 <button type="button" class="btn btn-outline-primary btn-sm cal-btn-add-comp" onclick="openAddCompanyModal()" title="เพิ่มบริษัทใหม่พร้อมข้อมูลวันที่">
@@ -859,13 +858,29 @@
   <div class="modal-backdrop" id="settingsSalaryModal" style="display:none;">
     <div class="modal-dialog modal-dialog-lg">
       <div class="modal-header">
-        <div>
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <h3>ตั้งค่าโครงสร้างเงินเดือนและเบี้ยเลี้ยง</h3>
-            <span class="card-paydate-badge" id="modalSalaryPeriodBadge">งวด: -</span>
-            <span class="card-paydate-badge" id="modalSalaryConfigStatusBadge">ค่ามาตรฐาน</span>
+        <div class="modal-header-info">
+          <div class="modal-salary-title-wrap">
+            <h3 class="modal-salary-title">
+              <span class="desktop-only-inline">ตั้งค่าโครงสร้างเงินเดือนและเบี้ยเลี้ยง</span>
+              <span class="mobile-only-inline">ตั้งค่าเงินเดือน & เบี้ยเลี้ยง</span>
+            </h3>
+            <div class="modal-salary-badges">
+              <span class="card-paydate-badge modal-badge-period" id="modalSalaryPeriodBadge">
+                <svg class="modal-badge-2d-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <span class="desktop-only-inline">งวด: -</span>
+                <span class="mobile-only-inline">-</span>
+              </span>
+              <span class="card-paydate-badge modal-badge-status status-global" id="modalSalaryConfigStatusBadge">
+                <svg class="modal-badge-2d-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                <span class="desktop-only-inline">ใช้ค่ามาตรฐาน (Global)</span>
+                <span class="mobile-only-inline">ค่ามาตรฐาน</span>
+              </span>
+            </div>
           </div>
-          <p class="subtitle text-muted small" id="modalSalaryPeriodSubtitle" style="margin:4px 0 0 0;">ปรับเปลี่ยนอัตราเงินเดือน เบี้ยเลี้ยง และสูตร OT สำหรับคำนวณเงินได้สุทธิ</p>
+          <p class="subtitle text-muted small" id="modalSalaryPeriodSubtitle" style="margin:4px 0 0 0;">
+            <span class="desktop-only-inline">ปรับเปลี่ยนอัตราเงินเดือน เบี้ยเลี้ยง และสูตร OT สำหรับคำนวณเงินได้สุทธิ</span>
+            <span class="mobile-only-inline">กำหนดอัตราเงินเดือน เบี้ยเลี้ยง และสูตร OT</span>
+          </p>
         </div>
         <button type="button" class="modal-close" onclick="closeSettingsSalaryModal()">&times;</button>
       </div>
@@ -964,28 +979,42 @@
           </div>
         </div>
       </div>
-      <div class="modal-footer modal-footer-between">
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button type="button" class="btn btn-outline-danger" onclick="resetSalaryConfigToDefault()" title="รีเซ็ตค่าในฟอร์มเป็นค่ามาตรฐานเริ่มต้น">
-            รีเซ็ตเป็นค่าเริ่มต้น
+      <div class="modal-footer modal-footer-between salary-settings-footer" id="settingsSalaryModalFooter">
+        <div class="salary-modal-footer-utils" id="salaryModalFooterUtils">
+          <button type="button" class="btn btn-outline-danger btn-sm" onclick="resetSalaryConfigToDefault()" title="รีเซ็ตค่าในฟอร์มเป็นค่ามาตรฐานเริ่มต้น">
+            <span class="desktop-only-inline">รีเซ็ตเป็นค่าเริ่มต้น</span>
+            <span class="mobile-only-inline">รีเซ็ตค่า</span>
           </button>
-          <button type="button" class="btn btn-outline-secondary" onclick="clearSalaryConfigToZero()" title="ปรับยอดเงินเดือน เบี้ยเลี้ยง และเงินหักเป็น 0 ทั้งหมด">
-            เคลียร์เป็น 0 (ยังไม่เริ่มงาน)
+          <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearSalaryConfigToZero()" title="ปรับยอดเงินเดือน เบี้ยเลี้ยง และเงินหักเป็น 0 ทั้งหมด">
+            <span class="desktop-only-inline">เคลียร์เป็น 0 (ยังไม่เริ่มงาน)</span>
+            <span class="mobile-only-inline">เคลียร์เป็น 0</span>
           </button>
-          <button type="button" class="btn btn-outline-secondary" id="btnResetPeriodSalaryConfig" onclick="resetPeriodSalaryConfigToDefault()" style="display: none;" title="ลบการตั้งค่าเฉพาะงวดนี้ แล้วกลับไปใช้ค่ามาตรฐาน">
-            ล้างค่าเฉพาะงวดนี้
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="btnResetPeriodSalaryConfig" onclick="resetPeriodSalaryConfigToDefault()" style="display: none;" title="ลบการตั้งค่าเฉพาะงวดนี้ แล้วกลับไปใช้ค่ามาตรฐาน">
+            <span class="desktop-only-inline">ล้างค่าเฉพาะงวดนี้</span>
+            <span class="mobile-only-inline">ล้างค่างวดนี้</span>
           </button>
-          <button type="button" class="btn btn-outline-primary" onclick="closeSettingsSalaryModal(); openFirebaseConfigModal();" title="ตั้งค่าและเชื่อมต่อเซิร์ฟเวอร์ FIREBASE CLOUD DATABASE">
-            เซิร์ฟเวอร์ FIREBASE
+          <button type="button" class="btn btn-outline-primary btn-sm" onclick="closeSettingsSalaryModal(); openFirebaseConfigModal();" title="ตั้งค่าและเชื่อมต่อเซิร์ฟเวอร์ FIREBASE CLOUD DATABASE">
+            <span class="desktop-only-inline">เซิร์ฟเวอร์ FIREBASE</span>
+            <span class="mobile-only-inline">Firebase</span>
           </button>
         </div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button type="button" class="btn btn-secondary" onclick="closeSettingsSalaryModal()">ยกเลิก</button>
-          <button type="button" class="btn btn-outline-primary" id="btnSaveSalaryForAllPeriods" onclick="saveSalaryConfigFromModal('all')" title="บันทึกใช้เป็นค่ามาตรฐานเริ่มต้นสำหรับทุกงวด">
-            บันทึกใช้กับทุกงวด
-          </button>
-          <button type="button" class="btn btn-primary" id="btnSaveSalaryForPeriod" onclick="saveSalaryConfigFromModal('period')" title="บันทึกการตั้งค่าเฉพาะของงวดเดือนนี้เท่านั้น">
-            บันทึกเฉพาะงวดนี้
+        <div class="salary-modal-footer-actions" id="salaryModalFooterActions">
+          <div class="salary-footer-sub-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeSettingsSalaryModal()">
+              ยกเลิก
+            </button>
+            <button type="button" class="btn btn-outline-primary" id="btnSaveSalaryForAllPeriods" onclick="saveSalaryConfigFromModal('all')" title="บันทึกใช้เป็นค่ามาตรฐานเริ่มต้นสำหรับทุกงวด">
+              <span class="desktop-only-inline">บันทึกใช้กับทุกงวด</span>
+              <span class="mobile-only-inline">ใช้กับทุกงวด</span>
+            </button>
+          </div>
+          <button type="button" class="btn btn-primary btn-save-period-main" id="btnSaveSalaryForPeriod" onclick="saveSalaryConfigFromModal('period')" title="บันทึกการตั้งค่าเฉพาะของงวดเดือนนี้เท่านั้น">
+            <svg class="btn-2d-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            <span id="btnSaveSalaryPeriodLabel">บันทึกเฉพาะงวดนี้</span>
           </button>
         </div>
       </div>

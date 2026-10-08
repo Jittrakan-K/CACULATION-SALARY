@@ -1350,15 +1350,14 @@ input[type="number"]::placeholder,
 }
 
 .badge-cal-company {
-  display: inline-block;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 1rem;
+  display: inline;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: inherit;
   color: var(--black);
-  background: var(--gray-100);
-  padding: 2px 8px;
-  border-radius: 4px;
-  border: 1px solid var(--border-color);
+  background: transparent;
+  padding: 0;
+  border: none;
 }
 
 .calendar-header-actions {
@@ -3179,6 +3178,67 @@ input[type="number"]::placeholder,
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Salary Settings Modal Header Base Styles */
+.modal-salary-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.modal-salary-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.modal-badge-status.status-override {
+  background: var(--gray-100);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+  font-weight: 700;
+}
+.modal-badge-status.status-global {
+  background: var(--gray-50);
+  color: var(--text-secondary);
+  border-color: var(--border-subtle);
+  font-weight: 600;
+}
+.modal-badge-2d-icon {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+  flex-shrink: 0;
+  vertical-align: -1px;
+}
+.btn-2d-icon {
+  width: 13px;
+  height: 13px;
+  stroke: currentColor;
+  flex-shrink: 0;
+  vertical-align: -2px;
+}
+
+/* Salary Settings Footer Desktop Base */
+.salary-settings-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.salary-modal-footer-utils {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.salary-modal-footer-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.salary-footer-sub-actions {
+  display: contents;
 }
 
 .modal-close {
@@ -5875,6 +5935,151 @@ input[type="number"]::placeholder,
     padding: 12px 14px !important;
   }
 
+  /* Salary Structure Modal Header on Mobile */
+  #settingsSalaryModal .modal-header {
+    padding: 12px 14px !important;
+    gap: 10px !important;
+  }
+  #settingsSalaryModal .modal-header-info {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+  #settingsSalaryModal .modal-salary-title-wrap {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 4px !important;
+  }
+  #settingsSalaryModal .modal-salary-title {
+    font-size: 0.92rem !important;
+    font-weight: 800 !important;
+    line-height: 1.3 !important;
+    margin: 0 !important;
+    color: var(--text-primary) !important;
+    letter-spacing: -0.01em !important;
+    white-space: normal !important;
+  }
+  #settingsSalaryModal .modal-salary-badges {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin-top: 3px !important;
+  }
+  #settingsSalaryModal .modal-badge-period,
+  #settingsSalaryModal .modal-badge-status {
+    padding: 3px 8px !important;
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    line-height: 1.25 !important;
+    white-space: nowrap !important;
+    font-family: inherit !important;
+  }
+  #settingsSalaryModal .modal-badge-period {
+    background: var(--gray-100) !important;
+    border: 1px solid var(--border-subtle) !important;
+    color: var(--text-primary) !important;
+    font-weight: 700 !important;
+  }
+  #settingsSalaryModal .modal-badge-status.status-global {
+    background: var(--gray-50) !important;
+    border: 1px solid var(--border-subtle) !important;
+    color: var(--text-secondary) !important;
+  }
+  #settingsSalaryModal .modal-badge-status.status-override {
+    background: var(--black) !important;
+    border: 1px solid var(--black) !important;
+    color: var(--white) !important;
+    font-weight: 700 !important;
+  }
+  #settingsSalaryModal #modalSalaryPeriodSubtitle {
+    font-size: 0.71rem !important;
+    color: var(--text-muted) !important;
+    margin-top: 4px !important;
+    line-height: 1.35 !important;
+    white-space: normal !important;
+  }
+  #settingsSalaryModal .modal-badge-2d-icon {
+    width: 12px !important;
+    height: 12px !important;
+    margin-right: 4px !important;
+    vertical-align: -1px !important;
+    color: currentColor !important;
+  }
+
+  /* Salary Structure Modal Footer on Mobile */
+  #settingsSalaryModal .salary-settings-footer {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding: 12px 14px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+  }
+  #settingsSalaryModal .salary-modal-footer-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  #settingsSalaryModal .btn-save-period-main {
+    width: 100% !important;
+    height: 38px !important;
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 12px !important;
+    border-radius: 8px !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+  }
+  #settingsSalaryModal .salary-footer-sub-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  #settingsSalaryModal .salary-footer-sub-actions .btn {
+    height: 34px !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 8px !important;
+    border-radius: 6px !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+  }
+  #settingsSalaryModal .salary-modal-footer-utils {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    justify-content: center !important;
+    width: 100% !important;
+    margin-top: 4px !important;
+    padding-top: 8px !important;
+    border-top: 1px dashed var(--border-subtle) !important;
+    box-sizing: border-box !important;
+  }
+  #settingsSalaryModal .salary-modal-footer-utils .btn {
+    flex: 1 1 auto !important;
+    height: 28px !important;
+    font-size: 0.7rem !important;
+    font-weight: 500 !important;
+    padding: 0 8px !important;
+    border-radius: 5px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+  }
+
   /* Account Modal on Mobile */
   .account-fields-grid {
     grid-template-columns: 1fr !important;
@@ -5971,19 +6176,53 @@ input[type="number"]::placeholder,
   }
   #manageCompaniesModal .comp-meta-mobile {
     display: flex !important;
+    flex-wrap: wrap !important;
     align-items: center !important;
-    justify-content: center !important;
-    gap: 12px !important;
-    font-size: 0.78rem !important;
-    background: var(--gray-50) !important;
-    border: 1px solid var(--border-subtle) !important;
-    padding: 7px 12px !important;
-    border-radius: 8px !important;
-    margin-bottom: 10px !important;
-    color: var(--text-secondary) !important;
+    justify-content: flex-start !important;
+    gap: 6px 8px !important;
+    margin-top: 4px !important;
+    margin-bottom: 12px !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
   }
-  #manageCompaniesModal .comp-meta-sep {
-    color: var(--gray-400) !important;
+  #manageCompaniesModal .comp-chip-tag,
+  #manageCompaniesModal .comp-chip-year {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 4px 10px !important;
+    border-radius: 6px !important;
+    font-size: 0.76rem !important;
+    background: var(--gray-100) !important;
+    border: 1px solid var(--border-subtle) !important;
+    color: var(--text-secondary) !important;
+    line-height: 1.25 !important;
+  }
+  #manageCompaniesModal .comp-chip-tag {
+    background: var(--gray-100) !important;
+  }
+  #manageCompaniesModal .comp-chip-year {
+    background: var(--gray-50) !important;
+  }
+  #manageCompaniesModal .comp-chip-icon {
+    width: 12px !important;
+    height: 12px !important;
+    color: var(--gray-500) !important;
+    flex-shrink: 0 !important;
+  }
+  #manageCompaniesModal .comp-chip-label {
+    color: var(--text-muted) !important;
+    font-size: 0.72rem !important;
+    font-weight: 500 !important;
+  }
+  #manageCompaniesModal .comp-chip-val {
+    color: var(--text-primary) !important;
+    font-weight: 700 !important;
+  }
+  #manageCompaniesModal .comp-chip-val.font-mono {
+    font-family: var(--font-mono) !important;
+    letter-spacing: 0.3px !important;
   }
   #manageCompaniesModal .col-comp-actions {
     display: flex !important;
@@ -7003,6 +7242,151 @@ body.is-in-simulator .modal-body {
 body.is-in-simulator .modal-footer {
   padding: 12px 14px !important;
 }
+
+/* Salary Structure Modal Header in Simulator */
+body.is-in-simulator #settingsSalaryModal .modal-header {
+  padding: 12px 14px !important;
+  gap: 10px !important;
+}
+body.is-in-simulator #settingsSalaryModal .modal-header-info {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+body.is-in-simulator #settingsSalaryModal .modal-salary-title-wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 4px !important;
+}
+body.is-in-simulator #settingsSalaryModal .modal-salary-title {
+  font-size: 0.92rem !important;
+  font-weight: 800 !important;
+  line-height: 1.3 !important;
+  margin: 0 !important;
+  color: var(--text-primary) !important;
+  letter-spacing: -0.01em !important;
+  white-space: normal !important;
+}
+body.is-in-simulator #settingsSalaryModal .modal-salary-badges {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-top: 3px !important;
+}
+body.is-in-simulator #settingsSalaryModal .modal-badge-period,
+body.is-in-simulator #settingsSalaryModal .modal-badge-status {
+  padding: 3px 8px !important;
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  line-height: 1.25 !important;
+  white-space: nowrap !important;
+  font-family: inherit !important;
+}
+body.is-in-simulator #settingsSalaryModal .modal-badge-period {
+  background: var(--gray-100) !important;
+  border: 1px solid var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+  font-weight: 700 !important;
+}
+body.is-in-simulator #settingsSalaryModal .modal-badge-status.status-global {
+  background: var(--gray-50) !important;
+  border: 1px solid var(--border-subtle) !important;
+  color: var(--text-secondary) !important;
+}
+body.is-in-simulator #settingsSalaryModal .modal-badge-status.status-override {
+  background: var(--black) !important;
+  border: 1px solid var(--black) !important;
+  color: var(--white) !important;
+  font-weight: 700 !important;
+}
+body.is-in-simulator #settingsSalaryModal #modalSalaryPeriodSubtitle {
+  font-size: 0.71rem !important;
+  color: var(--text-muted) !important;
+  margin-top: 4px !important;
+  line-height: 1.35 !important;
+  white-space: normal !important;
+}
+body.is-in-simulator #settingsSalaryModal .modal-badge-2d-icon {
+  width: 12px !important;
+  height: 12px !important;
+  margin-right: 4px !important;
+  vertical-align: -1px !important;
+  color: currentColor !important;
+}
+
+/* Salary Structure Modal Footer in Simulator */
+body.is-in-simulator #settingsSalaryModal .salary-settings-footer {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 8px !important;
+  padding: 12px 14px !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+}
+body.is-in-simulator #settingsSalaryModal .salary-modal-footer-actions {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  width: 100% !important;
+}
+body.is-in-simulator #settingsSalaryModal .btn-save-period-main {
+  width: 100% !important;
+  height: 38px !important;
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 12px !important;
+  border-radius: 8px !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+}
+body.is-in-simulator #settingsSalaryModal .salary-footer-sub-actions {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px !important;
+  width: 100% !important;
+}
+body.is-in-simulator #settingsSalaryModal .salary-footer-sub-actions .btn {
+  height: 34px !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 8px !important;
+  border-radius: 6px !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+}
+body.is-in-simulator #settingsSalaryModal .salary-modal-footer-utils {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  justify-content: center !important;
+  width: 100% !important;
+  margin-top: 4px !important;
+  padding-top: 8px !important;
+  border-top: 1px dashed var(--border-subtle) !important;
+  box-sizing: border-box !important;
+}
+body.is-in-simulator #settingsSalaryModal .salary-modal-footer-utils .btn {
+  flex: 1 1 auto !important;
+  height: 28px !important;
+  font-size: 0.7rem !important;
+  font-weight: 500 !important;
+  padding: 0 8px !important;
+  border-radius: 5px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+}
 body.is-in-simulator .account-fields-grid {
   grid-template-columns: 1fr !important;
   gap: 12px !important;
@@ -7094,19 +7478,53 @@ body.is-in-simulator #manageCompaniesModal .comp-desc {
 }
 body.is-in-simulator #manageCompaniesModal .comp-meta-mobile {
   display: flex !important;
+  flex-wrap: wrap !important;
   align-items: center !important;
-  justify-content: center !important;
-  gap: 12px !important;
-  font-size: 0.78rem !important;
-  background: var(--gray-50) !important;
-  border: 1px solid var(--border-subtle) !important;
-  padding: 7px 12px !important;
-  border-radius: 8px !important;
-  margin-bottom: 10px !important;
-  color: var(--text-secondary) !important;
+  justify-content: flex-start !important;
+  gap: 6px 8px !important;
+  margin-top: 4px !important;
+  margin-bottom: 12px !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
 }
-body.is-in-simulator #manageCompaniesModal .comp-meta-sep {
-  color: var(--gray-400) !important;
+body.is-in-simulator #manageCompaniesModal .comp-chip-tag,
+body.is-in-simulator #manageCompaniesModal .comp-chip-year {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 4px 10px !important;
+  border-radius: 6px !important;
+  font-size: 0.76rem !important;
+  background: var(--gray-100) !important;
+  border: 1px solid var(--border-subtle) !important;
+  color: var(--text-secondary) !important;
+  line-height: 1.25 !important;
+}
+body.is-in-simulator #manageCompaniesModal .comp-chip-tag {
+  background: var(--gray-100) !important;
+}
+body.is-in-simulator #manageCompaniesModal .comp-chip-year {
+  background: var(--gray-50) !important;
+}
+body.is-in-simulator #manageCompaniesModal .comp-chip-icon {
+  width: 12px !important;
+  height: 12px !important;
+  color: var(--gray-500) !important;
+  flex-shrink: 0 !important;
+}
+body.is-in-simulator #manageCompaniesModal .comp-chip-label {
+  color: var(--text-muted) !important;
+  font-size: 0.72rem !important;
+  font-weight: 500 !important;
+}
+body.is-in-simulator #manageCompaniesModal .comp-chip-val {
+  color: var(--text-primary) !important;
+  font-weight: 700 !important;
+}
+body.is-in-simulator #manageCompaniesModal .comp-chip-val.font-mono {
+  font-family: var(--font-mono) !important;
+  letter-spacing: 0.3px !important;
 }
 body.is-in-simulator #manageCompaniesModal .col-comp-actions {
   display: flex !important;

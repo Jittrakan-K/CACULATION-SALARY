@@ -2055,9 +2055,24 @@ function renderManageCompaniesTable() {
         </div>
         ${comp.description ? `<div class="comp-desc text-muted small">${comp.description}</div>` : ''}
         <div class="mobile-only-block comp-meta-mobile">
-          <span class="comp-meta-item"><span class="text-muted">รหัสย่อ:</span> <strong>${comp.code || '-'}</strong></span>
-          <span class="comp-meta-sep">•</span>
-          <span class="comp-meta-item"><span class="text-muted">ปีปฏิทิน:</span> <strong>${yearsStr}</strong></span>
+          <span class="comp-chip-tag">
+            <svg class="comp-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+              <line x1="7" y1="7" x2="7.01" y2="7"></line>
+            </svg>
+            <span class="comp-chip-label">รหัส:</span>
+            <strong class="comp-chip-val font-mono">${comp.code || '-'}</strong>
+          </span>
+          <span class="comp-chip-year">
+            <svg class="comp-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span class="comp-chip-label">ปีปฏิทิน:</span>
+            <strong class="comp-chip-val">${yearsStr}</strong>
+          </span>
         </div>
       </td>
       <td class="col-comp-code desktop-only-table-cell">
@@ -3088,28 +3103,37 @@ function updateModalPeriodInfo() {
   const pName = currentPeriod ? currentPeriod.displayName : 'งวดปัจจุบัน';
   const pMonth = currentPeriod ? currentPeriod.endMonthName : 'งวดนี้';
   const hasPeriodOverride = Boolean(currentPeriod && periodSalaryConfigs && periodSalaryConfigs[currentPeriod.id]);
+  const pYear = currentPeriod ? currentPeriod.yearCE : '';
+  const pMobileName = currentPeriod ? `${pMonth} ${pYear}` : 'งวดนี้';
+
+  const iconCal2D = `<svg class="modal-badge-2d-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`;
+  const iconGlobe2D = `<svg class="modal-badge-2d-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`;
+  const iconEdit2D = `<svg class="modal-badge-2d-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`;
+  const iconSave2D = `<svg class="btn-2d-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>`;
 
   if (badgeEl) {
-    badgeEl.innerText = `งวด: ${pName}`;
+    badgeEl.innerHTML = `${iconCal2D} <span class="desktop-only-inline">งวด: ${pName}</span><span class="mobile-only-inline">${pMobileName}</span>`;
   }
   if (statusEl) {
     if (hasPeriodOverride) {
-      statusEl.innerText = '✏️ มีการตั้งค่าเฉพาะงวดนี้';
-      statusEl.style.background = '#dbeafe';
-      statusEl.style.color = '#1e40af';
-      statusEl.style.borderColor = '#bfdbfe';
+      statusEl.className = 'card-paydate-badge modal-badge-status status-override';
+      statusEl.innerHTML = `${iconEdit2D} <span class="desktop-only-inline">มีการตั้งค่าเฉพาะงวดนี้</span><span class="mobile-only-inline">ปรับเฉพาะงวด</span>`;
     } else {
-      statusEl.innerText = '🌐 ใช้ค่ามาตรฐาน (Global)';
-      statusEl.style.background = '#f1f5f9';
-      statusEl.style.color = '#475569';
-      statusEl.style.borderColor = '#cbd5e1';
+      statusEl.className = 'card-paydate-badge modal-badge-status status-global';
+      statusEl.innerHTML = `${iconGlobe2D} <span class="desktop-only-inline">ใช้ค่ามาตรฐาน (Global)</span><span class="mobile-only-inline">ค่ามาตรฐาน</span>`;
     }
+    statusEl.style.background = '';
+    statusEl.style.color = '';
+    statusEl.style.borderColor = '';
   }
   if (subtitleEl) {
-    subtitleEl.innerText = `ปรับเปลี่ยนอัตราเงินเดือน เบี้ยเลี้ยง และสูตร OT สำหรับ ${pName}`;
+    subtitleEl.innerHTML = `<span class="desktop-only-inline">ปรับเปลี่ยนอัตราเงินเดือน เบี้ยเลี้ยง และสูตร OT สำหรับ ${pName}</span><span class="mobile-only-inline">กำหนดอัตราเงินเดือน เบี้ยเลี้ยง และสูตร OT</span>`;
   }
-  if (btnSavePeriod) {
-    btnSavePeriod.innerText = `💾 บันทึกเฉพาะงวดนี้ (${pMonth})`;
+  const saveLabelEl = document.getElementById('btnSaveSalaryPeriodLabel');
+  if (saveLabelEl) {
+    saveLabelEl.innerText = `บันทึกเฉพาะงวดนี้ (${pMonth})`;
+  } else if (btnSavePeriod) {
+    btnSavePeriod.innerHTML = `${iconSave2D} <span>บันทึกเฉพาะงวดนี้ (${pMonth})</span>`;
   }
   if (btnResetPeriod) {
     btnResetPeriod.style.display = hasPeriodOverride ? 'inline-flex' : 'none';
