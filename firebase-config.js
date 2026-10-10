@@ -10,14 +10,14 @@ const STORAGE_KEY_AUTH_USER = 'salary_auth_current_user_v1';
 const STORAGE_KEY_USERS_LIST = 'salary_app_users_v1';
 const STORAGE_KEY_ACTIVE_EDITING_USER = 'salary_active_editing_user_id_v1';
 
-// ค่าเริ่มต้นคอนฟิก Firebase
+// ค่าเริ่มต้นคอนฟิก Firebase (เชื่อมต่อเซิร์ฟเวอร์ caculation-salary อัตโนมัติทุกอุปกรณ์ทั้งคอมและมือถือ)
 const DEFAULT_FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDemoPlaceholderOnlyForTesting123456",
-  authDomain: "caculation-salary-app.firebaseapp.com",
-  projectId: "caculation-salary-app",
-  storageBucket: "caculation-salary-app.appspot.com",
-  messagingSenderId: "1234567890",
-  appId: "1:1234567890:web:abcdef123456"
+  apiKey: "AIzaSyDCGsmrG1SWZYAK1sLmP1nqFD0t3LMSPbw",
+  authDomain: "caculation-salary.firebaseapp.com",
+  projectId: "caculation-salary",
+  storageBucket: "caculation-salary.firebasestorage.app",
+  messagingSenderId: "709685534305",
+  appId: "1:709685534305:web:d03e6749ee643a38071420"
 };
 
 // ข้อมูลผู้ใช้เริ่มต้นในระบบ (มีเพียง ADMIN หลักคนเดียว)
@@ -304,13 +304,16 @@ function getActiveEditingUserId() {
  * เปลี่ยน User ID ที่กำลังดู/แก้ไขข้อมูล (เฉพาะ ADMIN เท่านั้นที่สามารถสลับดูคนอื่นได้)
  */
 function setActiveEditingUserId(userId) {
+  let nextId = userId || 'user_admin';
   if (currentUser && (currentUser.role !== 'admin' || currentUser.id !== 'user_admin')) {
-    activeEditingUserId = currentUser.id;
-    localStorage.setItem(STORAGE_KEY_ACTIVE_EDITING_USER, currentUser.id);
-    return currentUser.id;
+    nextId = currentUser.id;
   }
-  activeEditingUserId = userId || 'user_admin';
+  const changed = (activeEditingUserId !== nextId);
+  activeEditingUserId = nextId;
   localStorage.setItem(STORAGE_KEY_ACTIVE_EDITING_USER, activeEditingUserId);
+  if (changed && isFirebaseOnline && firebaseDb && typeof syncAllDataWithCloud === 'function') {
+    syncAllDataWithCloud(activeEditingUserId, true);
+  }
   return activeEditingUserId;
 }
 
@@ -340,6 +343,18 @@ async function loginWithPin(pin) {
     return { success: false, error: 'รหัส PIN ต้องมีความยาว 4–8 หลัก' };
   }
 
+  // หากเชื่อมต่อ Firebase ออนไลน์อยู่ ให้ดึงรายชื่อผู้ใช้ล่าสุดจาก Cloud ก่อนตรวจสอบ PIN
+  if (isFirebaseOnline && firebaseDb) {
+    try {
+      const userDirDoc = await firebaseDb.collection('app_system').doc('users_directory').get();
+      if (userDirDoc.exists && Array.isArray(userDirDoc.data().users) && userDirDoc.data().users.length > 0) {
+        localStorage.setItem(STORAGE_KEY_USERS_LIST, JSON.stringify(userDirDoc.data().users));
+      }
+    } catch (e) {
+      console.warn('Could not fetch cloud users before PIN check:', e.message);
+    }
+  }
+
   // ดึงรายชื่อทั้งหมด (internal bypass) เพื่อตรวจสอบรหัส PIN
   const users = getAllSystemUsers(true);
   const foundUser = users.find(u => u.pin === cleanPin);
@@ -356,6 +371,14 @@ async function loginWithPin(pin) {
   
   // กำหนด active editing user
   setActiveEditingUserId(foundUser.id);
+
+  // ดึงข้อมูลเงินเดือน บริษัท ปฏิทิน และเวลาทำงานของบัญชีนี้จาก Cloud ทันที
+  if (isFirebaseOnline && firebaseDb && typeof syncAllDataWithCloud === 'function') {
+    await syncAllDataWithCloud(foundUser.id, true);
+  }
+  if (typeof window.broadcastStorageToSimulator === 'function') {
+    window.broadcastStorageToSimulator();
+  }
 
   return { success: true, user: foundUser };
 }
@@ -493,14 +516,74 @@ async function logoutCurrentUser() {
 }
 
 /**
+ * ตรวจสอบและนำเข้าคอนฟิก Firebase จาก URL (?fb_cfg=...) หรือจากหน้าต่างหลัก (กรณี Phone Simulator)
+ */
+function importFirebaseConfigFromUrlOrParent() {
+  try {
+    // 1. ตรวจสอบจาก URL Parameter (?fb_cfg=...) สำหรับการสแกนหรือคลิกลิงก์ซิงก์ข้ามเครื่องเข้ามือถือ
+    if (typeof window !== 'undefined' && window.location && window.location.search) {
+      const params = new URLSearchParams(window.location.search);
+      const fbCfgB64 = params.get('fb_cfg');
+      if (fbCfgB64) {
+        try {
+          const jsonStr = decodeURIComponent(escape(atob(fbCfgB64)));
+          const parsed = JSON.parse(jsonStr);
+          if (parsed && parsed.projectId && parsed.apiKey) {
+            localStorage.setItem(STORAGE_KEY_FIREBASE_CFG, JSON.stringify(parsed));
+            window._justImportedFbConfigFromUrl = parsed.projectId;
+            // ลบพารามิเตอร์ fb_cfg ออกจาก URL เพื่อความสะอาดและปลอดภัย
+            params.delete('fb_cfg');
+            const newQuery = params.toString();
+            const cleanUrl = window.location.pathname + (newQuery ? '?' + newQuery : '') + (window.location.hash || '');
+            window.history.replaceState({}, document.title, cleanUrl);
+          }
+        } catch (decodeErr) {
+          console.warn('Invalid fb_cfg URL parameter:', decodeErr);
+        }
+      }
+    }
+
+    // 2. หากเปิดอยู่ใน Phone Simulator (iframe) ให้ซิงก์คอนฟิกและข้อมูลจากหน้าต่างหลักอัตโนมัติ
+    if (typeof window !== 'undefined' && window.self !== window.top) {
+      try {
+        if (window.parent && window.parent.localStorage) {
+          const parentLen = window.parent.localStorage.length;
+          for (let i = 0; i < parentLen; i++) {
+            const k = window.parent.localStorage.key(i);
+            if (k && (k.startsWith('orbray_') || k.startsWith('salary_') || k.startsWith('custom_firebase_'))) {
+              const v = window.parent.localStorage.getItem(k);
+              if (v !== null) {
+                localStorage.setItem(k, v);
+              }
+            }
+          }
+        }
+      } catch (crossOriginErr) {
+        // กรณีเบราว์เซอร์บล็อกการเข้าถึง parent.localStorage โดยตรง จะใช้ postMessage แทน
+      }
+    }
+  } catch (e) {
+    console.warn('importFirebaseConfigFromUrlOrParent error:', e);
+  }
+}
+
+/**
  * ตรวจสอบว่ากำลังใช้เซิร์ฟเวอร์ Firebase ที่กำหนดเองหรือไม่
  */
 function isUsingCustomFirebaseServer() {
   try {
     const custom = localStorage.getItem(STORAGE_KEY_FIREBASE_CFG);
-    if (!custom) return false;
-    const parsed = JSON.parse(custom);
-    return Boolean(parsed && parsed.projectId && parsed.projectId !== 'caculation-salary-app');
+    if (custom) {
+      const parsed = JSON.parse(custom);
+      if (parsed && parsed.projectId && parsed.projectId !== 'caculation-salary-app') {
+        return true;
+      }
+    }
+    // รองรับกรณีผู้ใช้แก้ไข DEFAULT_FIREBASE_CONFIG ในไฟล์ firebase-config.js โดยตรง
+    if (DEFAULT_FIREBASE_CONFIG && DEFAULT_FIREBASE_CONFIG.projectId && DEFAULT_FIREBASE_CONFIG.projectId !== 'caculation-salary-app') {
+      return true;
+    }
+    return false;
   } catch (e) {
     return false;
   }
@@ -532,6 +615,34 @@ function saveFirebaseConfig(cfg) {
   } catch (e) {
     console.error('Failed to save firebase config', e);
     return false;
+  }
+}
+
+/**
+ * สร้างลิงก์สำหรับแชร์การตั้งค่า Firebase ไปยังมือถือหรืออุปกรณ์อื่นในคลิกเดียว
+ */
+function generateFirebaseSyncUrl(cfg = null) {
+  try {
+    const activeCfg = cfg || getActiveFirebaseConfig();
+    if (!activeCfg || !activeCfg.projectId || activeCfg.projectId === 'caculation-salary-app') {
+      return '';
+    }
+    const payload = {
+      apiKey: activeCfg.apiKey || '',
+      authDomain: activeCfg.authDomain || '',
+      projectId: activeCfg.projectId || '',
+      storageBucket: activeCfg.storageBucket || '',
+      messagingSenderId: activeCfg.messagingSenderId || '',
+      appId: activeCfg.appId || ''
+    };
+    const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+    const baseUrl = window.location.origin && window.location.origin !== 'null'
+      ? (window.location.origin + window.location.pathname)
+      : window.location.href.split('?')[0];
+    return `${baseUrl}?fb_cfg=${encodeURIComponent(b64)}`;
+  } catch (e) {
+    console.warn('generateFirebaseSyncUrl failed:', e);
+    return '';
   }
 }
 
@@ -587,6 +698,7 @@ async function testFirebaseConnection(cfg) {
  * นำคอนฟิกเซิร์ฟเวอร์ใหม่ไปใช้งานและรีเฟรชการเชื่อมต่อแบบเรียลไทม์
  */
 async function reinitFirebaseWithNewConfig(newCfg) {
+  stopRealtimeCloudSync();
   saveFirebaseConfig(newCfg);
   if (typeof firebase !== 'undefined' && firebase.apps) {
     for (let app of [...firebase.apps]) {
@@ -597,6 +709,12 @@ async function reinitFirebaseWithNewConfig(newCfg) {
   onAuthStateListeners.forEach(cb => {
     try { cb(currentUser, isFirebaseOnline); } catch (e) {}
   });
+  if (isFirebaseOnline) {
+    await syncAllDataWithCloud(null, false);
+  }
+  if (typeof window.broadcastStorageToSimulator === 'function') {
+    window.broadcastStorageToSimulator();
+  }
   return true;
 }
 
@@ -604,6 +722,7 @@ async function reinitFirebaseWithNewConfig(newCfg) {
  * คืนค่าเซิร์ฟเวอร์เป็นค่าเริ่มต้น (โหมด Local Storage ออฟไลน์)
  */
 async function resetFirebaseConfigToDefault() {
+  stopRealtimeCloudSync();
   localStorage.removeItem(STORAGE_KEY_FIREBASE_CFG);
   if (typeof firebase !== 'undefined' && firebase.apps) {
     for (let app of [...firebase.apps]) {
@@ -614,6 +733,9 @@ async function resetFirebaseConfigToDefault() {
   onAuthStateListeners.forEach(cb => {
     try { cb(currentUser, isFirebaseOnline); } catch (e) {}
   });
+  if (typeof window.broadcastStorageToSimulator === 'function') {
+    window.broadcastStorageToSimulator();
+  }
   return true;
 }
 
@@ -621,6 +743,7 @@ async function resetFirebaseConfigToDefault() {
  * เริ่มต้นการทำงานของ Firebase
  */
 function initFirebaseApp() {
+  importFirebaseConfigFromUrlOrParent();
   const cfg = getActiveFirebaseConfig();
   const hasCustom = isUsingCustomFirebaseServer();
 
@@ -648,6 +771,12 @@ function initFirebaseApp() {
 
   // ตรวจสอบผู้ใช้ที่เคยล็อกอินค้างไว้
   checkStoredCurrentUser();
+
+  // หากเชื่อมต่อ Firebase ออนไลน์อยู่ ให้ดึงข้อมูลล่าสุดจาก Cloud และเปิด Real-time Sync ทันที
+  if (isFirebaseOnline && firebaseDb) {
+    syncAllDataWithCloud(null, true);
+    startRealtimeCloudSync();
+  }
 }
 
 function checkStoredCurrentUser() {
@@ -667,10 +796,210 @@ function checkStoredCurrentUser() {
   notifyAuthState(null);
 }
 
+var _activeCloudUnsubscribe = null;
+var _activeUsersUnsubscribe = null;
+var _isApplyingCloudSnapshot = false;
+
+/**
+ * หยุดการซิงก์แบบเรียลไทม์ชั่วคราว
+ */
+function stopRealtimeCloudSync() {
+  if (typeof _activeCloudUnsubscribe === 'function') {
+    try { _activeCloudUnsubscribe(); } catch (e) {}
+    _activeCloudUnsubscribe = null;
+  }
+  if (typeof _activeUsersUnsubscribe === 'function') {
+    try { _activeUsersUnsubscribe(); } catch (e) {}
+    _activeUsersUnsubscribe = null;
+  }
+}
+
+/**
+ * เริ่มฟังการเปลี่ยนแปลงข้อมูลจาก Firestore แบบเรียลไทม์ (Real-time Cross-Device Sync)
+ */
+function startRealtimeCloudSync(userId = null) {
+  stopRealtimeCloudSync();
+  if (!isFirebaseOnline || !firebaseDb) return;
+
+  const targetId = userId || getActiveEditingUserId();
+
+  // 1. ติดตามการเปลี่ยนแปลงข้อมูลเงินเดือน บริษัท ปฏิทิน และเวลาทำงานของ User
+  try {
+    _activeCloudUnsubscribe = firebaseDb.collection('user_salaries').doc(targetId).onSnapshot((doc) => {
+      if (!doc.exists) return;
+      if (doc.metadata && doc.metadata.hasPendingWrites) return; // ข้ามอีเวนต์ที่เกิดจากเครื่องตัวเองเพิ่งเขียน
+      const cloudData = doc.data();
+      if (cloudData && typeof window.applyCloudDataToLocal === 'function') {
+        _isApplyingCloudSnapshot = true;
+        try {
+          window.applyCloudDataToLocal(cloudData, targetId);
+        } finally {
+          _isApplyingCloudSnapshot = false;
+        }
+      }
+    }, (err) => {
+      console.warn('Realtime user_salaries listener warning:', err.message);
+    });
+  } catch (e) {
+    console.warn('Could not attach user_salaries onSnapshot:', e);
+  }
+
+  // 2. ติดตามการเปลี่ยนแปลงข้อมูลโปรไฟล์ผู้ใช้ในระบบ (ชื่อ, รหัสพนักงาน, แผนก, PIN)
+  try {
+    _activeUsersUnsubscribe = firebaseDb.collection('app_system').doc('users_directory').onSnapshot((doc) => {
+      if (!doc.exists) return;
+      if (doc.metadata && doc.metadata.hasPendingWrites) return;
+      const data = doc.data();
+      if (data && Array.isArray(data.users) && data.users.length > 0) {
+        try {
+          localStorage.setItem(STORAGE_KEY_USERS_LIST, JSON.stringify(data.users));
+          const cleanUsers = getAllSystemUsers(true);
+          if (currentUser) {
+            const updatedMe = cleanUsers.find(u => u.id === currentUser.id);
+            if (updatedMe) {
+              currentUser = updatedMe;
+              window.currentUser = updatedMe;
+              localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(updatedMe));
+            }
+          }
+          if (typeof window.refreshAllViewsAfterCloudSync === 'function') {
+            window.refreshAllViewsAfterCloudSync();
+          }
+        } catch (err) {}
+      }
+    }, (err) => {
+      console.warn('Realtime users_directory listener warning:', err.message);
+    });
+  } catch (e) {}
+}
+
+/**
+ * อัปโหลดข้อมูลทั้งหมดในเครื่อง (LocalStorage) ขึ้นไปสำรองและซิงก์บน Cloud Firestore
+ */
+async function pushAllLocalDataToCloud(userId = null, silent = true) {
+  if (!isFirebaseOnline || !firebaseDb) return false;
+  const targetId = userId || getActiveEditingUserId();
+  try {
+    // 1. ซิงก์ทะเบียนรายชื่อผู้ใช้ทั้งหมด
+    const allUsers = getAllSystemUsers(true);
+    await firebaseDb.collection('app_system').doc('users_directory').set({
+      users: allUsers,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    // 2. รวบรวมข้อมูลบริษัท ปฏิทิน โครงสร้างเงินเดือน และเวลาทำงานทั้งหมดของ User นี้
+    if (typeof window.collectAllLocalDataForCloud === 'function') {
+      const payload = window.collectAllLocalDataForCloud(targetId);
+      if (payload && Object.keys(payload).length > 0) {
+        payload.lastUpdated = firebase.firestore.FieldValue.serverTimestamp();
+        await firebaseDb.collection('user_salaries').doc(targetId).set(payload, { merge: true });
+      }
+    }
+    if (!silent && typeof showToastNotification === 'function') {
+      showToastNotification('☁️ อัปโหลดข้อมูลทั้งหมดขึ้น Cloud สำเร็จ!');
+    }
+    return true;
+  } catch (err) {
+    console.warn('pushAllLocalDataToCloud error:', err.message);
+    if (!silent && typeof showToastNotification === 'function') {
+      showToastNotification('⚠️ อัปโหลดข้อมูลขึ้น Cloud ไม่สำเร็จ: ' + err.message);
+    }
+    return false;
+  }
+}
+
+/**
+ * ดึงข้อมูลทั้งหมดจาก Cloud Firestore ลงมาที่เครื่อง (และหากบน Cloud ยังว่างอยู่ จะอัปโหลดข้อมูลจากเครื่องขึ้นไปแทน)
+ */
+async function pullAllUserDataFromCloud(userId = null, silent = true) {
+  if (!isFirebaseOnline || !firebaseDb) return false;
+  const targetId = userId || getActiveEditingUserId();
+  try {
+    // 1. ดึงทะเบียนผู้ใช้จาก Cloud
+    try {
+      const userDirDoc = await firebaseDb.collection('app_system').doc('users_directory').get();
+      if (userDirDoc.exists && Array.isArray(userDirDoc.data().users) && userDirDoc.data().users.length > 0) {
+        localStorage.setItem(STORAGE_KEY_USERS_LIST, JSON.stringify(userDirDoc.data().users));
+        const cleanUsers = getAllSystemUsers(true);
+        if (currentUser) {
+          const updatedMe = cleanUsers.find(u => u.id === currentUser.id);
+          if (updatedMe) {
+            currentUser = updatedMe;
+            window.currentUser = updatedMe;
+            localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(updatedMe));
+          }
+        }
+      } else {
+        // หากบน Cloud ยังไม่มีทะเบียนผู้ใช้ ให้อัปโหลดจากเครื่องขึ้นไป
+        const localUsers = getAllSystemUsers(true);
+        await firebaseDb.collection('app_system').doc('users_directory').set({
+          users: localUsers,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+      }
+    } catch (uErr) {
+      console.warn('Users directory pull warning:', uErr.message);
+    }
+
+    // 2. ดึงข้อมูลเงินเดือน บริษัท ปฏิทิน และเวลาทำงานของ targetId
+    const doc = await firebaseDb.collection('user_salaries').doc(targetId).get();
+    if (doc.exists) {
+      const cloudData = doc.data();
+      const hasMeaningfulData = cloudData && (
+        cloudData.salaryConfig ||
+        cloudData.allCompanies ||
+        cloudData.periodSalaryConfigs ||
+        Object.keys(cloudData).some(k => k.startsWith('attendance_'))
+      );
+
+      if (hasMeaningfulData && typeof window.applyCloudDataToLocal === 'function') {
+        _isApplyingCloudSnapshot = true;
+        try {
+          window.applyCloudDataToLocal(cloudData, targetId);
+        } finally {
+          _isApplyingCloudSnapshot = false;
+        }
+        // อัปโหลดส่วนที่อาจมีเฉพาะในเครื่อง (เช่น บริษัทหรือข้อมูลที่ยังไม่เคยขึ้น Cloud) กลับไปผสานด้วย
+        await pushAllLocalDataToCloud(targetId, true);
+        if (!silent && typeof showToastNotification === 'function') {
+          showToastNotification('☁️ ซิงก์ข้อมูลล่าสุดจาก Cloud เรียบร้อยแล้ว!');
+        }
+        return true;
+      }
+    }
+
+    // หากบน Cloud ยังไม่มีข้อมูลของ User นี้เลย ให้อัปโหลดข้อมูลในเครื่องขึ้นไปเป็นค่าเริ่มต้นบน Cloud
+    await pushAllLocalDataToCloud(targetId, true);
+    if (!silent && typeof showToastNotification === 'function') {
+      showToastNotification('☁️ ซิงก์ข้อมูลเริ่มต้นขึ้น Cloud เรียบร้อยแล้ว!');
+    }
+    return true;
+  } catch (err) {
+    console.warn('pullAllUserDataFromCloud error:', err.message);
+    if (!silent && typeof showToastNotification === 'function') {
+      showToastNotification('⚠️ ดึงข้อมูลจาก Cloud ไม่สำเร็จ: ' + err.message);
+    }
+    return false;
+  }
+}
+
+/**
+ * ซิงก์ข้อมูลแบบสมบูรณ์ (ดึงจาก Cloud + ผสานข้อมูลในเครื่อง + เริ่มฟังการเปลี่ยนแปลงเรียลไทม์)
+ */
+async function syncAllDataWithCloud(userId = null, silent = true) {
+  const ok = await pullAllUserDataFromCloud(userId, silent);
+  startRealtimeCloudSync(userId);
+  return ok;
+}
+
 /**
  * Cloud Sync สโคปตาม User ID
  */
 async function syncDataToCloud(docKey, data, userId = null) {
+  if (typeof window.broadcastStorageToSimulator === 'function') {
+    window.broadcastStorageToSimulator();
+  }
+  if (_isApplyingCloudSnapshot) return false;
   if (!isFirebaseOnline || !firebaseDb) return false;
   const targetId = userId || getActiveEditingUserId();
   try {
@@ -706,3 +1035,4 @@ async function loadDataFromCloud(docKey, userId = null) {
 window.addEventListener('DOMContentLoaded', () => {
   initFirebaseApp();
 });
+

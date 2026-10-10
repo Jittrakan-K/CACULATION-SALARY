@@ -6,6 +6,11 @@
       "**/.*",
       "**/node_modules/**",
       "cal_crops/**",
+      "scratch/**",
+      "_backup_before_minimal/**",
+      "dom_dump.txt",
+      "shared_strings_utf8.txt",
+      "excel_attendance_sample.json",
       "*.xlsx"
     ],
     "rewrites": [

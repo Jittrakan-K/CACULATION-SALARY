@@ -162,11 +162,35 @@ function syncSalaryProfileWithActiveUser() {
   }
 }
 
+function isZeroedLegacySalaryConfig(cfg) {
+  if (!cfg || typeof cfg !== 'object') return true;
+  return (
+    Number(cfg.baseSalary || 0) === 0 &&
+    Number(cfg.diligenceFullAmount || 0) === 0 &&
+    Number(cfg.transportationAllowance || 0) === 0 &&
+    Number(cfg.foodPerDay || 0) === 0 &&
+    Number(cfg.otMealPerDay || 0) === 0 &&
+    Number(cfg.ssoDeduction || 0) === 0
+  );
+}
+
+function sanitizePeriodSalaryConfigs(mapObj) {
+  if (!mapObj || typeof mapObj !== 'object') return {};
+  const cleaned = {};
+  Object.keys(mapObj).forEach(pId => {
+    if (mapObj[pId] && !isZeroedLegacySalaryConfig(mapObj[pId])) {
+      cleaned[pId] = mapObj[pId];
+    }
+  });
+  return cleaned;
+}
+
 function getSalaryConfigForPeriod(periodId) {
-  if (periodId && periodSalaryConfigs && periodSalaryConfigs[periodId]) {
+  if (periodId && periodSalaryConfigs && periodSalaryConfigs[periodId] && !isZeroedLegacySalaryConfig(periodSalaryConfigs[periodId])) {
     return Object.assign({}, DEFAULT_SALARY_CONFIG, periodSalaryConfigs[periodId]);
   }
-  return Object.assign({}, DEFAULT_SALARY_CONFIG, userBaseSalaryConfig || DEFAULT_SALARY_CONFIG);
+  const baseCfg = (!isZeroedLegacySalaryConfig(userBaseSalaryConfig)) ? userBaseSalaryConfig : DEFAULT_SALARY_CONFIG;
+  return Object.assign({}, DEFAULT_SALARY_CONFIG, baseCfg);
 }
 
 function savePeriodSalaryConfigsToStorage() {
@@ -194,6 +218,10 @@ function saveCompaniesToStorage() {
   try {
     localStorage.setItem(STORAGE_KEY_COMPANIES, JSON.stringify(allCompanies));
     localStorage.setItem(STORAGE_KEY_ACTIVE_COMPANY, activeCompanyId);
+    if (typeof syncDataToCloud === 'function') {
+      syncDataToCloud('allCompanies', allCompanies);
+      syncDataToCloud('activeCompanyId', activeCompanyId);
+    }
   } catch (e) {
     console.warn('Companies save failed', e);
   }
@@ -260,28 +288,38 @@ function loadStorageData() {
     const userCfgKey = getScopedUserKey(STORAGE_KEY_SALARY_CONFIG);
     const rawSalaryCfg = localStorage.getItem(userCfgKey);
     if (rawSalaryCfg) {
-      userBaseSalaryConfig = Object.assign({}, DEFAULT_SALARY_CONFIG, JSON.parse(rawSalaryCfg));
+      const parsedCfg = JSON.parse(rawSalaryCfg);
+      userBaseSalaryConfig = isZeroedLegacySalaryConfig(parsedCfg)
+        ? { ...DEFAULT_SALARY_CONFIG }
+        : Object.assign({}, DEFAULT_SALARY_CONFIG, parsedCfg);
     } else if (uid === 'user_admin') {
       const legacyCfg = localStorage.getItem(STORAGE_KEY_SALARY_CONFIG);
-      userBaseSalaryConfig = legacyCfg ? Object.assign({}, DEFAULT_SALARY_CONFIG, JSON.parse(legacyCfg)) : { ...DEFAULT_SALARY_CONFIG };
+      if (legacyCfg) {
+        const parsedLegacy = JSON.parse(legacyCfg);
+        userBaseSalaryConfig = isZeroedLegacySalaryConfig(parsedLegacy)
+          ? { ...DEFAULT_SALARY_CONFIG }
+          : Object.assign({}, DEFAULT_SALARY_CONFIG, parsedLegacy);
+      } else {
+        userBaseSalaryConfig = { ...DEFAULT_SALARY_CONFIG };
+      }
     } else {
       userBaseSalaryConfig = { ...DEFAULT_SALARY_CONFIG };
     }
     currentSalaryConfig = { ...userBaseSalaryConfig };
 
-    // โหลดการตั้งค่าค่าเงินเฉพาะของแต่ละงวดเดือน
+    // โหลดการตั้งค่าค่าเงินเฉพาะของแต่ละงวดเดือน (พร้อมกรองค่า 0 ตกค้างจากเวอร์ชันเก่าออก)
     const userPeriodCfgKey = getScopedUserKey(STORAGE_KEY_PERIOD_SALARY_CONFIGS);
     const rawPeriodSalaryCfg = localStorage.getItem(userPeriodCfgKey);
     if (rawPeriodSalaryCfg) {
       try {
-        periodSalaryConfigs = JSON.parse(rawPeriodSalaryCfg) || {};
+        periodSalaryConfigs = sanitizePeriodSalaryConfigs(JSON.parse(rawPeriodSalaryCfg) || {});
       } catch (e) {
         periodSalaryConfigs = {};
       }
     } else if (uid === 'user_admin') {
       const legacyPeriodCfg = localStorage.getItem(STORAGE_KEY_PERIOD_SALARY_CONFIGS);
       try {
-        periodSalaryConfigs = legacyPeriodCfg ? JSON.parse(legacyPeriodCfg) : {};
+        periodSalaryConfigs = legacyPeriodCfg ? sanitizePeriodSalaryConfigs(JSON.parse(legacyPeriodCfg)) : {};
       } catch (e) {
         periodSalaryConfigs = {};
       }
@@ -313,10 +351,201 @@ function saveCalendarsToStorage() {
       localStorage.setItem(STORAGE_KEY_CALENDARS, JSON.stringify(allCalendars));
     }
     localStorage.setItem(STORAGE_KEY_YEAR, activeYearCE.toString());
+    if (typeof syncDataToCloud === 'function') {
+      syncDataToCloud('activeYearCE', activeYearCE);
+    }
   } catch (e) {
     console.warn('Storage save failed', e);
   }
 }
+
+/**
+ * รวบรวมข้อมูลทั้งหมดในเครื่อง (LocalStorage) ของ targetId เพื่อเตรียมอัปโหลดขึ้น Cloud Firestore
+ */
+window.collectAllLocalDataForCloud = function(targetId = null) {
+  const uid = targetId || ((typeof getActiveEditingUserId === 'function') ? getActiveEditingUserId() : 'user_admin');
+  const payload = {
+    allCompanies: allCompanies,
+    activeCompanyId: activeCompanyId,
+    activeYearCE: activeYearCE
+  };
+
+  try {
+    const cfgRaw = localStorage.getItem(`${STORAGE_KEY_SALARY_CONFIG}_${uid}`)
+      || (uid === 'user_admin' ? localStorage.getItem(STORAGE_KEY_SALARY_CONFIG) : null);
+    if (cfgRaw) {
+      const parsed = JSON.parse(cfgRaw);
+      payload.salaryConfig = isZeroedLegacySalaryConfig(parsed) ? { ...DEFAULT_SALARY_CONFIG } : parsed;
+    } else if (userBaseSalaryConfig) {
+      payload.salaryConfig = isZeroedLegacySalaryConfig(userBaseSalaryConfig) ? { ...DEFAULT_SALARY_CONFIG } : userBaseSalaryConfig;
+    }
+  } catch (e) {}
+
+  try {
+    const pCfgRaw = localStorage.getItem(`${STORAGE_KEY_PERIOD_SALARY_CONFIGS}_${uid}`)
+      || (uid === 'user_admin' ? localStorage.getItem(STORAGE_KEY_PERIOD_SALARY_CONFIGS) : null);
+    if (pCfgRaw) {
+      payload.periodSalaryConfigs = sanitizePeriodSalaryConfigs(JSON.parse(pCfgRaw));
+    } else if (periodSalaryConfigs && Object.keys(periodSalaryConfigs).length > 0) {
+      payload.periodSalaryConfigs = sanitizePeriodSalaryConfigs(periodSalaryConfigs);
+    }
+  } catch (e) {}
+
+  // รวบรวมข้อมูลตารางเวลาทำงาน (Attendance) ของทุกบริษัทและทุกงวดเดือน
+  try {
+    const compIds = Object.keys(allCompanies || { 'orbray': true });
+    compIds.forEach(compId => {
+      const compStoreKey = `${STORAGE_KEY_ATTENDANCE}_${compId}_${uid}`;
+      let rawAtt = localStorage.getItem(compStoreKey);
+      if (!rawAtt && compId === 'orbray') {
+        rawAtt = localStorage.getItem(`${STORAGE_KEY_ATTENDANCE}_${uid}`)
+          || (uid === 'user_admin' ? localStorage.getItem(STORAGE_KEY_ATTENDANCE) : null);
+      }
+      if (rawAtt) {
+        const parsedAtt = JSON.parse(rawAtt);
+        if (parsedAtt && typeof parsedAtt === 'object') {
+          Object.keys(parsedAtt).forEach(periodId => {
+            if (Array.isArray(parsedAtt[periodId]) && parsedAtt[periodId].length > 0) {
+              payload[`attendance_${compId}_${periodId}`] = parsedAtt[periodId];
+            }
+          });
+        }
+      }
+    });
+  } catch (e) {}
+
+  return payload;
+};
+
+/**
+ * นำข้อมูลที่ได้จาก Cloud Firestore มาผสานลง LocalStorage และอัปเดตหน้าจอทันที
+ */
+window.applyCloudDataToLocal = function(cloudData, targetId = null) {
+  if (!cloudData || typeof cloudData !== 'object') return;
+  const uid = targetId || ((typeof getActiveEditingUserId === 'function') ? getActiveEditingUserId() : 'user_admin');
+
+  try {
+    // 1. ผสานข้อมูลทะเบียนบริษัทและปฏิทิน (allCompanies)
+    if (cloudData.allCompanies && typeof cloudData.allCompanies === 'object') {
+      const mergedCompanies = Object.assign({}, allCompanies, cloudData.allCompanies);
+      if (!mergedCompanies['orbray']) {
+        mergedCompanies['orbray'] = JSON.parse(JSON.stringify(DEFAULT_ORBRAY_COMPANY));
+      }
+      allCompanies = mergedCompanies;
+      localStorage.setItem(STORAGE_KEY_COMPANIES, JSON.stringify(allCompanies));
+      if (allCompanies['orbray'] && allCompanies['orbray'].calendars) {
+        localStorage.setItem(STORAGE_KEY_CALENDARS, JSON.stringify(allCompanies['orbray'].calendars));
+      }
+    }
+
+    if (cloudData.activeCompanyId && allCompanies && allCompanies[cloudData.activeCompanyId]) {
+      activeCompanyId = cloudData.activeCompanyId;
+      localStorage.setItem(STORAGE_KEY_ACTIVE_COMPANY, activeCompanyId);
+    }
+
+    if (cloudData.activeYearCE) {
+      activeYearCE = parseInt(cloudData.activeYearCE, 10) || 2026;
+      localStorage.setItem(STORAGE_KEY_YEAR, String(activeYearCE));
+    }
+
+    // 2. ผสานโครงสร้างเงินเดือนหลัก (salaryConfig) โดยไม่ใช้ค่า 0 ตกค้างจากเวอร์ชันเก่ามาทับ
+    if (cloudData.salaryConfig && typeof cloudData.salaryConfig === 'object') {
+      const cleanCloudCfg = isZeroedLegacySalaryConfig(cloudData.salaryConfig)
+        ? { ...DEFAULT_SALARY_CONFIG }
+        : Object.assign({}, DEFAULT_SALARY_CONFIG, cloudData.salaryConfig);
+      const userCfgKey = `${STORAGE_KEY_SALARY_CONFIG}_${uid}`;
+      localStorage.setItem(userCfgKey, JSON.stringify(cleanCloudCfg));
+      if (uid === 'user_admin') {
+        localStorage.setItem(STORAGE_KEY_SALARY_CONFIG, JSON.stringify(cleanCloudCfg));
+      }
+    }
+
+    // 3. ผสานโครงสร้างเงินเดือนรายงวด (periodSalaryConfigs)
+    if (cloudData.periodSalaryConfigs && typeof cloudData.periodSalaryConfigs === 'object') {
+      const userPeriodCfgKey = `${STORAGE_KEY_PERIOD_SALARY_CONFIGS}_${uid}`;
+      const existingRaw = localStorage.getItem(userPeriodCfgKey);
+      let existingObj = {};
+      if (existingRaw) {
+        try { existingObj = sanitizePeriodSalaryConfigs(JSON.parse(existingRaw) || {}); } catch (e) {}
+      }
+      const cleanCloudPeriods = sanitizePeriodSalaryConfigs(cloudData.periodSalaryConfigs);
+      const mergedPeriodCfgs = Object.assign({}, existingObj, cleanCloudPeriods);
+      localStorage.setItem(userPeriodCfgKey, JSON.stringify(mergedPeriodCfgs));
+      if (uid === 'user_admin') {
+        localStorage.setItem(STORAGE_KEY_PERIOD_SALARY_CONFIGS, JSON.stringify(mergedPeriodCfgs));
+      }
+    }
+
+    // 4. ผสานข้อมูลตารางลงเวลาทำงาน (เรียงคีย์ legacy ก่อน แล้วค่อยทับด้วยคีย์ที่มีรหัสบริษัท)
+    const attKeys = Object.keys(cloudData)
+      .filter(k => k.startsWith('attendance_'))
+      .sort((a, b) => {
+        const aHasComp = a.substring('attendance_'.length).includes('_') ? 1 : 0;
+        const bHasComp = b.substring('attendance_'.length).includes('_') ? 1 : 0;
+        return aHasComp - bHasComp;
+      });
+
+    attKeys.forEach(key => {
+      const rows = cloudData[key];
+      if (!Array.isArray(rows)) return;
+
+      // รูปแบบ key: attendance_<compId>_<YYYY-MM> หรือ attendance_<YYYY-MM>
+      const withoutPrefix = key.substring('attendance_'.length);
+      const lastUnderscore = withoutPrefix.lastIndexOf('_');
+      let compId = 'orbray';
+      let periodId = withoutPrefix;
+      if (lastUnderscore > 0) {
+        compId = withoutPrefix.substring(0, lastUnderscore);
+        periodId = withoutPrefix.substring(lastUnderscore + 1);
+      }
+
+      const compStoreKey = `${STORAGE_KEY_ATTENDANCE}_${compId}_${uid}`;
+      let compStore = {};
+      try {
+        const raw = localStorage.getItem(compStoreKey);
+        if (raw) compStore = JSON.parse(raw) || {};
+      } catch (e) {}
+      compStore[periodId] = rows;
+      localStorage.setItem(compStoreKey, JSON.stringify(compStore));
+
+      if (compId === 'orbray') {
+        const legacyKey = `${STORAGE_KEY_ATTENDANCE}_${uid}`;
+        let legacyStore = {};
+        try {
+          const rawL = localStorage.getItem(legacyKey);
+          if (rawL) legacyStore = JSON.parse(rawL) || {};
+        } catch (e) {}
+        legacyStore[periodId] = rows;
+        localStorage.setItem(legacyKey, JSON.stringify(legacyStore));
+      }
+    });
+
+    // 5. รีเฟรชหน้าจอให้แสดงข้อมูลล่าสุดทันที
+    window.refreshAllViewsAfterCloudSync();
+    if (typeof window.broadcastStorageToSimulator === 'function') {
+      window.broadcastStorageToSimulator();
+    }
+  } catch (err) {
+    console.warn('applyCloudDataToLocal error:', err);
+  }
+};
+
+/**
+ * รีเฟรช UI ทั้งหมดหลังซิงก์ข้อมูลจาก Cloud หรือเปลี่ยนสถานะจากอีกหน้าจอ
+ */
+window.refreshAllViewsAfterCloudSync = function() {
+  const prevPeriodId = currentPeriod ? currentPeriod.id : null;
+  loadStorageData();
+  renderCompanyDropdown();
+  updateYearSelectDropdown();
+  refreshPeriodSelector(prevPeriodId);
+  renderOrbrayCalendarGrid();
+  updateRateLabelsOnCards();
+  updateCardPeriodBadge();
+  recalculateSalary();
+  updateAdminScopeBanner();
+  updateNavbarAuthUI(currentUser, isFirebaseOnline);
+};
 
 function saveAttendanceToStorage(periodId, rows) {
   try {
@@ -1449,7 +1678,7 @@ function onAppYearChange() {
   renderOrbrayCalendarGrid();
 }
 
-function refreshPeriodSelector() {
+function refreshPeriodSelector(preferredPeriodId = null) {
   const select1 = document.getElementById('payrollPeriodSelect');
   const select2 = document.getElementById('payrollPeriodSelectAtt');
   const selects = [select1, select2].filter(Boolean);
@@ -1467,7 +1696,9 @@ function refreshPeriodSelector() {
   });
 
   const currentMonthNum = new Date().getMonth() + 1;
-  const matchPeriod = periods.find(p => p.monthIndex + 1 === currentMonthNum) || periods[0];
+  const matchPeriod = (preferredPeriodId && periods.find(p => p.id === preferredPeriodId))
+    || periods.find(p => p.monthIndex + 1 === currentMonthNum)
+    || periods[0];
   selects.forEach(select => {
     select.value = matchPeriod.id;
   });
@@ -4207,16 +4438,27 @@ function openFirebaseConfigModal() {
   setInputValue('fbCfgMessagingSenderId', cfg.messagingSenderId || '');
   setInputValue('fbCfgAppId', cfg.appId || '');
 
-  // แสดงผลแถบสถานะเซิร์ฟเวอร์
+  // แสดงผลแถบสถานะเซิร์ฟเวอร์ พร้อมปุ่มซิงก์ข้ามอุปกรณ์ (คอม <-> มือถือ)
   const statusBanner = document.getElementById('fbServerStatusBanner');
   if (statusBanner) {
     if (isCustom) {
       statusBanner.className = 'fb-server-status-banner banner-custom';
       statusBanner.innerHTML = `
         <div class="fb-status-icon">🟢</div>
-        <div class="fb-status-content">
+        <div class="fb-status-content" style="flex:1;">
           <div class="fb-status-title">เซิร์ฟเวอร์: <strong>${escapeHtml(cfg.projectId)}</strong> <span class="fb-status-tag-custom">(ออนไลน์)</span></div>
-          <div class="fb-status-desc">เชื่อมต่อ Firebase Firestore สำเร็จ ข้อมูลจะถูกซิงก์ออนไลน์</div>
+          <div class="fb-status-desc">เชื่อมต่อ Firebase Firestore สำเร็จ ข้อมูลจะถูกซิงก์ออนไลน์แบบเรียลไทม์</div>
+          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;">
+            <button type="button" class="btn btn-sm" style="background:#111111; color:#ffffff; border:1px solid #111111; font-size:0.76rem; padding:5px 10px; border-radius:6px; cursor:pointer; font-weight:600;" onclick="copyFirebaseSyncLinkForMobile()">
+              📲 คัดลอกลิงก์ซิงก์เข้ามือถืออัตโนมัติ
+            </button>
+            <button type="button" class="btn btn-sm" style="background:#ffffff; color:#111111; border:1px solid #cbd5e1; font-size:0.76rem; padding:5px 10px; border-radius:6px; cursor:pointer; font-weight:600;" onclick="manualPullFromCloud()">
+              ☁️ ดึงข้อมูลจาก Cloud
+            </button>
+            <button type="button" class="btn btn-sm" style="background:#ffffff; color:#111111; border:1px solid #cbd5e1; font-size:0.76rem; padding:5px 10px; border-radius:6px; cursor:pointer; font-weight:600;" onclick="manualPushToCloud()">
+              📤 อัปโหลดข้อมูลขึ้น Cloud
+            </button>
+          </div>
         </div>
       `;
     } else {
@@ -4225,13 +4467,87 @@ function openFirebaseConfigModal() {
         <div class="fb-status-icon">🟡</div>
         <div class="fb-status-content">
           <div class="fb-status-title">เซิร์ฟเวอร์: <strong>Local Storage</strong> <span class="fb-status-tag-demo">(ออฟไลน์)</span></div>
-          <div class="fb-status-desc">ยังไม่ได้เชื่อมต่อ Cloud ข้อมูลถูกจัดเก็บปลอดภัยภายในเครื่องนี้</div>
+          <div class="fb-status-desc">ยังไม่ได้เชื่อมต่อ Cloud ข้อมูลถูกจัดเก็บแยกตามเบราว์เซอร์ของแต่ละเครื่อง (หากต้องการให้คอมและมือถือซิงก์กัน กรุณาใส่คอนฟิก Firebase ด้านล่าง หรือเปิดผ่านลิงก์ซิงก์จากเครื่องที่เชื่อมต่อแล้ว)</div>
         </div>
       `;
     }
   }
 
   modal.style.display = 'flex';
+}
+
+/**
+ * คัดลอกลิงก์ที่มีคอนฟิก Firebase ฝังอยู่ เพื่อส่งไปเปิดในมือถือให้เชื่อมต่ออัตโนมัติทันที
+ */
+function copyFirebaseSyncLinkForMobile() {
+  const alertBox = document.getElementById('fbConfigAlert');
+  const apiKey = document.getElementById('fbCfgApiKey')?.value.trim();
+  const authDomain = document.getElementById('fbCfgAuthDomain')?.value.trim();
+  const projectId = document.getElementById('fbCfgProjectId')?.value.trim();
+  const storageBucket = document.getElementById('fbCfgStorageBucket')?.value.trim();
+  const messagingSenderId = document.getElementById('fbCfgMessagingSenderId')?.value.trim();
+  const appId = document.getElementById('fbCfgAppId')?.value.trim();
+
+  const cfg = (projectId && apiKey)
+    ? { apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId }
+    : (typeof getActiveFirebaseConfig === 'function' ? getActiveFirebaseConfig() : null);
+
+  const syncUrl = typeof generateFirebaseSyncUrl === 'function' ? generateFirebaseSyncUrl(cfg) : '';
+  if (!syncUrl) {
+    showToastNotification('⚠️ กรุณาบันทึกการเชื่อมต่อ Firebase ก่อนสร้างลิงก์ซิงก์');
+    return;
+  }
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(syncUrl).then(() => {
+      if (alertBox) {
+        alertBox.className = 'alert alert-success';
+        alertBox.innerHTML = '📲 <strong>คัดลอกลิงก์ซิงก์เข้ามือถือสำเร็จ!</strong> ส่งลิงก์นี้ไปเปิดบนเบราว์เซอร์มือถือ ระบบจะเชื่อมต่อ Firebase และดึงข้อมูลทั้งหมดให้อัตโนมัติทันทีโดยไม่ต้องกรอกคอนฟิกใหม่';
+        alertBox.style.display = 'block';
+      }
+      showToastNotification('📲 คัดลอกลิงก์ซิงก์เข้ามือถือเรียบร้อยแล้ว!');
+    }).catch(() => {
+      prompt('คัดลอกลิงก์ด้านล่างเพื่อนำไปเปิดในมือถือ:', syncUrl);
+    });
+  } else {
+    prompt('คัดลอกลิงก์ด้านล่างเพื่อนำไปเปิดในมือถือ:', syncUrl);
+  }
+}
+
+async function manualPullFromCloud() {
+  const alertBox = document.getElementById('fbConfigAlert');
+  if (alertBox) {
+    alertBox.className = 'alert alert-info';
+    alertBox.textContent = '⏳ กำลังดึงข้อมูลล่าสุดจาก Cloud Firestore...';
+    alertBox.style.display = 'block';
+  }
+  if (typeof pullAllUserDataFromCloud === 'function') {
+    const ok = await pullAllUserDataFromCloud(null, false);
+    if (alertBox) {
+      alertBox.className = ok ? 'alert alert-success' : 'alert alert-danger';
+      alertBox.textContent = ok
+        ? '✅ ดึงข้อมูลทั้งหมดจาก Cloud มาอัปเดตในเครื่องนี้เรียบร้อยแล้ว!'
+        : '❌ ไม่สามารถดึงข้อมูลจาก Cloud ได้ กรุณาตรวจสอบการเชื่อมต่อ';
+    }
+  }
+}
+
+async function manualPushToCloud() {
+  const alertBox = document.getElementById('fbConfigAlert');
+  if (alertBox) {
+    alertBox.className = 'alert alert-info';
+    alertBox.textContent = '⏳ กำลังอัปโหลดข้อมูลทั้งหมดในเครื่องนี้ขึ้น Cloud Firestore...';
+    alertBox.style.display = 'block';
+  }
+  if (typeof pushAllLocalDataToCloud === 'function') {
+    const ok = await pushAllLocalDataToCloud(null, false);
+    if (alertBox) {
+      alertBox.className = ok ? 'alert alert-success' : 'alert alert-danger';
+      alertBox.textContent = ok
+        ? '✅ อัปโหลดข้อมูลทั้งหมดในเครื่องนี้ขึ้น Cloud เรียบร้อยแล้ว! อุปกรณ์อื่นที่ใช้บัญชีเดียวกันจะได้รับข้อมูลตรงกันทันที'
+        : '❌ ไม่สามารถอัปโหลดข้อมูลขึ้น Cloud ได้ กรุณาตรวจสอบการเชื่อมต่อ';
+    }
+  }
 }
 
 function closeFirebaseConfigModal() {
@@ -4433,7 +4749,7 @@ async function saveFirebaseConfigFromModal() {
 
   closeFirebaseConfigModal();
   updateNavbarAuthUI(currentUser, isFirebaseOnline);
-  showSuccessPopup('เชื่อมต่อสำเร็จ', `บันทึกและเชื่อมต่อเซิร์ฟเวอร์ Firebase (${projectId}) เรียบร้อยแล้ว`);
+  showSuccessPopup('เชื่อมต่อสำเร็จ', `บันทึกและเชื่อมต่อเซิร์ฟเวอร์ Firebase (${projectId}) พร้อมซิงก์ข้อมูลเรียบร้อยแล้ว`);
   showToastNotification(`🔥 เชื่อมต่อเซิร์ฟเวอร์ Firebase (${projectId}) สำเร็จ!`);
 }
 
@@ -4523,8 +4839,71 @@ function showToastNotification(message) {
 }
 
 // ==========================================================================
-// 16. เริ่มต้นระบบ (DOM Ready Initialization)
+// 16. เริ่มต้นระบบ (DOM Ready Initialization) & Cross-Window / Simulator Sync
 // ==========================================================================
+window.broadcastStorageToSimulator = function() {
+  try {
+    const dump = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith('orbray_') || k.startsWith('salary_') || k.startsWith('custom_firebase_'))) {
+        dump[k] = localStorage.getItem(k);
+      }
+    }
+    // หากอยู่บนหน้าต่างหลัก ให้ส่งข้อมูลไปยัง Phone Simulator iframe
+    const simIframe = document.getElementById('simIframe');
+    if (simIframe && simIframe.contentWindow) {
+      simIframe.contentWindow.postMessage({ type: 'SALARY_APP_STORAGE_SYNC', storage: dump }, '*');
+    }
+    // หากอยู่ใน Phone Simulator iframe ให้ส่งข้อมูลกลับไปยังหน้าต่างหลักด้วย
+    if (window.self !== window.top && window.parent) {
+      window.parent.postMessage({ type: 'SALARY_APP_STORAGE_SYNC', storage: dump }, '*');
+    }
+  } catch (e) {}
+};
+
+window.addEventListener('message', async (event) => {
+  if (!event.data || event.data.type !== 'SALARY_APP_STORAGE_SYNC' || !event.data.storage) return;
+  try {
+    const incoming = event.data.storage;
+    let fbConfigChanged = false;
+    const prevFbCfg = localStorage.getItem(STORAGE_KEY_FIREBASE_CFG);
+
+    Object.keys(incoming).forEach(k => {
+      if (incoming[k] !== null && incoming[k] !== undefined) {
+        if (k === STORAGE_KEY_FIREBASE_CFG && incoming[k] !== prevFbCfg) {
+          fbConfigChanged = true;
+        }
+        localStorage.setItem(k, incoming[k]);
+      }
+    });
+
+    if (fbConfigChanged && typeof initFirebaseApp === 'function') {
+      initFirebaseApp();
+    } else if (typeof checkStoredCurrentUser === 'function') {
+      checkStoredCurrentUser();
+    }
+
+    if (typeof window.refreshAllViewsAfterCloudSync === 'function') {
+      window.refreshAllViewsAfterCloudSync();
+    }
+  } catch (e) {}
+});
+
+window.addEventListener('storage', (event) => {
+  if (!event.key) return;
+  if (event.key.startsWith('orbray_') || event.key.startsWith('salary_') || event.key.startsWith('custom_firebase_')) {
+    if (event.key === STORAGE_KEY_FIREBASE_CFG && typeof initFirebaseApp === 'function') {
+      initFirebaseApp();
+    } else if (typeof checkStoredCurrentUser === 'function') {
+      checkStoredCurrentUser();
+    }
+    if (typeof window.refreshAllViewsAfterCloudSync === 'function') {
+      window.refreshAllViewsAfterCloudSync();
+    }
+  }
+});
+
 window.addEventListener('DOMContentLoaded', () => {
   // ตรวจสอบว่ากำลังทำงานอยู่ภายใน Phone Simulator หรือไม่
   if (window.self !== window.top || window.location.search.includes('mode=mobile_sim')) {
@@ -4552,6 +4931,12 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   updateAdminScopeBanner();
+
+  if (window._justImportedFbConfigFromUrl) {
+    setTimeout(() => {
+      showToastNotification(`🔥 เชื่อมต่อ Firebase (${window._justImportedFbConfigFromUrl}) และซิงก์ข้อมูลเข้ามือถือสำเร็จ!`);
+    }, 500);
+  }
 });
 
 // ==========================================================================
@@ -4664,9 +5049,19 @@ function openPhoneSimulator() {
 
   const iframe = document.getElementById('simIframe');
   if (iframe) {
+    if (!iframe._hasSyncLoadListener) {
+      iframe.addEventListener('load', () => {
+        if (typeof window.broadcastStorageToSimulator === 'function') {
+          window.broadcastStorageToSimulator();
+        }
+      });
+      iframe._hasSyncLoadListener = true;
+    }
     const currentSrc = iframe.getAttribute('src');
     if (!currentSrc || currentSrc === 'about:blank') {
       iframe.src = 'index.html?mode=mobile_sim';
+    } else if (typeof window.broadcastStorageToSimulator === 'function') {
+      window.broadcastStorageToSimulator();
     }
   }
 
