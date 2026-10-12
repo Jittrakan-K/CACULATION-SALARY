@@ -140,6 +140,7 @@ let periodSalaryConfigs = {}; // จัดเก็บการตั้งค�
 // ==========================================================================
 const STORAGE_KEY_CALENDARS = 'orbray_salary_calendars_v2';
 const STORAGE_KEY_YEAR = 'orbray_salary_active_year_v2';
+const STORAGE_KEY_ACTIVE_PERIOD = 'orbray_salary_active_period_v2';
 const STORAGE_KEY_ATTENDANCE = 'orbray_salary_attendance_store_v2';
 const STORAGE_KEY_SALARY_CONFIG = 'salary_rates_config_v2';
 const STORAGE_KEY_PERIOD_SALARY_CONFIGS = 'period_salary_configs_v2';
@@ -164,6 +165,7 @@ function syncSalaryProfileWithActiveUser() {
 
 function isZeroedLegacySalaryConfig(cfg) {
   if (!cfg || typeof cfg !== 'object') return true;
+  if (cfg._intentionalZero) return false;
   return (
     Number(cfg.baseSalary || 0) === 0 &&
     Number(cfg.diligenceFullAmount || 0) === 0 &&
@@ -178,7 +180,7 @@ function sanitizePeriodSalaryConfigs(mapObj) {
   if (!mapObj || typeof mapObj !== 'object') return {};
   const cleaned = {};
   Object.keys(mapObj).forEach(pId => {
-    if (mapObj[pId] && !isZeroedLegacySalaryConfig(mapObj[pId])) {
+    if (mapObj[pId] && typeof mapObj[pId] === 'object') {
       cleaned[pId] = mapObj[pId];
     }
   });
@@ -186,7 +188,7 @@ function sanitizePeriodSalaryConfigs(mapObj) {
 }
 
 function getSalaryConfigForPeriod(periodId) {
-  if (periodId && periodSalaryConfigs && periodSalaryConfigs[periodId] && !isZeroedLegacySalaryConfig(periodSalaryConfigs[periodId])) {
+  if (periodId && periodSalaryConfigs && periodSalaryConfigs[periodId] && typeof periodSalaryConfigs[periodId] === 'object') {
     return Object.assign({}, DEFAULT_SALARY_CONFIG, periodSalaryConfigs[periodId]);
   }
   const baseCfg = (!isZeroedLegacySalaryConfig(userBaseSalaryConfig)) ? userBaseSalaryConfig : DEFAULT_SALARY_CONFIG;
@@ -364,10 +366,12 @@ function saveCalendarsToStorage() {
  */
 window.collectAllLocalDataForCloud = function(targetId = null) {
   const uid = targetId || ((typeof getActiveEditingUserId === 'function') ? getActiveEditingUserId() : 'user_admin');
+  const savedPeriodId = localStorage.getItem(STORAGE_KEY_ACTIVE_PERIOD) || (currentPeriod ? currentPeriod.id : null);
   const payload = {
     allCompanies: allCompanies,
     activeCompanyId: activeCompanyId,
-    activeYearCE: activeYearCE
+    activeYearCE: activeYearCE,
+    activePeriodId: savedPeriodId
   };
 
   try {
@@ -388,6 +392,8 @@ window.collectAllLocalDataForCloud = function(targetId = null) {
       payload.periodSalaryConfigs = sanitizePeriodSalaryConfigs(JSON.parse(pCfgRaw));
     } else if (periodSalaryConfigs && Object.keys(periodSalaryConfigs).length > 0) {
       payload.periodSalaryConfigs = sanitizePeriodSalaryConfigs(periodSalaryConfigs);
+    } else {
+      payload.periodSalaryConfigs = {};
     }
   } catch (e) {}
 
@@ -427,7 +433,7 @@ window.applyCloudDataToLocal = function(cloudData, targetId = null) {
   try {
     // 1. ผสานข้อมูลทะเบียนบริษัทและปฏิทิน (allCompanies)
     if (cloudData.allCompanies && typeof cloudData.allCompanies === 'object') {
-      const mergedCompanies = Object.assign({}, allCompanies, cloudData.allCompanies);
+      const mergedCompanies = Object.assign({}, cloudData.allCompanies);
       if (!mergedCompanies['orbray']) {
         mergedCompanies['orbray'] = JSON.parse(JSON.stringify(DEFAULT_ORBRAY_COMPANY));
       }
@@ -448,6 +454,10 @@ window.applyCloudDataToLocal = function(cloudData, targetId = null) {
       localStorage.setItem(STORAGE_KEY_YEAR, String(activeYearCE));
     }
 
+    if (cloudData.activePeriodId) {
+      localStorage.setItem(STORAGE_KEY_ACTIVE_PERIOD, String(cloudData.activePeriodId));
+    }
+
     // 2. ผสานโครงสร้างเงินเดือนหลัก (salaryConfig) โดยไม่ใช้ค่า 0 ตกค้างจากเวอร์ชันเก่ามาทับ
     if (cloudData.salaryConfig && typeof cloudData.salaryConfig === 'object') {
       const cleanCloudCfg = isZeroedLegacySalaryConfig(cloudData.salaryConfig)
@@ -460,19 +470,13 @@ window.applyCloudDataToLocal = function(cloudData, targetId = null) {
       }
     }
 
-    // 3. ผสานโครงสร้างเงินเดือนรายงวด (periodSalaryConfigs)
+    // 3. ผสานโครงสร้างเงินเดือนรายงวด (periodSalaryConfigs) ให้ตรงกับ Cloud ล่าสุด
     if (cloudData.periodSalaryConfigs && typeof cloudData.periodSalaryConfigs === 'object') {
       const userPeriodCfgKey = `${STORAGE_KEY_PERIOD_SALARY_CONFIGS}_${uid}`;
-      const existingRaw = localStorage.getItem(userPeriodCfgKey);
-      let existingObj = {};
-      if (existingRaw) {
-        try { existingObj = sanitizePeriodSalaryConfigs(JSON.parse(existingRaw) || {}); } catch (e) {}
-      }
       const cleanCloudPeriods = sanitizePeriodSalaryConfigs(cloudData.periodSalaryConfigs);
-      const mergedPeriodCfgs = Object.assign({}, existingObj, cleanCloudPeriods);
-      localStorage.setItem(userPeriodCfgKey, JSON.stringify(mergedPeriodCfgs));
+      localStorage.setItem(userPeriodCfgKey, JSON.stringify(cleanCloudPeriods));
       if (uid === 'user_admin') {
-        localStorage.setItem(STORAGE_KEY_PERIOD_SALARY_CONFIGS, JSON.stringify(mergedPeriodCfgs));
+        localStorage.setItem(STORAGE_KEY_PERIOD_SALARY_CONFIGS, JSON.stringify(cleanCloudPeriods));
       }
     }
 
@@ -534,11 +538,11 @@ window.applyCloudDataToLocal = function(cloudData, targetId = null) {
  * รีเฟรช UI ทั้งหมดหลังซิงก์ข้อมูลจาก Cloud หรือเปลี่ยนสถานะจากอีกหน้าจอ
  */
 window.refreshAllViewsAfterCloudSync = function() {
-  const prevPeriodId = currentPeriod ? currentPeriod.id : null;
+  const savedPeriodId = localStorage.getItem(STORAGE_KEY_ACTIVE_PERIOD) || (currentPeriod ? currentPeriod.id : null);
   loadStorageData();
   renderCompanyDropdown();
   updateYearSelectDropdown();
-  refreshPeriodSelector(prevPeriodId);
+  refreshPeriodSelector(savedPeriodId);
   renderOrbrayCalendarGrid();
   updateRateLabelsOnCards();
   updateCardPeriodBadge();
@@ -1231,7 +1235,7 @@ function saveAttendanceEditModal() {
   }
 }
 
-function autoFillNormalWorkdays() {
+function autoFillNormalWorkdays(shouldSave = true) {
   currentAttendance.forEach(row => {
     const dayInfo = getOrbrayDayInfo(row.date);
     if (dayInfo.isWorkDay) {
@@ -1254,9 +1258,11 @@ function autoFillNormalWorkdays() {
       row.otDay = 0;
     }
   });
-  buildAttendanceTable();
-  recalculateSalary();
-  saveCurrentAttendance();
+  if (shouldSave) {
+    buildAttendanceTable();
+    recalculateSalary();
+    saveCurrentAttendance();
+  }
 }
 
 function clearAttendanceTable() {
@@ -1709,15 +1715,16 @@ function refreshPeriodSelector(preferredPeriodId = null) {
     });
   });
 
+  const savedPeriodId = preferredPeriodId || localStorage.getItem(STORAGE_KEY_ACTIVE_PERIOD);
   const currentMonthNum = new Date().getMonth() + 1;
-  const matchPeriod = (preferredPeriodId && periods.find(p => p.id === preferredPeriodId))
+  const matchPeriod = (savedPeriodId && periods.find(p => p.id === savedPeriodId))
     || periods.find(p => p.monthIndex + 1 === currentMonthNum)
     || periods[0];
   selects.forEach(select => {
     select.value = matchPeriod.id;
   });
 
-  onPayrollPeriodSelectChange();
+  onPayrollPeriodSelectChange(false);
 }
 
 function onPayrollPeriodSelectAttChange() {
@@ -1726,10 +1733,10 @@ function onPayrollPeriodSelectAttChange() {
   if (selectAtt && selectMain) {
     selectMain.value = selectAtt.value;
   }
-  onPayrollPeriodSelectChange();
+  onPayrollPeriodSelectChange(true);
 }
 
-function onPayrollPeriodSelectChange() {
+function onPayrollPeriodSelectChange(isUserAction = true) {
   const select = document.getElementById('payrollPeriodSelect');
   const selectAtt = document.getElementById('payrollPeriodSelectAtt');
   if (!select && !selectAtt) return;
@@ -1747,6 +1754,13 @@ function onPayrollPeriodSelectChange() {
   salaryProfile.periodMonth = `${found.endMonthNameEN} ${found.yearCE}`;
   salaryProfile.payDate = found.payDate;
 
+  try {
+    localStorage.setItem(STORAGE_KEY_ACTIVE_PERIOD, found.id);
+    if (isUserAction && typeof syncDataToCloud === 'function') {
+      syncDataToCloud('activePeriodId', found.id);
+    }
+  } catch (e) {}
+
   // โหลดการตั้งค่าค่าเงินเฉพาะของงวดนี้ (ถ้ามีบันทึกแยกไว้) หรือใช้ค่ามาตรฐาน
   currentSalaryConfig = getSalaryConfigForPeriod(found.id);
   updateRateLabelsOnCards();
@@ -1760,7 +1774,7 @@ function onPayrollPeriodSelectChange() {
     currentAttendance = JSON.parse(JSON.stringify(EXCEL_SAMPLE_ATTENDANCE));
   } else {
     generateAttendanceForPeriod(found.startDate, found.endDate);
-    autoFillNormalWorkdays();
+    autoFillNormalWorkdays(false);
   }
 
   const periodSubtitle = document.getElementById('timesheetPeriodSubtitle');
@@ -4855,12 +4869,24 @@ function showToastNotification(message) {
 // ==========================================================================
 // 16. เริ่มต้นระบบ (DOM Ready Initialization) & Cross-Window / Simulator Sync
 // ==========================================================================
+function isSyncableStorageKey(k) {
+  if (!k) return false;
+  return (
+    k.startsWith('orbray_') ||
+    k.startsWith('salary_') ||
+    k.startsWith('period_salary_') ||
+    k.startsWith('multi_company_') ||
+    k.startsWith('custom_firebase_') ||
+    k.startsWith('gemini_')
+  );
+}
+
 window.broadcastStorageToSimulator = function() {
   try {
     const dump = {};
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (k && (k.startsWith('orbray_') || k.startsWith('salary_') || k.startsWith('custom_firebase_'))) {
+      if (isSyncableStorageKey(k)) {
         dump[k] = localStorage.getItem(k);
       }
     }
@@ -4906,7 +4932,7 @@ window.addEventListener('message', async (event) => {
 
 window.addEventListener('storage', (event) => {
   if (!event.key) return;
-  if (event.key.startsWith('orbray_') || event.key.startsWith('salary_') || event.key.startsWith('custom_firebase_')) {
+  if (isSyncableStorageKey(event.key)) {
     if (event.key === STORAGE_KEY_FIREBASE_CFG && typeof initFirebaseApp === 'function') {
       initFirebaseApp();
     } else if (typeof checkStoredCurrentUser === 'function') {

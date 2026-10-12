@@ -550,7 +550,7 @@ function importFirebaseConfigFromUrlOrParent() {
           const parentLen = window.parent.localStorage.length;
           for (let i = 0; i < parentLen; i++) {
             const k = window.parent.localStorage.key(i);
-            if (k && (k.startsWith('orbray_') || k.startsWith('salary_') || k.startsWith('custom_firebase_'))) {
+            if (k && (k.startsWith('orbray_') || k.startsWith('salary_') || k.startsWith('period_salary_') || k.startsWith('multi_company_') || k.startsWith('custom_firebase_') || k.startsWith('gemini_'))) {
               const v = window.parent.localStorage.getItem(k);
               if (v !== null) {
                 localStorage.setItem(k, v);
@@ -1002,15 +1002,24 @@ async function syncDataToCloud(docKey, data, userId = null) {
   if (_isApplyingCloudSnapshot) return false;
   if (!isFirebaseOnline || !firebaseDb) return false;
   const targetId = userId || getActiveEditingUserId();
+  const docRef = firebaseDb.collection('user_salaries').doc(targetId);
   try {
-    await firebaseDb.collection('user_salaries').doc(targetId).set({
+    await docRef.update({
       [docKey]: data,
       lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    });
     return true;
-  } catch (err) {
-    console.warn('Cloud sync error:', err.message);
-    return false;
+  } catch (updateErr) {
+    try {
+      await docRef.set({
+        [docKey]: data,
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      return true;
+    } catch (err) {
+      console.warn('Cloud sync error:', err.message);
+      return false;
+    }
   }
 }
 
